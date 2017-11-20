@@ -1,0 +1,18 @@
+{application, cf_client,
+ [{description, "A Cuneiform client implementation."},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {cf_client, []}},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, [cf_client]},
+
+  {maintainers, ["Jorgen Brandt"]},
+  {licenses, ["Apache 2.0"]},
+  {links, [
+           {"GitHub", "https://github.com/joergen7/cf_client/"}
+          ]}
+ ]}.
