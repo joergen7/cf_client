@@ -8,7 +8,7 @@
     stdlib
    ]},
   {env,[]},
-  {modules, [cf_client]},
+  {modules, [cf_client, cf_client_process, cf_client_sup]},
 
   {maintainers, ["Jorgen Brandt"]},
   {licenses, ["Apache 2.0"]},
