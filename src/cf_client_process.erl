@@ -11,6 +11,33 @@
 %% CRE client callbacks
 -export( [init/1, is_value/2, recv/4, step/2] ).
 
+%% API functions
+-export( [start_link/1, start_link/2] ).
+
+
+%%====================================================================
+%% API functions
+%%====================================================================
+
+start_link( F ) when is_function( F, 0 ) ->
+  case F() of
+    {ok, CreName} -> start_link( CreName );
+    {error, E}    -> {error, E}
+  end;
+
+start_link( CreName ) ->
+  cre_client:start_link( CreName, ?MODULE, [] ).
+
+
+start_link( ClientName, F ) when is_function( F, 0 ) ->
+  case F() of
+    {ok, CreName} -> start_link( ClientName, CreName );
+    {error, E}    -> {error, E}
+  end;
+
+start_link( Clientname, CreName ) ->
+  cre_client:start_link( Clientname, CreName, ?MODULE, [] ).
+
 
 %%====================================================================
 %% CRE client callback implementations

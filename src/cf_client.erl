@@ -3,7 +3,7 @@
 %% @end
 %%%-------------------------------------------------------------------
 
--module( cf_client_app ).
+-module( cf_client ).
 -behaviour( application ).
 
 %% Escript export
@@ -45,7 +45,7 @@ start( _StartType, _StartArgs ) ->
 
     end,
 
-  cf_client_sup:start_link().
+  cf_client_sup:start_link( CreNode ).
 
 stop(_State) ->
   ok.
@@ -69,7 +69,7 @@ main( [CreNodeStr] ) ->
   io:format( "connected nodes: ~p~n", [nodes()] ),
 
   % a workflow expression falls from the sky
-  E = cuneiform:lang:str( "blub" ),
+  E = cuneiform_lang:str( "blub" ),
 
   io:format( "state:           starting workflow~n" ),
 
