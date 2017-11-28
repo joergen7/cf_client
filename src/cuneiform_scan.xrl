@@ -29,6 +29,7 @@ FIX       = fix
 FOLD      = fold
 FOR       = for
 FRN       = Frn
+IMPORT    = import
 IN        = in
 ISNIL     = isnil
 LAMBDA    = \\
@@ -92,6 +93,7 @@ Rules.
 {FOLD}      : {token, {fold, TokenLine, TokenChars}}.
 {FOR}       : {token, {for, TokenLine, TokenChars}}.
 {FRN}       : {token, {frn, TokenLine, TokenChars}}.
+{IMPORT}    : {token, {import, TokenLine, TokenChars}}.
 {IN}        : {token, {in, TokenLine, TokenChars}}.
 {ISNIL}     : {token, {isnil, TokenLine, TokenChars}}.
 {LAMBDA}    : {token, {lambda, TokenLine, TokenChars}}.
