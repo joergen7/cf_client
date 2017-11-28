@@ -10,3 +10,5 @@ rel/example_project
 .rebar
 _build
 rebar.lock
+src/cuneiform_scan.erl
+src/cuneiform_parse.erl
