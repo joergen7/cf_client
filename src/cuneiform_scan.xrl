@@ -35,6 +35,7 @@ ISNIL     = isnil
 LAMBDA    = \\
 LARROW    = <-
 LBRACE    = \{
+LET       = let
 LPAREN    = \(
 LSQUAREBR = \[
 LTAG      = <
@@ -99,6 +100,7 @@ Rules.
 {LAMBDA}    : {token, {lambda, TokenLine, TokenChars}}.
 {LARROW}    : {token, {larrow, TokenLine, TokenChars}}.
 {LBRACE}    : {token, {lbrace, TokenLine, TokenChars}}.
+{LET}       : {token, {assign, TokenLine, TokenChars}}.
 {LPAREN}    : {token, {lparen, TokenLine, TokenChars}}.
 {LSQUAREBR} : {token, {lsquarebr, TokenLine, TokenChars}}.
 {LTAG}      : {token, {ltag, TokenLine, TokenChars}}.

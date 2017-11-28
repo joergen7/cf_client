@@ -39,4 +39,5 @@
                      | {cnd, info(), ctx(), e(), e()}
                      | {app, info(), ctx(), [app_arg()]}.
 
-
+-type r()           :: {r_var, info(), x(), t()}
+                     | {r_rcd, info(), [{x(), r()}]}.

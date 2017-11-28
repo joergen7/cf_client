@@ -14,6 +14,31 @@
 -export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, app/2] ).
 -export( [str/2, file/2, true/1, false/1, cnd/4, var/2, lam_ntv/3, app/3] ).
 
+%% Pattern constructors
+-export( [r_rcd_pair/2] ).
+-export( [r_var/3, r_rcd/2] ).
+
+%%====================================================================
+%% Pattern constructors
+%%====================================================================
+
+-spec r_var( Info :: info(), X :: x(), T :: t() ) -> r().
+
+r_var( Info, X, T ) when is_atom( X ) ->
+  {r_var, Info, X, T}.
+
+
+-spec r_rcd_pair( X :: x(), R :: r() ) -> {x(), r()}.
+
+r_rcd_pair( X, R ) when is_atom( X ) ->
+  {X, R}.
+
+
+-spec r_rcd( Info :: info(), RLst :: [r()] ) -> r().
+
+r_rcd( Info, RLst ) when is_list( RLst ) ->
+  {r_var, Info, RLst}.
+
 
 %%====================================================================
 %% Type constructors
@@ -78,8 +103,7 @@ str( S ) ->
 -spec str( Info :: info(), S :: s() ) -> e().
 
 str( Info, S )
-when Info =:= na orelse is_tuple( Info ),
-     is_list( S ) ->
+when is_list( S ) ->
   {str, Info, S}.
 
 
@@ -92,8 +116,7 @@ file( S ) ->
 -spec file( Info :: info(), S :: s() ) -> e().
 
 file( Info, S )
-when Info =:= na orelse is_tuple( Info ),
-     is_list( S ) ->
+when is_list( S ) ->
   {file, Info, S}.
 
 
@@ -105,8 +128,7 @@ true() ->
 
 -spec true( Info :: info() ) -> e().
 
-true( Info )
-when Info =:= na orelse is_tuple( Info ) ->
+true( Info ) ->
   {true, Info}.
 
 
@@ -118,8 +140,7 @@ false() ->
 
 -spec false( Info :: info() ) -> e().
 
-false( Info )
-when Info =:= na orelse is_tuple( Info ) ->
+false( Info ) ->
   {false, Info}.
 
 
@@ -131,8 +152,7 @@ cnd( EIf, EThen, EElse ) ->
 
 -spec cnd( Info :: info(), EIf :: e(), EThen :: e(), EElse :: e() ) -> e().
 
-cnd( Info, EIf, EThen, EElse )
-when Info =:= na orelse is_tuple( Info ) ->
+cnd( Info, EIf, EThen, EElse ) ->
   {cnd, Info, EIf, EThen, EElse}.
   
 
@@ -145,8 +165,7 @@ var( X ) ->
 -spec var( Info :: info(), X :: x() ) -> e().
 
 var( Info, X )
-when Info =:= na orelse is_tuple( Info ),
-     is_atom( X ) ->
+when is_atom( X ) ->
   {var, Info, X}.
 
 
@@ -159,8 +178,7 @@ lam_ntv( ArgLst, EBody ) ->
 -spec lam_ntv( Info :: info(), ArgLst :: [lam_ntv_arg()], EBody :: e() ) -> e().
 
 lam_ntv( Info, ArgLst, EBody )
-when Info =:= na orelse is_tuple( Info ),
-     is_list( ArgLst ) ->
+when is_list( ArgLst ) ->
   {lam_ntv, Info, ArgLst, EBody}.
 
 
@@ -173,6 +191,5 @@ app( F, ArgLst ) ->
 -spec app( Info :: info(), F :: e(), ArgLst :: [app_arg()] ) -> e().
 
 app( Info, F, ArgLst )
-when Info =:= na orelse is_tuple( Info ),
-     is_list( ArgLst ) ->
+when is_list( ArgLst ) ->
   {app, Info, F, ArgLst}.
