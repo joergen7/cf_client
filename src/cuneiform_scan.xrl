@@ -136,7 +136,7 @@ Rules.
 
 Erlang code.
 
-% -export( [yyrev/2] ).
+-export( [yyrev/2] ).
 
 -spec trim_body( S :: string() ) -> string().
 

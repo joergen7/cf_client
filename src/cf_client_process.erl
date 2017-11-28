@@ -72,7 +72,7 @@ when E       :: e(),
               | norule.
 
 step( E, _UsrInfo ) ->
-  case cuneiform_sem:find_context( E, hole ) of
+  case cuneiform_sem:find_context( E ) of
 
     {ok, E, Ctx} ->
       E1 = cuneiform_sem:reduce( E ),

@@ -11,8 +11,10 @@
 
 %% Expression constructors
 -export( [lam_ntv_arg/3, app_arg/2] ).
--export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, app/2] ).
--export( [str/2, file/2, true/1, false/1, cnd/4, var/2, lam_ntv/3, app/3] ).
+-export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, app/2,
+          cmp/2, conj/2, disj/2, neg/1] ).
+-export( [str/2, file/2, true/1, false/1, cnd/4, var/2, lam_ntv/3, app/3,
+          cmp/3, conj/3, disj/3, neg/2] ).
 
 %% Pattern constructors
 -export( [r_rcd_pair/2] ).
@@ -193,3 +195,53 @@ app( F, ArgLst ) ->
 app( Info, F, ArgLst )
 when is_list( ArgLst ) ->
   {app, Info, F, ArgLst}.
+
+
+-spec cmp( E1 :: e(), E2 :: e() ) -> e().
+
+cmp( E1, E2 ) ->
+  cmp( na, E1, E2 ).
+
+
+-spec cmp( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
+
+cmp( Info, E1, E2 ) ->
+  {cmp, Info, E1, E2}.
+
+
+-spec neg( E :: e() ) -> e().
+
+neg( E ) ->
+  neg( na, E ).
+
+
+-spec neg( Info :: info(), E :: e() ) -> e().
+
+neg( Info, E ) ->
+  {neg, Info, E}.
+
+
+-spec conj( E1 :: e(), E2 :: e() ) -> e().
+
+conj( E1, E2 ) ->
+  conj( na, E1, E2 ).
+
+
+-spec conj( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
+
+conj( Info, E1, E2 ) ->
+  {conj, Info, E1, E2}.
+
+
+-spec disj( E1 :: e(), E2 :: e() ) -> e().
+
+disj( E1, E2 ) ->
+  disj( na, E1, E2 ).
+
+
+-spec disj( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
+
+disj( Info, E1, E2 ) ->
+  {disj, Info, E1, E2}.
+
+

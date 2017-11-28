@@ -33,7 +33,11 @@
                      | {cnd, info(), e(), e(), e()}
                      | {var, info(), x()}
                      | {lam_ntv, info(), [lam_ntv_arg()], e()}
-                     | {app, info(), e(), [app_arg()]}.
+                     | {app, info(), e(), [app_arg()]}
+                     | {cmp, info(), e(), e()}
+                     | {neg, info(), e()}
+                     | {conj, info(), e(), e()}
+                     | {disj, info(), e(), e()}.
 
 -type ctx()         :: hole
                      | {cnd, info(), ctx(), e(), e()}
