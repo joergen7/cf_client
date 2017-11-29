@@ -4,7 +4,7 @@
 
 -import( cuneiform_parse, [parse/1] ).
 -import( cuneiform_lang, [str/2, var/2, file/2, true/1, false/1, cmp/3, conj/3,
-                          disj/3] ).
+                          disj/3, neg/2] ).
 
 parse_test_() ->
   {foreach,

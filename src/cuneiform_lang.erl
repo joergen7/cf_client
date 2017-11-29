@@ -36,10 +36,10 @@ r_rcd_pair( X, R ) when is_atom( X ) ->
   {X, R}.
 
 
--spec r_rcd( Info :: info(), RLst :: [r()] ) -> r().
+-spec r_rcd( Info :: info(), RLst :: [{x(), r()}] ) -> r().
 
 r_rcd( Info, RLst ) when is_list( RLst ) ->
-  {r_var, Info, RLst}.
+  {r_rcd, Info, RLst}.
 
 
 %%====================================================================

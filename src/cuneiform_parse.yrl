@@ -46,6 +46,7 @@ expr        -> filelit                       : visit_file( '$1' ).
 expr        -> true                          : visit_true( '$1' ).
 expr        -> false                         : visit_false( '$1' ).
 expr        -> lparen expr cmp expr rparen   : visit_cmp( '$2', '$3', '$4' ).
+expr        -> neg expr                      : visit_neg( '$1', '$2' ).
 expr        -> lparen expr wedge expr rparen : visit_conj( '$2', '$3', '$4' ).
 expr        -> lparen expr vee expr rparen   : visit_disj( '$2', '$3', '$4' ).
 
@@ -86,7 +87,9 @@ file( Filename ) ->
   end.
 
 
--spec visit_import( {strlit, L :: pos_integer(), S :: string()} ) -> string().
+-spec visit_import( {strlit, L, S} ) -> {import, pos_integer(), string()}
+when L :: pos_integer(),
+     S :: string().
 
 visit_import( {strlit, L, S} ) -> {import, L, S}.
 
@@ -146,3 +149,9 @@ visit_conj( E1, {wedge, L, _}, E2 ) ->
 
 visit_disj( E1, {vee, L, _}, E2 ) ->
   cuneiform_lang:disj( L, E1, E2 ).
+
+
+-spec visit_neg( {neg, L :: pos_integer(), _}, E :: e() ) -> e().
+
+visit_neg( {neg, L, _}, E ) ->
+  cuneiform_lang:neg( L, E ).
