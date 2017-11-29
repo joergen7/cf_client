@@ -3,8 +3,11 @@
 -include_lib( "eunit/include/eunit.hrl" ).
 
 -import( cuneiform_parse, [parse/1] ).
--import( cuneiform_lang, [str/2, var/2, file/2, true/1, false/1, cmp/3, conj/3,
-                          disj/3, neg/2, cnd/4] ).
+-import( cuneiform_lang, [str/2, var/2, file/2, true/1, false/1, cmp/3,
+                          conj/3, disj/3, neg/2, cnd/4, lam_ntv/3,
+                          lam_ntv_arg/3, t_str/0, t_file/0, app/3,
+                          r_var/3, t_fn/3, t_rcd/1, t_rcd_arg/2,
+                          l_bash/0, lam_frn/5] ).
 
 parse_test_() ->
   {foreach,
@@ -21,6 +24,7 @@ parse_test_() ->
     {"import definition query", fun import_definition_query/0},
     {"variable query",          fun variable_query/0},
     {"string query",            fun string_query/0},
+    {"integer query",           fun integer_query/0},
     {"file query",              fun file_query/0},
     {"true query",              fun true_query/0},
     {"false query",             fun false_query/0},
@@ -28,7 +32,10 @@ parse_test_() ->
     {"conditional query",       fun conditional_query/0},
     {"negation query",          fun negation_query/0},
     {"conjunction query",       fun conjunction_query/0},
-    {"disjunction query",       fun disjunction_query/0}
+    {"disjunction query",       fun disjunction_query/0},
+    {"no arg lambda query",     fun no_arg_lambda_query/0},
+    {"two arg lambda query",    fun two_arg_lambda_query/0},
+    {"foreign function bash",   fun foreign_function_bash/0}
    ]
   }.
 
@@ -39,7 +46,7 @@ one_variable_definition() ->
               {id, 2, "x"}],
   ?assertEqual( {ok, {[],
                       [],
-                      [{{r_var, 1, x, 'Str'}, {str, 1, "bla"}}],
+                      [{r_var( 1, x, 'Str' ), str( 1, "bla" )}],
                       var( 2, x )}}, parse( TokenLst ) ).
 
 two_variable_definition() ->
@@ -51,8 +58,8 @@ two_variable_definition() ->
               {semicolon, 2, ";"}, {id, 3, "x"}],
   ?assertEqual( {ok, {[],
                       [],
-                      [{{r_var, 1, x, 'Str'}, {str, 1, "bla"}},
-                       {{r_var, 2, y, 'Str'}, {str, 2, "blub"}}],
+                      [{r_var( 1, x, t_str() ), str( 1, "bla" )},
+                       {r_var( 2, y, t_str() ), str( 2, "blub" )}],
                       var( 3, x )}}, parse( TokenLst ) ).
 
 one_single_import() ->
@@ -61,7 +68,7 @@ one_single_import() ->
   ?assertEqual( {ok, {[{import, 1, "a.cuf"}],
                       [],
                       [],
-                      {str, 2, "bla"}}}, parse( TokenLst ) ).
+                      str( 2, "bla" )}}, parse( TokenLst ) ).
 
 one_double_import() ->
   TokenLst = [{import, 1, "import"}, {filelit, 1, "a.cuf"}, {comma, 1, ","},
@@ -70,7 +77,7 @@ one_double_import() ->
   ?assertEqual( {ok, {[{import, 1, "a.cuf"}, {import, 1, "b.cuf"}],
                       [],
                       [],
-                      {str, 2, "bla"}}}, parse( TokenLst ) ).
+                      str( 2, "bla" )}}, parse( TokenLst ) ).
 
 two_single_imports() ->
   TokenLst = [{import, 1, "import"}, {filelit, 1, "a.cuf"}, {semicolon, 1, ";"},
@@ -79,7 +86,7 @@ two_single_imports() ->
   ?assertEqual( {ok, {[{import, 1, "a.cuf"}, {import, 2, "b.cuf"}],
                       [],
                       [],
-                      {str, 3, "bla"}}}, parse( TokenLst ) ).
+                      str( 3, "bla" )}}, parse( TokenLst ) ).
 
 import_definition_query() ->
   TokenLst = [{import, 1, "import"}, {filelit, 1, "a.cuf"}, {semicolon, 1, ";"},
@@ -89,8 +96,8 @@ import_definition_query() ->
               {id, 3, "x"}],
   ?assertEqual( {ok, {[{import, 1, "a.cuf"}],
                       [],
-                      [{{r_var, 2, x, 'Str'}, {str, 2, "bla"}}],
-                      {var, 3, x}}}, parse( TokenLst ) ).
+                      [{r_var( 2, x, t_str() ), str( 2, "bla" )}],
+                      var( 3, x )}}, parse( TokenLst ) ).
 
 variable_query() ->
   TokenLst = [{id, 1, "x"}],
@@ -99,6 +106,10 @@ variable_query() ->
 string_query() ->
   TokenLst = [{strlit, 1, "bla"}],
   ?assertEqual( {ok, {[], [], [], str( 1, "bla" )}}, parse( TokenLst ) ).
+
+integer_query() ->
+  TokenLst = [{intlit, 1, "-5"}],
+  ?assertEqual( {ok, {[], [], [], str( 1, "-5" )}}, parse( TokenLst ) ).
 
 file_query() ->
   TokenLst = [{filelit, 1, "blub.txt"}],
@@ -142,3 +153,28 @@ disjunction_query() ->
               {false, 1, "false"}, {rparen, 1, ")"}],
   ?assertEqual( {ok, {[], [], [], disj( 1, true( 1 ), false( 1 ) )}},
                 parse( TokenLst ) ).
+
+no_arg_lambda_query() ->
+  TokenLst = [{lambda, 1, "\\"}, {lparen, 1, "("},
+              {rparen, 1, ")"}, {id, 1, "a"}],
+  E = lam_ntv( 1, [], var( 1, a ) ),
+  ?assertEqual( {ok, {[], [], [], E}}, parse( TokenLst ) ).
+
+two_arg_lambda_query() ->
+  TokenLst = [{lambda, 1, "\\"}, {lparen, 1, "("}, {id, 1, "a"},
+              {colon, 1, ":"}, {str, 1, "Str"}, {comma, 1, ","},
+              {id, 1, "b"}, {colon, 1, ":"}, {file, 1, "File"},
+              {rparen, 1, ")"}, {id, 1, "a"}],
+  E = lam_ntv( 1, [lam_ntv_arg( a, "a", t_str() ),
+                   lam_ntv_arg( b, "b", t_file() )], var( 1, a ) ),
+  ?assertEqual( {ok, {[], [], [], E}}, parse( TokenLst ) ).
+
+foreign_function_bash() ->
+  TokenLst = [{def, 1, "def"}, {id, 1, "f"}, {lparen, 1, "("},
+              {rparen, 1, ")"}, {in, 1, "in"}, {bash, 1, "Bash"},
+              {body, 1, "blablub"},
+              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}],
+  E = app( 5, var( 5, f ), [] ),
+  DefLst = [{r_var( 1, x, t_fn( frn, [], t_rcd( [t_rcd_arg( x, t_str() )] ) ) ),
+             lam_frn( 1, "f", [], l_bash(), "blablub" )}],
+  ?assertEqual( {ok, {[], [], DefLst, E}}, parse( TokenLst ) ).

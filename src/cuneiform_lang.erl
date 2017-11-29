@@ -6,19 +6,31 @@
 %%====================================================================
 
 %% Type constructors
--export( [t_fn_arg/2] ).
--export( [t_str/0, t_file/0, t_bool/0, t_fn/3] ).
+-export( [t_fn_arg/2, t_rcd_arg/2] ).
+-export( [t_str/0, t_file/0, t_bool/0, t_fn/3, t_rcd/1] ).
 
 %% Expression constructors
--export( [lam_ntv_arg/3, app_arg/2] ).
--export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, app/2,
-          cmp/2, conj/2, disj/2, neg/1] ).
--export( [str/2, file/2, true/1, false/1, cnd/4, var/2, lam_ntv/3, app/3,
-          cmp/3, conj/3, disj/3, neg/2] ).
+-export( [lam_ntv_arg/3, lam_frn_arg/2, app_arg/2] ).
+-export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2,
+          lam_frn/4, app/2, cmp/2, conj/2, disj/2, neg/1] ).
+-export( [str/2, file/2, true/1, false/1, cnd/4, var/2, lam_ntv/3,
+          lam_frn/5, app/3, cmp/3, conj/3, disj/3, neg/2] ).
 
 %% Pattern constructors
 -export( [r_rcd_pair/2] ).
 -export( [r_var/3, r_rcd/2] ).
+
+%% Language constructors
+-export( [l_bash/0] ).
+
+%%====================================================================
+%% Pattern constructors
+%%====================================================================
+
+-spec l_bash() -> l().
+
+l_bash() ->
+  'Bash'.
 
 %%====================================================================
 %% Pattern constructors
@@ -52,6 +64,12 @@ t_fn_arg( S, T ) when is_list( S ) ->
   {S, T}.
 
 
+-spec t_rcd_arg( X :: x(), T :: t() ) -> t_rcd_arg().
+
+t_rcd_arg( X, T ) when is_atom( X ) ->
+  {X, T}.
+
+
 -spec t_str() -> t().
 
 t_str() ->
@@ -78,6 +96,12 @@ when Tau =:= ntv orelse Tau =:= frn,
   {'Fn', Tau, ArgLst, TRet}.
 
 
+-spec t_rcd( ArgLst :: [t_rcd_arg()] ) -> t().
+
+t_rcd( ArgLst ) when is_list( ArgLst ) ->
+  {'Rcd', ArgLst}.
+
+
 %%====================================================================
 %% Expression constructors
 %%====================================================================
@@ -88,6 +112,12 @@ lam_ntv_arg( X, S, T )
 when is_atom( X ),
      is_list( S ) ->
   {X, S, T}.
+
+
+-spec lam_frn_arg( S :: s(), T :: t() ) -> lam_frn_arg().
+
+lam_frn_arg( S, T ) when is_list( S ) ->
+  {S, T}.
 
 
 -spec app_arg( S :: s(), E :: e() ) -> app_arg().
@@ -183,6 +213,30 @@ lam_ntv( Info, ArgLst, EBody )
 when is_list( ArgLst ) ->
   {lam_ntv, Info, ArgLst, EBody}.
 
+
+-spec lam_frn( SName, ArgLst, L, Body ) -> e()
+when SName  :: string(),
+     ArgLst :: [lam_frn_arg()],
+     L      :: l(),
+     Body   :: s().
+
+lam_frn( SName, ArgLst, L, SBody ) ->
+  lam_frn( na, SName, ArgLst, L, SBody ).
+
+
+-spec lam_frn( Info, SName, ArgLst, L, Body ) -> e()
+when Info   :: info(),
+     SName  :: string(),
+     ArgLst :: [lam_frn_arg()],
+     L      :: l(),
+     Body   :: s().
+
+lam_frn( Info, SName, ArgLst, L, Body )
+when is_list( SName ),
+     is_list( ArgLst ),
+     is_atom( L ),
+     is_list( Body ) ->
+  {lam_frn, Info, SName, ArgLst, L, Body}.
 
 -spec app( F :: e(), ArgLst :: [app_arg()] ) -> e().
 
