@@ -7,7 +7,7 @@
                           conj/3, disj/3, neg/2, cnd/4, lam_ntv/3,
                           lam_ntv_arg/3, t_str/0, t_file/0, app/3,
                           r_var/3, t_fn/3, t_rcd/1, t_rcd_arg/2,
-                          l_bash/0, lam_frn/5] ).
+                          l_bash/0, lam_frn/6] ).
 
 parse_test_() ->
   {foreach,
@@ -170,9 +170,10 @@ two_arg_lambda_query() ->
   ?assertEqual( {ok, {[], [], [], E}}, parse( TokenLst ) ).
 
 foreign_function_bash() ->
-  TokenLst = [{def, 1, "def"}, {id, 1, "f"}, {lparen, 1, "("},
-              {rparen, 1, ")"}, {in, 1, "in"}, {bash, 1, "Bash"},
-              {body, 1, "blablub"},
+  TokenLst = [{def, 1, "def"}, {id, 1, "f"}, {lparen, 1, "("}, {rparen, 1, ")"},
+              {rarrow, 1, "->"}, {ltag, 1, "<"}, {id, 1, "out"},
+              {colon, 1, ":"}, {str, 1, "Str"}, {rtag, 1, ">"},
+              {in, 1, "in"}, {bash, 1, "Bash"}, {body, 1, "blablub"},
               {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}],
   E = app( 5, var( 5, f ), [] ),
   DefLst = [{r_var( 1, x, t_fn( frn, [], t_rcd( [t_rcd_arg( x, t_str() )] ) ) ),
