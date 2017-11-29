@@ -4,7 +4,7 @@
 
 -import( cuneiform_parse, [parse/1] ).
 -import( cuneiform_lang, [str/2, var/2, file/2, true/1, false/1, cmp/3, conj/3,
-                          disj/3, neg/2] ).
+                          disj/3, neg/2, cnd/4] ).
 
 parse_test_() ->
   {foreach,
@@ -25,6 +25,7 @@ parse_test_() ->
     {"true query",              fun true_query/0},
     {"false query",             fun false_query/0},
     {"compare query",           fun compare_query/0},
+    {"conditional query",       fun conditional_query/0},
     {"negation query",          fun negation_query/0},
     {"conjunction query",       fun conjunction_query/0},
     {"disjunction query",       fun disjunction_query/0}
@@ -55,7 +56,7 @@ two_variable_definition() ->
                       var( 3, x )}}, parse( TokenLst ) ).
 
 one_single_import() ->
-  TokenLst = [{import, 1, "import"}, {strlit, 1, "a.cuf"}, {semicolon, 1, ";"},
+  TokenLst = [{import, 1, "import"}, {filelit, 1, "a.cuf"}, {semicolon, 1, ";"},
               {strlit, 2, "bla"}],
   ?assertEqual( {ok, {[{import, 1, "a.cuf"}],
                       [],
@@ -63,8 +64,8 @@ one_single_import() ->
                       {str, 2, "bla"}}}, parse( TokenLst ) ).
 
 one_double_import() ->
-  TokenLst = [{import, 1, "import"}, {strlit, 1, "a.cuf"}, {comma, 1, ","},
-              {strlit, 1, "b.cuf"}, {semicolon, 1, ";"},
+  TokenLst = [{import, 1, "import"}, {filelit, 1, "a.cuf"}, {comma, 1, ","},
+              {filelit, 1, "b.cuf"}, {semicolon, 1, ";"},
               {strlit, 2, "bla"}],
   ?assertEqual( {ok, {[{import, 1, "a.cuf"}, {import, 1, "b.cuf"}],
                       [],
@@ -72,8 +73,8 @@ one_double_import() ->
                       {str, 2, "bla"}}}, parse( TokenLst ) ).
 
 two_single_imports() ->
-  TokenLst = [{import, 1, "import"}, {strlit, 1, "a.cuf"}, {semicolon, 1, ";"},
-              {import, 2, "import"}, {strlit, 2, "b.cuf"}, {semicolon, 2, ";"},
+  TokenLst = [{import, 1, "import"}, {filelit, 1, "a.cuf"}, {semicolon, 1, ";"},
+              {import, 2, "import"}, {filelit, 2, "b.cuf"}, {semicolon, 2, ";"},
               {strlit, 3, "bla"}],
   ?assertEqual( {ok, {[{import, 1, "a.cuf"}, {import, 2, "b.cuf"}],
                       [],
@@ -81,7 +82,7 @@ two_single_imports() ->
                       {str, 3, "bla"}}}, parse( TokenLst ) ).
 
 import_definition_query() ->
-  TokenLst = [{import, 1, "import"}, {strlit, 1, "a.cuf"}, {semicolon, 1, ";"},
+  TokenLst = [{import, 1, "import"}, {filelit, 1, "a.cuf"}, {semicolon, 1, ";"},
               {assign, 2, "let"}, {id, 2, "x"}, {colon, 2, ":"},
               {str, 2, "Str"}, {eq, 2, "="}, {strlit, 2, "bla"},
               {semicolon, 2, ";"},
@@ -116,6 +117,15 @@ compare_query() ->
               {strlit, 1, "blub"}, {rparen, 1, ")"}],
   ?assertEqual( {ok, {[], [], [], cmp( 1, str( 1, "bla" ), str( 1, "blub" ) )}},
                 parse( TokenLst ) ).
+
+conditional_query() ->
+  TokenLst = [{cnd, 1, "if"}, {true, 1, "true"},
+              {then, 2, "then"},
+              {strlit, 3, "bla"},
+              {else, 4, "else"},
+              {strlit, 5, "blub"}],
+  E = cnd( 1, true( 1 ), str( 3, "bla" ), str( 5, "blub" ) ),
+  ?assertEqual( {ok, {[], [], [], E}}, parse( TokenLst ) ).
 
 negation_query() ->
   TokenLst = [{neg, 1, "not"}, {false, 1, "false"}],

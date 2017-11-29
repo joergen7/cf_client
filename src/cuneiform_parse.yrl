@@ -3,7 +3,7 @@
 %% ==================================================================
 
 Nonterminals
-  define define_lst expr imp imp_lst imp_str_lst ptn script type.
+  define define_lst expr imp imp_lst imp_f_lst ptn script type.
 
 Terminals
   assign bash octave perl python r racket wedge bool cmp cnd colon
@@ -18,37 +18,38 @@ Terminals
 
 Rootsymbol script.
 
-script      -> expr                          : {[], [], [], '$1'}.
-script      -> define_lst expr               : {[], [], '$1', '$2'}.
-script      -> imp_lst expr                  : {'$1', [], [], '$2'}.
-script      -> imp_lst define_lst expr       : {'$1', [], '$2', '$3'}.
+script     -> expr                          : {[], [], [], '$1'}.
+script     -> define_lst expr               : {[], [], '$1', '$2'}.
+script     -> imp_lst expr                  : {'$1', [], [], '$2'}.
+script     -> imp_lst define_lst expr       : {'$1', [], '$2', '$3'}.
 
-define_lst  -> define                        : ['$1'].
-define_lst  -> define define_lst             : ['$1'|'$2'].
+define_lst -> define                        : ['$1'].
+define_lst -> define define_lst             : ['$1'|'$2'].
 
-define      -> assign ptn eq expr semicolon  : {'$2', '$4'}.
+define     -> assign ptn eq expr semicolon  : {'$2', '$4'}.
 
-ptn         -> id colon type                 : visit_r_var( '$1', '$3' ).
+ptn        -> id colon type                 : visit_r_var( '$1', '$3' ).
 
-imp_lst     -> imp                           : '$1'.
-imp_lst     -> imp imp_lst                   : '$1'++'$2'.
+imp_lst    -> imp                           : '$1'.
+imp_lst    -> imp imp_lst                   : '$1'++'$2'.
 
-imp         -> import imp_str_lst semicolon  : '$2'.
+imp        -> import imp_f_lst semicolon    : '$2'.
 
-imp_str_lst -> strlit                        : [visit_import( '$1' )].
-imp_str_lst -> strlit comma imp_str_lst      : [visit_import( '$1' )|'$3'].
+imp_f_lst  -> filelit                       : [visit_import( '$1' )].
+imp_f_lst  -> filelit comma imp_f_lst       : [visit_import( '$1' )|'$3'].
 
-type        -> str                           : cuneiform_lang:t_str().
+type       -> str                           : cuneiform_lang:t_str().
 
-expr        -> id                            : visit_var( '$1' ).
-expr        -> strlit                        : visit_str( '$1' ).
-expr        -> filelit                       : visit_file( '$1' ).
-expr        -> true                          : visit_true( '$1' ).
-expr        -> false                         : visit_false( '$1' ).
-expr        -> lparen expr cmp expr rparen   : visit_cmp( '$2', '$3', '$4' ).
-expr        -> neg expr                      : visit_neg( '$1', '$2' ).
-expr        -> lparen expr wedge expr rparen : visit_conj( '$2', '$3', '$4' ).
-expr        -> lparen expr vee expr rparen   : visit_disj( '$2', '$3', '$4' ).
+expr       -> id                            : visit_var( '$1' ).
+expr       -> strlit                        : visit_str( '$1' ).
+expr       -> filelit                       : visit_file( '$1' ).
+expr       -> true                          : visit_true( '$1' ).
+expr       -> false                         : visit_false( '$1' ).
+expr       -> lparen expr cmp expr rparen   : visit_cmp( '$2', '$3', '$4' ).
+expr       -> cnd expr then expr else expr  : visit_cnd( '$1', '$2', '$4', '$6' ).
+expr       -> neg expr                      : visit_neg( '$1', '$2' ).
+expr       -> lparen expr wedge expr rparen : visit_conj( '$2', '$3', '$4' ).
+expr       -> lparen expr vee expr rparen   : visit_disj( '$2', '$3', '$4' ).
 
 
 %% ==================================================================
@@ -87,11 +88,11 @@ file( Filename ) ->
   end.
 
 
--spec visit_import( {strlit, L, S} ) -> {import, pos_integer(), string()}
+-spec visit_import( {filelit, L, S} ) -> {import, pos_integer(), string()}
 when L :: pos_integer(),
      S :: string().
 
-visit_import( {strlit, L, S} ) -> {import, L, S}.
+visit_import( {filelit, L, S} ) -> {import, L, S}.
 
 
 -spec visit_r_var( {id, L, S}, T ) -> r()
@@ -155,3 +156,13 @@ visit_disj( E1, {vee, L, _}, E2 ) ->
 
 visit_neg( {neg, L, _}, E ) ->
   cuneiform_lang:neg( L, E ).
+
+
+-spec visit_cnd( {cnd, L, _}, EIf, EThen, EElse ) -> e()
+when L     :: pos_integer(),
+     EIf   :: e(),
+     EThen :: e(),
+     EElse :: e().
+
+visit_cnd( {cnd, L, _}, EIf, EThen, EElse ) ->
+  cuneiform_lang:cnd( L, EIf, EThen, EElse ).
