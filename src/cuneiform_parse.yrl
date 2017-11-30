@@ -145,13 +145,13 @@ visit_var( {id, L, Varname} ) ->
 -spec visit_file( {filelit, L :: pos_integer(), S :: string()} ) -> e().
 
 visit_file( {filelit, L, S} ) ->
-  cuneiform_lang:file( L, S ).
+  cuneiform_lang:file( L, list_to_binary( S ) ).
 
 
 -spec visit_str( {_, L :: pos_integer(), S :: string()} ) -> e().
 
 visit_str( {_, L, S} ) ->
-  cuneiform_lang:str( L, S ).
+  cuneiform_lang:str( L, list_to_binary( S ) ).
 
 
 -spec visit_true( {true, L :: pos_integer(), _} ) -> e().
@@ -211,8 +211,9 @@ visit_lambda( {lambda, L, _}, ArgLst, EBody ) ->
 
 -spec visit_lam_ntv_arg( {id, _, X :: string()}, T :: t() ) -> lam_ntv_arg().
 
-visit_lam_ntv_arg( {id, _, X}, T ) ->
-  cuneiform_lang:lam_ntv_arg( list_to_atom( X ), X, T ).
+visit_lam_ntv_arg( {id, _, S}, T ) ->
+  X = list_to_atom( S ),
+  cuneiform_lang:lam_ntv_arg( X, X, T ).
 
 -spec visit_def_frn( Id, ArgLst, RetType, Lang, Body ) -> {r(), e()}
 when Id      :: {id, pos_integer(), string()},
