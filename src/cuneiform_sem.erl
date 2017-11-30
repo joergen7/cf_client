@@ -17,10 +17,10 @@
 
 -spec reduce( E :: e() ) -> e().
 
-reduce( {cnd, _, {true, _}, EThen, _} ) ->                     % E-true
+reduce( {cnd, _, {true, _}, EThen, _} ) ->                     % E-cnd-true
   EThen;
 
-reduce( {cnd, _, {false, _}, _, EElse} ) ->                    % E-false
+reduce( {cnd, _, {false, _}, _, EElse} ) ->                    % E-cnd-false
   EElse;
 
 reduce( {app, _, {lam_ntv, _, [], EBody}, []} ) ->             % E-beta-base
@@ -41,7 +41,7 @@ reduce( {app, AppInfo,                                         % E-beta
 -spec is_value( E :: e() ) -> boolean().
 
 is_value( {str, _, _} )        -> true;
-is_value( {file, _, _} )       -> true;
+is_value( {file, _, _, _} )    -> true;
 is_value( {true, _} )          -> true;
 is_value( {false, _} )         -> true;
 is_value( {cnd, _, _, _, _} )  -> false;
@@ -59,10 +59,10 @@ when E  :: e(),
      X1 :: x(),
      X2 :: x().
 
-rename( E = {str, _, _}, _, _ )  -> E;
-rename( E = {file, _, _}, _, _ ) -> E;
-rename( E = {true, _}, _, _ )    -> E;
-rename( E = {false, _}, _, _ )   -> E;
+rename( E = {str, _, _}, _, _ )     -> E;
+rename( E = {file, _, _, _}, _, _ ) -> E;
+rename( E = {true, _}, _, _ )       -> E;
+rename( E = {false, _}, _, _ )      -> E;
 
 rename( {cnd, Info, EIf, EThen, EElse}, X, Y ) ->
   {cnd, Info, rename( EIf, X, Y ),
@@ -99,10 +99,10 @@ when E1 :: e(),
      X  :: x(),
      E2 :: e().
 
-subst( E1 = {str, _, _}, _, _ )  -> E1;
-subst( E1 = {file, _, _}, _, _ ) -> E1;
-subst( E1 = {true, _}, _, _ )    -> E1;
-subst( E1 = {false, _}, _, _ )   -> E1;
+subst( E1 = {str, _, _}, _, _ )     -> E1;
+subst( E1 = {file, _, _, _}, _, _ ) -> E1;
+subst( E1 = {true, _}, _, _ )       -> E1;
+subst( E1 = {false, _}, _, _ )      -> E1;
 
 subst( {cnd, Info, EIf, EThen, EElse}, X, E2 ) ->
   {cnd, Info, subst( EIf, X, E2 ),
@@ -188,7 +188,7 @@ when E   :: e(),
      Ctx :: ctx().
 
 try_context( {str, _, _}, _ )        -> no_ctx;
-try_context( {file, _, _}, _ )       -> no_ctx;
+try_context( {file, _, _, _}, _ )    -> no_ctx;
 try_context( {true, _}, _ )          -> no_ctx;
 try_context( {false, _}, _ )         -> no_ctx;
 

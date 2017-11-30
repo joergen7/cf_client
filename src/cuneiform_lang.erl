@@ -7,17 +7,19 @@
 
 %% Type constructors
 -export( [t_arg/2] ).
--export( [t_str/0, t_file/0, t_bool/0, t_fn/3, t_rcd/1] ).
+-export( [t_str/0, t_file/0, t_bool/0, t_fn/3, t_rcd/1, t_lst/1] ).
 
 %% Expression constructors
--export( [lam_ntv_arg/3, lam_frn_arg/2, app_arg/2] ).
--export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2,
-          lam_frn/5, app/2, cmp/2, conj/2, disj/2, neg/1] ).
--export( [str/2, file/2, true/1, false/1, cnd/4, var/2, lam_ntv/3,
-          lam_frn/6, app/3, cmp/3, conj/3, disj/3, neg/2] ).
+-export( [lam_ntv_arg/3, x_bind/2, r_bind/2] ).
+-export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, lam_frn/5,
+          app/2, cmp/2, conj/2, disj/2, neg/1, fut/1, lst/2, append/2, isnil/1,
+          for/2, fold/3, rcd/1, proj/2, fix/1, assign/2] ).
+-export( [str/2, file/2, true/1, false/1, cnd/4, var/2, lam_ntv/3, lam_frn/6,
+          app/3, cmp/3, conj/3, disj/3, neg/2, fut/2, lst/3, append/3, isnil/2,
+          for/3, fold/4, rcd/2, proj/3, fix/2, assign/3] ).
 
 %% Pattern constructors
--export( [r_rcd_pair/2] ).
+-export( [r_arg/2] ).
 -export( [r_var/3, r_rcd/2] ).
 
 %% Language constructors
@@ -87,7 +89,7 @@ when Tau =:= ntv orelse Tau =:= frn,
 
 lam_ntv_arg( XIn, XEx, T )
 when is_atom( XIn ), is_atom( XEx ) ->
-  {X, S, T}.
+  {XIn, XEx, T}.
 
 -spec x_bind( X :: x(), E :: e() )     -> x_bind().
       x_bind( X, E ) when is_atom( X ) -> {X, E}.
@@ -145,11 +147,12 @@ lam_ntv( Info, ArgLst, EBody ) when is_list( ArgLst ) ->
   {lam_ntv, Info, ArgLst, EBody}.
 
 
--spec lam_frn( FName, ArgLst, L, Body ) -> e()
-when FName  :: x(),
-     ArgLst :: [lam_frn_arg()],
-     L      :: l(),
-     Body   :: s().
+-spec lam_frn( FName, ArgLst, RetType, L, Body ) -> e()
+when FName   :: x(),
+     ArgLst  :: [t_arg()],
+     RetType :: t(),
+     L       :: l(),
+     Body    :: s().
 
 lam_frn( FName, ArgLst, RetType, L, SBody ) ->
   lam_frn( na, FName, ArgLst, RetType, L, SBody ).
@@ -158,7 +161,7 @@ lam_frn( FName, ArgLst, RetType, L, SBody ) ->
 -spec lam_frn( Info, FName, ArgLst, RetType, L, Body ) -> e()
 when Info    :: info(),
      FName   :: x(),
-     ArgLst  :: [lam_frn_arg()],
+     ArgLst  :: [t_arg()],
      RetType :: t(),
      L       :: l(),
      Body    :: s().
@@ -168,7 +171,7 @@ when is_atom( FName ),
      is_list( ArgLst ),
      is_atom( L ),
      is_binary( Body ) ->
-  {lam_frn, Info, SName, ArgLst, RetType, L, Body}.
+  {lam_frn, Info, FName, ArgLst, RetType, L, Body}.
 
 
 -spec app( F :: e(), ArgLst :: [x_bind()] ) -> e().
@@ -208,7 +211,7 @@ when is_atom( FName ),
       fut( Info, H )                -> {fut, Info, H}.
 
 -spec lst( T :: t(), ELst :: [e()] ) -> e().
-      lst( T, ELst )                 -> lst( na, T, ELst )
+      lst( T, ELst )                 -> lst( na, T, ELst ).
 
 -spec lst( Info :: info(), T :: t(), ELst :: [e()] ) -> e().
       lst( Info, T, ELst ) when is_list( ELst )      -> {lst, Info, T, ELst}.
@@ -229,7 +232,7 @@ when is_atom( FName ),
       for( ArgLst, E )                      -> for( na, ArgLst, E ).
 
 -spec for( Info :: info(), ArgLst :: [x_bind()], E :: e() ) -> e().
-      for( Info, ArgLst, E ) when is_list( ArgLst )         -> {for ArgLst, E}.
+      for( Info, ArgLst, E ) when is_list( ArgLst ) -> {for, Info, ArgLst, E}.
 
 -spec fold( InitArg :: x_bind(), ArgLst :: [x_bind()], E :: e() ) -> e().
       fold( InitArg, ArgLst, E ) -> fold( na, InitArg, ArgLst, E ).
@@ -253,4 +256,25 @@ when is_tuple( InitArg ),
 -spec rcd( Info :: info(), ArgLst :: [x_bind()] ) -> e().
       rcd( Info, ArgLst ) when is_list( ArgLst )  -> {rcd, Info, ArgLst}.
 
+-spec proj( X :: x(), E :: e() ) -> e().
+      proj( X, E )               -> proj( na, X, E ).
+
+-spec proj( Info :: info(), X :: x(), E :: e() ) -> e().
+      proj( Info, X, E ) when is_atom( X )       -> {proj, Info, X, E}.
+
+-spec fix( E :: e() ) -> e().
+      fix( E )        -> fix( na, E ).
+
+-spec fix( Info :: info(), E :: e() ) -> e().
+      fix( Info, E )                  -> {fix, Info, E}.
+
+-spec assign( RBind :: r_bind(), E :: e() ) -> e().
+      assign( RBind, E )                    -> assign( na, RBind, E ).
+
+
+-spec assign( Info :: info(), RBind :: r_bind(), E :: e() ) -> e().
+
+assign( Info, RBind, E )
+when is_tuple( RBind ) ->
+  {assign, Info, RBind, E}.
 

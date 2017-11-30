@@ -10,7 +10,7 @@
 -import( cuneiform_sem, [in_hole/2, find_context/1] ).
 
 -import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3] ).
--import( cuneiform_lang, [lam_ntv_arg/3, app_arg/2] ).
+-import( cuneiform_lang, [lam_ntv_arg/3, x_bind/2] ).
 -import( cuneiform_lang, [str/1, file/1, true/0, false/0, cnd/3, var/1,
                              lam_ntv/2, app/2] ).
  
@@ -19,21 +19,21 @@
 %%====================================================================
 
 e_lam1() ->
-  lam_ntv( [lam_ntv_arg( x, "x", t_str() ),
-            lam_ntv_arg( y, "y", t_file() )], var( x ) ).
+  lam_ntv( [lam_ntv_arg( x, x, t_str() ),
+            lam_ntv_arg( y, y, t_file() )], var( x ) ).
 
 e_lam_first() ->
-  lam_ntv( [lam_ntv_arg( x, "x", t_str() ),
-            lam_ntv_arg( y, "y", t_str() )], var( x ) ).
+  lam_ntv( [lam_ntv_arg( x, x, t_str() ),
+            lam_ntv_arg( y, y, t_str() )], var( x ) ).
 
 e_lam_const() ->
-  lam_ntv( [], str( "blub" ) ).
+  lam_ntv( [], str( <<"blub">> ) ).
 
 e_lam_id() ->
-  lam_ntv( [lam_ntv_arg( x, "x", t_str() )], var( x ) ).
+  lam_ntv( [lam_ntv_arg( x, x, t_str() )], var( x ) ).
 
 e_app_id() ->
-  app( e_lam_id(), [app_arg( "x", str( "blub" ) )] ).
+  app( e_lam_id(), [x_bind( x, str( <<"blub">> ) )] ).
 
 %%====================================================================
 %% Notion of reduction
@@ -61,23 +61,23 @@ reduce_test_() ->
   }.
 
 cnd_with_true_if_expr_reduces_to_then_expr() ->
-  ETrue = str( "blub" ),
-  E1 = cnd( true(), ETrue, str( "bla" ) ),
+  ETrue = str( <<"blub">> ),
+  E1 = cnd( true(), ETrue, str( <<"bla">> ) ),
   ?assertEqual( ETrue, reduce( E1 ) ).
 
 cnd_with_false_if_expr_reduces_to_then_expr() ->
-  EFalse = str( "bla" ),
-  E1 = cnd( false(), str( "blub" ), EFalse ),
+  EFalse = str( <<"bla">> ),
+  E1 = cnd( false(), str( <<"blub">> ), EFalse ),
   ?assertEqual( EFalse, reduce( E1 ) ).
 
 nat_app_without_arg_reduces_to_lam_body() ->
   E1 = app( e_lam_const(), [] ),
-  E2 = str( "blub" ),
+  E2 = str( <<"blub">> ),
   ?assertEqual( E2, reduce( E1 ) ).
 
 nat_app_with_single_arg_reduces_to_empty_application() ->
   E1 = e_app_id(),
-  E2 = app( lam_ntv( [], str( "blub") ), [] ),
+  E2 = app( lam_ntv( [], str( <<"blub">> ) ), [] ),
   ?assertEqual( E2, reduce( E1 ) ).
 
 
@@ -104,10 +104,10 @@ is_value_test_() ->
   }.
 
 str_is_value() ->
-  ?assert( is_value( str( "blub" ) ) ).
+  ?assert( is_value( str( <<"blub">> ) ) ).
 
 file_is_value() ->
-  ?assert( is_value( file( "blub" ) ) ).
+  ?assert( is_value( file( <<"blub">> ) ) ).
 
 true_is_value() ->
   ?assert( is_value( true() ) ).
@@ -176,17 +176,17 @@ rename_test_() ->
      fun rename_propagates_to_app_function/0},
 
     {"rename propagates to application arguments",
-     fun rename_propagates_to_app_arg_lst/0}
+     fun rename_propagates_to_x_bind_lst/0}
    ]
   }.
 
 
 rename_leaves_str_alone() ->
-  E = str( "blub" ),
+  E = str( <<"blub">> ),
   ?assertEqual( E, rename( E, x, y ) ).
 
 rename_leaves_file_alone() ->
-  E = file( "blub" ),
+  E = file( <<"blub">> ),
   ?assertEqual( E, rename( E, x, y ) ).
 
 rename_leaves_true_alone() ->
@@ -222,12 +222,12 @@ matching_var_is_renamed() ->
   ?assertEqual( E2, rename( E1, x, y ) ).
 
 rename_propagates_to_lam_ntv_arg_lst() ->
-  E1 = lam_ntv( [lam_ntv_arg( x, "x", t_str() )], str( "blub" ) ),
-  E2 = lam_ntv( [lam_ntv_arg( y, "x", t_str() )], str( "blub" ) ),
+  E1 = lam_ntv( [lam_ntv_arg( x, x, t_str() )], str( <<"blub">> ) ),
+  E2 = lam_ntv( [lam_ntv_arg( y, x, t_str() )], str( <<"blub">> ) ),
   ?assertEqual( E2, rename( E1, x, y ) ).
 
 rename_leaves_nonmatching_lam_ntv_arg_alone() ->
-  E = lam_ntv( [lam_ntv_arg( z, "z", t_str() )], str( "blub" ) ),
+  E = lam_ntv( [lam_ntv_arg( z, z, t_str() )], str( <<"blub">> ) ),
   ?assertEqual( E, rename( E, x, y ) ).
 
 rename_propagates_to_lam_ntv_body() ->
@@ -240,9 +240,9 @@ rename_propagates_to_app_function() ->
   E2 = app( var( y ), [] ),
   ?assertEqual( E2, rename( E1, x, y ) ).
 
-rename_propagates_to_app_arg_lst() ->
-  E1 = app( var( f ), [app_arg( "x", var( x ) )] ),
-  E2 = app( var( f ), [app_arg( "x", var( y ) )] ),
+rename_propagates_to_x_bind_lst() ->
+  E1 = app( var( f ), [x_bind( x, var( x ) )] ),
+  E2 = app( var( f ), [x_bind( x, var( y ) )] ),
   ?assertEqual( E2, rename( E1, x, y ) ).
 
 
@@ -289,17 +289,17 @@ subst_test_() ->
      fun subst_propagates_to_app_function/0},
 
     {"substitution propagates to application arguments",
-     fun subst_propagates_to_app_arg_lst/0}
+     fun subst_propagates_to_x_bind_lst/0}
    ]
   }.
 
 
 subst_leaves_str_alone() ->
-  E = str( "blub" ),
+  E = str( <<"blub">> ),
   ?assertEqual( E, subst( E, x, var( y ) ) ).
 
 subst_leaves_file_alone() ->
-  E = file( "blub" ),
+  E = file( <<"blub">> ),
   ?assertEqual( E, subst( E, x, var( y ) ) ).
 
 subst_leaves_true_alone() ->
@@ -340,18 +340,18 @@ subst_propagates_to_lam_ntv_body() ->
   ?assertEqual( E2, subst( E1, x, var( y ) ) ).
 
 subst_shadowed_by_bound_var() ->
-  E = lam_ntv( [lam_ntv_arg( x, "x", t_str() )], var( x ) ),
-  ?assertMatch( {lam_ntv, na, [{X, "x", 'Str'}], {var, na, X}},
+  E = lam_ntv( [lam_ntv_arg( x, x, t_str() )], var( x ) ),
+  ?assertMatch( {lam_ntv, na, [{X, x, 'Str'}], {var, na, X}},
                 subst( E, x, var( y ) ) ).
 
 subst_is_capture_avoiding() ->
-  E = lam_ntv( [lam_ntv_arg( x, "x", t_str() )], var( y ) ),
-  ?assertNotMatch( {lam_ntv, na, [{X, "x", 'Str'}], {var, na, X}},
+  E = lam_ntv( [lam_ntv_arg( x, x, t_str() )], var( y ) ),
+  ?assertNotMatch( {lam_ntv, na, [{X, x, 'Str'}], {var, na, X}},
                    subst( E, y, var( x ) ) ).
 
 subst_retains_order_of_lam_ntv_arg_lst() ->
-  ?assertMatch( {lam_ntv, na, [{X, "x", 'Str'},
-                               {_, "y", 'File'}], {var, na, X}},
+  ?assertMatch( {lam_ntv, na, [{X, x, 'Str'},
+                               {_, y, 'File'}], {var, na, X}},
                 subst( e_lam1(), a, var( b ) ) ).
 
 subst_propagates_to_app_function() ->
@@ -359,9 +359,9 @@ subst_propagates_to_app_function() ->
   E2 = app( var( y ), [] ),
   ?assertEqual( E2, subst( E1, x, var( y ) ) ).
 
-subst_propagates_to_app_arg_lst() ->
-  E1 = app( var( f ), [app_arg( "x", var( x ) )] ),
-  E2 = app( var( f ), [app_arg( "x", var( y ) )] ),
+subst_propagates_to_x_bind_lst() ->
+  E1 = app( var( f ), [x_bind( x, var( x ) )] ),
+  E2 = app( var( f ), [x_bind( x, var( y ) )] ),
   ?assertEqual( E2, subst( E1, x, var( y ) ) ).
 
 
@@ -414,13 +414,13 @@ in_hole_test_() ->
   }.
 
 insert_in_empty_ctx_returns_original_expr() ->
-  E = str( "blub" ),
+  E = str( <<"blub">> ),
   ?assertEqual( E, in_hole( E, hole ) ).
 
 insert_traverses_cnd_if_expr() ->
   E1 = true(),
-  Ctx = cnd( hole, str( "bla" ), str( "blub" ) ),
-  E2 = cnd( true(), str( "bla" ), str( "blub" ) ),
+  Ctx = cnd( hole, str( <<"bla">> ), str( <<"blub">> ) ),
+  E2 = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
   ?assertEqual( E2, in_hole( E1, Ctx ) ).
 
 insert_traverses_non_frn_app_fun_pos() ->
@@ -473,10 +473,10 @@ find_context_test_() ->
     
 
 string_is_no_redex() ->
-  ?assertEqual( no_ctx, find_context( str( "blub" ) ) ).
+  ?assertEqual( no_ctx, find_context( str( <<"blub">> ) ) ).
 
 file_is_no_redex() ->
-  ?assertEqual( no_ctx, find_context( file( "blub" ) ) ).
+  ?assertEqual( no_ctx, find_context( file( <<"blub">> ) ) ).
 
 true_is_no_redex() ->
   ?assertEqual( no_ctx, find_context( true() ) ).
@@ -485,16 +485,16 @@ false_is_no_redex() ->
   ?assertEqual( no_ctx, find_context( false() ) ).
 
 cnd_with_true_if_expr_is_redex() ->
-  E = cnd( true(), str( "bla" ), str( "blub" ) ),
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
 cnd_with_false_if_expr_is_redex() ->
-  E = cnd( false(), str( "bla" ), str( "blub" ) ),
+  E = cnd( false(), str( <<"bla">> ), str( <<"blub">> ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
 find_context_traverses_cnd_if_expr() ->
   E = cnd( true(), true(), false() ),
-  Ctx = cnd( hole, str( "bla" ), str( "blub") ),
+  Ctx = cnd( hole, str( <<"bla">> ), str( <<"blub">> ) ),
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
 
 var_is_no_redex() ->

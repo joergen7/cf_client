@@ -6,6 +6,9 @@
                      | pos_integer()
                      | {string(), pos_integer()}.
 
+-type hash()        :: na
+                     | binary().
+
 -type x()           :: atom().
 
 -type s()           :: binary().
@@ -36,7 +39,7 @@
 
 -type e()           :: {str, info(), s()}
                      | {cmp, info(), e(), e()}
-                     | {file, info(), s(), _}
+                     | {file, info(), s(), hash()}
                      | {true, info()}
                      | {false, info()}
                      | {cnd, info(), e(), e(), e()}
@@ -47,7 +50,7 @@
                      | {lam_ntv, info(), [lam_ntv_arg()], e()}
                      | {lam_frn, info(), x(), [t_arg()], t(), l(), s()}
                      | {app, info(), e(), [x_bind()]}
-                     | {fut, info(), _}
+                     | {fut, info(), hash()}
                      | {lst, info(), t(), [e()]}
                      | {append, info(), e, e}
                      | {isnil, info(), e}
@@ -65,5 +68,5 @@
 
 -type ctx()         :: hole
                      | {cnd, info(), ctx(), e(), e()}
-                     | {app, info(), ctx(), [s_bind()]}.
+                     | {app, info(), ctx(), [x_bind()]}.
 

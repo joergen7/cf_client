@@ -5,15 +5,20 @@
 
 Definitions.
 
-BASH      = [Bb]ash
-OCTAVE    = [Oo]ctave
-PERL      = [Pp]erl
-PYTHON    = [Pp]ython
-R         = [Rr]
-RACKET    = [Rr]acket
+LBASH     = Bash
+LOCTAVE   = Octave
+LPERL     = Perl
+LPYTHON   = Python
+LR        = R
+LRACKET   = Racket
 
-AND       = and
-BOOL      = Bool
+TSTR      = Str
+TFILE     = File
+TBOOL     = Bool
+TLAMNTV   = Ntv
+TLAMFRN   = Frn
+
+ASSIGN    = let
 CMP       = ==
 CND       = if
 COLON     = :
@@ -24,24 +29,19 @@ DOT       = \.
 ELSE      = else
 EQ        = =
 FALSE     = false
-FILE      = File
 FIX       = fix
 FOLD      = fold
 FOR       = for
-FRN       = Frn
 IMPORT    = import
 IN        = in
 ISNIL     = isnil
 LAMBDA    = \\
 LARROW    = <-
 LBRACE    = \{
-LET       = let
 LPAREN    = \(
 LSQUAREBR = \[
 LTAG      = <
-NOT       = not
-NTV       = Ntv
-OR        = or
+NEG       = not
 PLUS      = \+
 RARROW    = ->
 RBRACE    = \}
@@ -49,9 +49,10 @@ RPAREN    = \)
 RSQUAREBR = \]
 RTAG      = >
 SEMICOLON = ;
-STR       = Str
 THEN      = then
 TRUE      = true
+VEE       = or
+WEDGE     = and
 
 ID        = [A-Za-z][A-Za-z0-9\-_]*
 INTLIT    = -?([0-9]|[1-9][0-9]*)
@@ -59,8 +60,7 @@ STRLIT    = "[^"]*"
 FILELIT   = '[^']*'
 BODY      = \*\{([^}]|\}+[^}*])*\}+\*
 
-COMMENT1  = (#|//|%).*
-COMMENT2  = /\*([^*]|\*+[^/*])*\*+/
+COMMENT   = %.*
 WS        = [\000-\s]
 
 
@@ -70,15 +70,20 @@ WS        = [\000-\s]
 
 Rules.
 
-{BASH}      : {token, {bash, TokenLine, TokenChars}}.
-{OCTAVE}    : {token, {octave, TokenLine, TokenChars}}.
-{PERL}      : {token, {perl, TokenLine, TokenChars}}.
-{PYTHON}    : {token, {python, TokenLine, TokenChars}}.
-{R}         : {token, {r, TokenLine, TokenChars}}.
-{RACKET}    : {token, {racket, TokenLine, TokenChars}}.
+{LBASH}     : {token, {l_bash, TokenLine, TokenChars}}.
+{LOCTAVE}   : {token, {l_octave, TokenLine, TokenChars}}.
+{LPERL}     : {token, {l_perl, TokenLine, TokenChars}}.
+{LPYTHON}   : {token, {l_python, TokenLine, TokenChars}}.
+{LR}        : {token, {l_r, TokenLine, TokenChars}}.
+{LRACKET}   : {token, {l_racket, TokenLine, TokenChars}}.
 
-{AND}       : {token, {wedge, TokenLine, TokenChars}}.
-{BOOL}      : {token, {bool, TokenLine, TokenChars}}.
+{TSTR}      : {token, {t_str, TokenLine, TokenChars}}.
+{TFILE}     : {token, {t_file, TokenLine, TokenChars}}.
+{TBOOL}     : {token, {t_bool, TokenLine, TokenChars}}.
+{TLAMNTV}   : {token, {t_lam_ntv, TokenLine, TokenChars}}.
+{TLAMFRN}   : {token, {t_lam_frn, TokenLine, TokenChars}}.
+
+{ASSIGN}    : {token, {assign, TokenLine, TokenChars}}.
 {CMP}       : {token, {cmp, TokenLine, TokenChars}}.
 {CND}       : {token, {cnd, TokenLine, TokenChars}}.
 {COLON}     : {token, {colon, TokenLine, TokenChars}}.
@@ -89,24 +94,19 @@ Rules.
 {ELSE}      : {token, {else, TokenLine, TokenChars}}.
 {EQ}        : {token, {eq, TokenLine, TokenChars}}.
 {FALSE}     : {token, {false, TokenLine, TokenChars}}.
-{FILE}      : {token, {file, TokenLine, TokenChars}}.
 {FIX}       : {token, {fix, TokenLine, TokenChars}}.
 {FOLD}      : {token, {fold, TokenLine, TokenChars}}.
 {FOR}       : {token, {for, TokenLine, TokenChars}}.
-{FRN}       : {token, {frn, TokenLine, TokenChars}}.
 {IMPORT}    : {token, {import, TokenLine, TokenChars}}.
 {IN}        : {token, {in, TokenLine, TokenChars}}.
 {ISNIL}     : {token, {isnil, TokenLine, TokenChars}}.
 {LAMBDA}    : {token, {lambda, TokenLine, TokenChars}}.
 {LARROW}    : {token, {larrow, TokenLine, TokenChars}}.
 {LBRACE}    : {token, {lbrace, TokenLine, TokenChars}}.
-{LET}       : {token, {assign, TokenLine, TokenChars}}.
 {LPAREN}    : {token, {lparen, TokenLine, TokenChars}}.
 {LSQUAREBR} : {token, {lsquarebr, TokenLine, TokenChars}}.
 {LTAG}      : {token, {ltag, TokenLine, TokenChars}}.
-{NOT}       : {token, {neg, TokenLine, TokenChars}}.
-{NTV}       : {token, {ntv, TokenLine, TokenChars}}.
-{OR}        : {token, {vee, TokenLine, TokenChars}}.
+{NEG}       : {token, {neg, TokenLine, TokenChars}}.
 {PLUS}      : {token, {plus, TokenLine, TokenChars}}.
 {RARROW}    : {token, {rarrow, TokenLine, TokenChars}}.
 {RBRACE}    : {token, {rbrace, TokenLine, TokenChars}}.
@@ -114,9 +114,10 @@ Rules.
 {RSQUAREBR} : {token, {rsquarebr, TokenLine, TokenChars}}.
 {RTAG}      : {token, {rtag, TokenLine, TokenChars}}.
 {SEMICOLON} : {token, {semicolon, TokenLine, TokenChars}}.
-{STR}       : {token, {str, TokenLine, TokenChars}}.
 {THEN}      : {token, {then, TokenLine, TokenChars}}.
 {TRUE}      : {token, {true, TokenLine, TokenChars}}.
+{VEE}       : {token, {vee, TokenLine, TokenChars}}.
+{WEDGE}     : {token, {wedge, TokenLine, TokenChars}}.
 
 {ID}        : {token, {id, TokenLine, TokenChars}}.
 {INTLIT}    : {token, {intlit, TokenLine, TokenChars}}.
@@ -124,8 +125,7 @@ Rules.
 {FILELIT}   : {token, {filelit, TokenLine, trim_lit( TokenChars )}}.
 {BODY}      : {token, {body, TokenLine, trim_body( TokenChars )}}.
 
-{COMMENT1}  : skip_token.
-{COMMENT2}  : skip_token.
+{COMMENT}   : skip_token.
 {WS}        : skip_token.
 
 
