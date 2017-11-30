@@ -1,10 +1,10 @@
-%% ==================================================================
+%%====================================================================
 %% Symbol Declaration
-%% ==================================================================
+%%====================================================================
 
 Nonterminals
-  define define_lst e u_arg_lst u_arg ground imp imp_lst imp_f_lst l
-  lam_ntv_arg lam_ntv_arg_lst r script t u.
+  define e u_arg_lst u_arg imp l
+  lam_ntv_arg lam_ntv_arg_lst r script t u stat x_bind_lst x_bind.
 
 Terminals
   l_bash l_octave l_perl l_python l_r l_racket
@@ -15,32 +15,37 @@ Terminals
   rarrow rbrace rparen rsquarebr rtag semicolon then true id
   intlit strlit filelit body.
 
-%% ==================================================================
+%%====================================================================
 %% Syntax Definition
-%% ==================================================================
+%%====================================================================
 
 Rootsymbol script.
 
-script          -> e                          : {[], [], [], '$1'}.
-script          -> define_lst e               : {[], [], '$1', '$2'}.
-script          -> imp_lst e                  : {'$1', [], [], '$2'}.
-script          -> imp_lst define_lst e       : {'$1', [], '$2', '$3'}.
+script          -> stat                       : '$1'.
+script          -> stat script                : join_stat( '$1', '$2' ).
 
-imp_lst         -> imp                        : '$1'.
-imp_lst         -> imp imp_lst                : '$1'++'$2'.
+stat            -> imp                        : {['$1'], [], [], []}.
+stat            -> define                     : {[], [], ['$1'], []}.
+stat            -> e dot                      : {[], [], [], ['$1']}.
 
-imp             -> import filelit semicolon   : [visit_import( '$2' )].
-
-define_lst      -> define                     : ['$1'].
-define_lst      -> define define_lst          : ['$1'|'$2'].
+imp             -> import filelit semicolon   : visit_import( '$2' ).
 
 define          -> assign r eq e semicolon    : {'$2', '$4'}.
 define          -> def id lparen rparen rarrow ltag u_arg_lst rtag in l body
                                               : visit_def_frn( '$2', [], '$7', '$10', '$11' ).
+define          -> def id lparen u_arg_lst rparen rarrow ltag u_arg_lst rtag in l body
+                                              : visit_def_frn( '$2', '$4', '$8', '$11', '$12' ).
+% TODO: native function definition
 
 r               -> id colon t                 : visit_r_var( '$1', '$3' ).
+% TODO: r_rcd
 
 l               -> l_bash                     : cuneiform_lang:l_bash().
+l               -> l_octave                   : cuneiform_lang:l_octave().
+l               -> l_perl                     : cuneiform_lang:l_perl().
+l               -> l_python                   : cuneiform_lang:l_python().
+l               -> l_r                        : cuneiform_lang:l_r().
+l               -> l_racket                   : cuneiform_lang:l_racket().
 
 u_arg_lst       -> u_arg                      : ['$1'].
 u_arg_lst       -> u_arg comma u_arg_lst      : ['$1'|'$3'].
@@ -72,7 +77,8 @@ e               -> lambda lparen rparen e     : visit_lambda( '$1', [], '$4' ).
 e               -> lambda lparen lam_ntv_arg_lst rparen e
                                               : visit_lambda( '$1', '$3', '$5' ).
 e               -> id lparen rparen           : visit_app( '$1', [] ).
-% e               -> e lparen x_bind_lst rparen : visit_app( '$1', '$3' ).
+e               -> id lparen x_bind_lst rparen
+                                              : visit_app( '$1', '$3' ).
 
 lam_ntv_arg_lst -> lam_ntv_arg                : ['$1'].
 lam_ntv_arg_lst -> lam_ntv_arg comma lam_ntv_arg_lst
@@ -80,13 +86,15 @@ lam_ntv_arg_lst -> lam_ntv_arg comma lam_ntv_arg_lst
 
 lam_ntv_arg     -> id colon t                 : visit_lam_ntv_arg( '$1', '$3' ).
 
-% x_bind_lst      -> x_bind                     : ['$1'].
-% x_bind_
+x_bind_lst      -> x_bind                     : ['$1'].
+x_bind_lst      -> x_bind comma x_bind_lst    : ['$1'|'$3'].
+
+x_bind          -> id eq e                    : visit_x_bind( '$1', '$3' ).
 
 
-%% ==================================================================
+%%====================================================================
 %% Erlang Code
-%% ==================================================================
+%%====================================================================
 
 Erlang code.
 
@@ -118,6 +126,13 @@ file( Filename ) ->
       S = binary_to_list( B ),
       string( S )
   end.
+
+-spec join_stat( T1, T2 ) -> {[_], [_], [_], [_]}
+when T1 :: {[_], [_], [_], [_]},
+     T2 :: {[_], [_], [_], [_]}.
+
+join_stat( {A1, B1, C1, D1}, {A2, B2, C2, D2} ) ->
+  {A1++A2, B1++B2, C1++C2, D1++D2}.
 
 
 -spec visit_import( {filelit, L, S} ) -> {import, pos_integer(), string()}
@@ -243,3 +258,9 @@ when L      :: pos_integer(),
 
 visit_app( {id, L, X}, ArgLst ) ->
   cuneiform_lang:app( L, cuneiform_lang:var( L, list_to_atom( X ) ), ArgLst ).
+
+
+-spec visit_x_bind( {id, _, S :: string()}, E :: e() ) -> e().
+
+visit_x_bind( {id, _, S}, E ) ->
+  cuneiform_lang:x_bind( list_to_atom( S ), E ).

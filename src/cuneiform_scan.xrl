@@ -19,6 +19,7 @@ TLAMNTV   = Ntv
 TLAMFRN   = Frn
 
 ASSIGN    = let
+BAR       = |
 CMP       = ==
 CND       = if
 COLON     = :
@@ -84,6 +85,7 @@ Rules.
 {TLAMFRN}   : {token, {t_lam_frn, TokenLine, TokenChars}}.
 
 {ASSIGN}    : {token, {assign, TokenLine, TokenChars}}.
+{BAR}       : {token, {bar, TokenLine, TokenChars}}.
 {CMP}       : {token, {cmp, TokenLine, TokenChars}}.
 {CND}       : {token, {cnd, TokenLine, TokenChars}}.
 {COLON}     : {token, {colon, TokenLine, TokenChars}}.
