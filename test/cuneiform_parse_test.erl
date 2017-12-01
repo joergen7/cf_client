@@ -5,10 +5,11 @@
 -import( cuneiform_parse, [parse/1] ).
 -import( cuneiform_lang, [str/2, var/2, file/2, true/1, false/1, cmp/3,
                           conj/3, disj/3, neg/2, cnd/4, lam_ntv/3,
-                          lam_ntv_arg/3, t_str/0, t_file/0, app/3,
+                          lam_ntv_arg/2, t_str/0, t_file/0, app/3,
                           r_var/3, t_fn/3, t_rcd/1, t_arg/2,
                           l_bash/0, lam_frn/6, t_lst/1, l_octave/0, t_bool/0,
-                          l_perl/0, l_python/0, l_r/0, x_bind/2, l_racket/0] ).
+                          l_perl/0, l_python/0, l_r/0, x_bind/2, l_racket/0,
+                          fix/2] ).
 
 parse_test_() ->
   {foreach,
@@ -21,26 +22,27 @@ parse_test_() ->
     {"two_variable_definition", fun two_variable_definition/0},
     {"one single import",       fun one_single_import/0},
     {"two single imports",      fun two_single_imports/0},
-    {"import definition query", fun import_definition_query/0},
-    {"variable query",          fun variable_query/0},
-    {"string query",            fun string_query/0},
-    {"integer query",           fun integer_query/0},
-    {"file query",              fun file_query/0},
-    {"true query",              fun true_query/0},
-    {"false query",             fun false_query/0},
-    {"compare string query",    fun compare_string_query/0},
-    {"conditional query",       fun conditional_query/0},
-    {"negation query",          fun negation_query/0},
-    {"conjunction query",       fun conjunction_query/0},
-    {"disjunction query",       fun disjunction_query/0},
-    {"no arg lambda query",     fun no_arg_lambda_query/0},
-    {"two arg lambda query",    fun two_arg_lambda_query/0},
+    {"import definition",       fun import_definition/0},
+    {"variable",                fun variable/0},
+    {"string",                  fun string/0},
+    {"integer",                 fun integer/0},
+    {"file",                    fun file/0},
+    {"true",                    fun true/0},
+    {"false",                   fun false/0},
+    {"compare string",          fun compare_string/0},
+    {"conditional",             fun conditional/0},
+    {"negation",                fun negation/0},
+    {"conjunction",             fun conjunction/0},
+    {"disjunction",             fun disjunction/0},
+    {"no arg lambda",           fun no_arg_lambda/0},
+    {"two arg lambda",          fun two_arg_lambda/0},
     {"foreign function bash",   fun foreign_function_bash/0},
     {"foreign function octave", fun foreign_function_octave/0},
     {"foreign function perl",   fun foreign_function_perl/0},
     {"foreign function python", fun foreign_function_python/0},
     {"foreign function r",      fun foreign_function_r/0},
-    {"foreign function racket", fun foreign_function_racket/0}
+    {"foreign function racket", fun foreign_function_racket/0},
+    {"fixpoint operator",       fun fixpoint_operator/0}
    ]
   }.
 
@@ -84,7 +86,7 @@ two_single_imports() ->
                       [],
                       [str( 3, <<"bla">> )]}}, parse( TokenLst ) ).
 
-import_definition_query() ->
+import_definition() ->
   TokenLst = [{import, 1, "import"}, {filelit, 1, "a.cuf"}, {semicolon, 1, ";"},
               {assign, 2, "let"}, {id, 2, "x"}, {colon, 2, ":"},
               {t_str, 2, "Str"}, {eq, 2, "="}, {strlit, 2, "bla"},
@@ -95,37 +97,37 @@ import_definition_query() ->
                       [{r_var( 2, x, t_str() ), str( 2, <<"bla">> )}],
                       [var( 3, x )]}}, parse( TokenLst ) ).
 
-variable_query() ->
+variable() ->
   TokenLst = [{id, 1, "x"}, {dot, 1, "."}],
   ?assertEqual( {ok, {[], [], [], [var( 1, x )]}}, parse( TokenLst ) ).
 
-string_query() ->
+string() ->
   TokenLst = [{strlit, 1, "bla"}, {dot, 1, "."}],
   ?assertEqual( {ok, {[], [], [], [str( 1, <<"bla">> )]}}, parse( TokenLst ) ).
 
-integer_query() ->
+integer() ->
   TokenLst = [{intlit, 1, "-5"}, {dot, 1, "."}],
   ?assertEqual( {ok, {[], [], [], [str( 1, <<"-5">> )]}}, parse( TokenLst ) ).
 
-file_query() ->
+file() ->
   TokenLst = [{filelit, 1, "blub.txt"}, {dot, 1, "."}],
   ?assertEqual( {ok, {[], [], [], [file( 1, <<"blub.txt">> )]}}, parse( TokenLst ) ).
 
-true_query() ->
+true() ->
   TokenLst = [{true, 1, "true"}, {dot, 1, "."}],
   ?assertEqual( {ok, {[], [], [], [true( 1 )]}}, parse( TokenLst ) ).
 
-false_query() ->
+false() ->
   TokenLst = [{false, 1, "false"}, {dot, 1, "."}],
   ?assertEqual( {ok, {[], [], [], [false( 1 )]}}, parse( TokenLst ) ).
 
-compare_query() ->
+compare_string() ->
   TokenLst = [{lparen, 1, "("}, {strlit, 1, "bla"}, {cmp, 1, "=="},
               {strlit, 1, "blub"}, {rparen, 1, ")"}, {dot, 1, "."}],
   ?assertEqual( {ok, {[], [], [], [cmp( 1, str( 1, <<"bla">> ), str( 1, <<"blub">> ) )]}},
                 parse( TokenLst ) ).
 
-conditional_query() ->
+conditional() ->
   TokenLst = [{cnd, 1, "if"}, {true, 1, "true"},
               {then, 2, "then"},
               {strlit, 3, "bla"},
@@ -134,35 +136,35 @@ conditional_query() ->
   E = cnd( 1, true( 1 ), str( 3, <<"bla">> ), str( 5, <<"blub">> ) ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
 
-negation_query() ->
+negation() ->
   TokenLst = [{neg, 1, "not"}, {false, 1, "false"}, {dot, 1, "."}],
   ?assertEqual( {ok, {[], [], [], [neg( 1, false( 1 ) )]}}, parse( TokenLst ) ).
 
-conjunction_query() ->
+conjunction() ->
   TokenLst = [{lparen, 1, "("}, {true, 1, "true"}, {wedge, 1, "and"},
               {false, 1, "false"}, {rparen, 1, ")"}, {dot, 1, "."}],
   ?assertEqual( {ok, {[], [], [], [conj( 1, true( 1 ), false( 1 ) )]}},
                 parse( TokenLst ) ).
 
-disjunction_query() ->
+disjunction() ->
   TokenLst = [{lparen, 1, "("}, {true, 1, "true"}, {vee, 1, "or"},
               {false, 1, "false"}, {rparen, 1, ")"}, {dot, 1, "."}],
   ?assertEqual( {ok, {[], [], [], [disj( 1, true( 1 ), false( 1 ) )]}},
                 parse( TokenLst ) ).
 
-no_arg_lambda_query() ->
+no_arg_lambda() ->
   TokenLst = [{lambda, 1, "\\"}, {lparen, 1, "("},
               {rparen, 1, ")"}, {id, 1, "a"}, {dot, 1, "."}],
   E = lam_ntv( 1, [], var( 1, a ) ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
 
-two_arg_lambda_query() ->
+two_arg_lambda() ->
   TokenLst = [{lambda, 1, "\\"}, {lparen, 1, "("}, {id, 1, "a"},
               {colon, 1, ":"}, {t_str, 1, "Str"}, {comma, 1, ","},
               {id, 1, "b"}, {colon, 1, ":"}, {t_file, 1, "File"},
               {rparen, 1, ")"}, {id, 1, "a"}, {dot, 1, "."}],
-  E = lam_ntv( 1, [lam_ntv_arg( a, a, t_str() ),
-                   lam_ntv_arg( b, b, t_file() )], var( 1, a ) ),
+  E = lam_ntv( 1, [lam_ntv_arg( a, t_str() ),
+                   lam_ntv_arg( b, t_file() )], var( 1, a ) ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
 
 foreign_function_bash() ->
@@ -282,3 +284,23 @@ foreign_function_racket() ->
              lam_frn( 1, f, [t_arg( x, t_str() ), t_arg( y, t_file() )], t_rcd( [t_arg( out, t_str() )] ),
                       l_racket(), <<"blablub">> )}],
   ?assertEqual( {ok, {[], [], DefLst, [E]}}, parse( TokenLst ) ).
+
+fixpoint_operator() ->
+  TokenLst = [{fix, 1, "fix"},
+              {lambda, 1, "\\"},
+              {lparen, 1, "("},
+              {id, 1, "f"},
+              {colon, 1, ":"},
+              {t_lam_ntv, 1, "Ntv"},
+              {lparen, 1, "("},
+              {rparen, 1, ")"},
+              {rarrow, 1, "->"},
+              {t_bool, 1, "Bool"},
+              {rparen, 1, ")"},
+              {id, 2, "f"},
+              {lparen, 2, "("},
+              {rparen, 2, ")"},
+              {dot, 2, "."}],
+  E = fix( 1, lam_ntv( 1, [lam_ntv_arg( f, t_fn( ntv, [], t_bool() ) )],
+      app( 2, var( 2, f ), [] ) ) ),
+  ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).

@@ -10,7 +10,7 @@
 -import( cuneiform_sem, [in_hole/2, find_context/1] ).
 
 -import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3] ).
--import( cuneiform_lang, [lam_ntv_arg/3, x_bind/2] ).
+-import( cuneiform_lang, [lam_ntv_arg/2, x_bind/2] ).
 -import( cuneiform_lang, [str/1, file/1, true/0, false/0, cnd/3, var/1,
                              lam_ntv/2, app/2] ).
  
@@ -19,18 +19,18 @@
 %%====================================================================
 
 e_lam1() ->
-  lam_ntv( [lam_ntv_arg( x, x, t_str() ),
-            lam_ntv_arg( y, y, t_file() )], var( x ) ).
+  lam_ntv( [lam_ntv_arg( x, t_str() ),
+            lam_ntv_arg( y, t_file() )], var( x ) ).
 
 e_lam_first() ->
-  lam_ntv( [lam_ntv_arg( x, x, t_str() ),
-            lam_ntv_arg( y, y, t_str() )], var( x ) ).
+  lam_ntv( [lam_ntv_arg( x, t_str() ),
+            lam_ntv_arg( y, t_str() )], var( x ) ).
 
 e_lam_const() ->
   lam_ntv( [], str( <<"blub">> ) ).
 
 e_lam_id() ->
-  lam_ntv( [lam_ntv_arg( x, x, t_str() )], var( x ) ).
+  lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ).
 
 e_app_id() ->
   app( e_lam_id(), [x_bind( x, str( <<"blub">> ) )] ).
@@ -222,12 +222,12 @@ matching_var_is_renamed() ->
   ?assertEqual( E2, rename( E1, x, y ) ).
 
 rename_propagates_to_lam_ntv_arg_lst() ->
-  E1 = lam_ntv( [lam_ntv_arg( x, x, t_str() )], str( <<"blub">> ) ),
-  E2 = lam_ntv( [lam_ntv_arg( y, x, t_str() )], str( <<"blub">> ) ),
+  E1 = lam_ntv( [lam_ntv_arg( x, t_str() )], str( <<"blub">> ) ),
+  E2 = lam_ntv( [{y, x, t_str()}], str( <<"blub">> ) ),
   ?assertEqual( E2, rename( E1, x, y ) ).
 
 rename_leaves_nonmatching_lam_ntv_arg_alone() ->
-  E = lam_ntv( [lam_ntv_arg( z, z, t_str() )], str( <<"blub">> ) ),
+  E = lam_ntv( [lam_ntv_arg( z, t_str() )], str( <<"blub">> ) ),
   ?assertEqual( E, rename( E, x, y ) ).
 
 rename_propagates_to_lam_ntv_body() ->
@@ -340,12 +340,12 @@ subst_propagates_to_lam_ntv_body() ->
   ?assertEqual( E2, subst( E1, x, var( y ) ) ).
 
 subst_shadowed_by_bound_var() ->
-  E = lam_ntv( [lam_ntv_arg( x, x, t_str() )], var( x ) ),
+  E = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
   ?assertMatch( {lam_ntv, na, [{X, x, 'Str'}], {var, na, X}},
                 subst( E, x, var( y ) ) ).
 
 subst_is_capture_avoiding() ->
-  E = lam_ntv( [lam_ntv_arg( x, x, t_str() )], var( y ) ),
+  E = lam_ntv( [lam_ntv_arg( x, t_str() )], var( y ) ),
   ?assertNotMatch( {lam_ntv, na, [{X, x, 'Str'}], {var, na, X}},
                    subst( E, y, var( x ) ) ).
 

@@ -8,7 +8,7 @@ Nonterminals
 
 Terminals
   l_bash l_octave l_perl l_python l_r l_racket
-  t_str t_file t_bool t_frn t_ntv
+  t_str t_file t_bool t_lam_frn t_lam_ntv
   assign bar wedge cmp cnd colon
   comma def do dot else eq false fix fold for import in
   isnil lambda larrow lbrace lparen lsquarebr ltag neg vee plus
@@ -61,6 +61,13 @@ u               -> lsquarebr t_bool rsquarebr : cuneiform_lang:t_lst( cuneiform_
 
 t               -> t_str                      : cuneiform_lang:t_str().
 t               -> t_file                     : cuneiform_lang:t_file().
+t               -> t_bool                     : cuneiform_lang:t_bool().
+t               -> t_lam_ntv lparen rparen rarrow t
+                                              : cuneiform_lang:t_fn( ntv, [], '$5' ).
+% TODO: Native function type with non-empty argument list
+% TODO: Foreign function type
+% TODO: Record type
+% TODO: List type
 
 e               -> id                         : visit_var( '$1' ).
 e               -> strlit                     : visit_str( '$1' ).
@@ -74,11 +81,25 @@ e               -> neg e                      : visit_neg( '$1', '$2' ).
 e               -> lparen e wedge e rparen    : visit_conj( '$2', '$3', '$4' ).
 e               -> lparen e vee e rparen      : visit_disj( '$2', '$3', '$4' ).
 e               -> lambda lparen rparen e     : visit_lambda( '$1', [], '$4' ).
+% TODO: lambda with no arguments but a number of let bindings before e
 e               -> lambda lparen lam_ntv_arg_lst rparen e
                                               : visit_lambda( '$1', '$3', '$5' ).
+% TODO: lambda with non-empty argument list and a number of let bindings before e
 e               -> id lparen rparen           : visit_app( '$1', [] ).
 e               -> id lparen x_bind_lst rparen
                                               : visit_app( '$1', '$3' ).
+% TODO: native function definition with no arguments and no let bindings before e
+% TODO: native function definition with no arguments but a number of let bindings before e
+% TODO: native function definition with non-empty argument list but no let bindings before e
+% TODO: native function definition with non-empty argument list and a number of let bindings before e
+% TODO: list literal
+% TODO: list append
+% TODO: isnil test
+% TODO: for
+% TODO: fold
+% TODO: record literal
+% TODO: projection
+e               -> fix e                      : visit_fix( '$1', '$2' ).
 
 lam_ntv_arg_lst -> lam_ntv_arg                : ['$1'].
 lam_ntv_arg_lst -> lam_ntv_arg comma lam_ntv_arg_lst
@@ -135,90 +156,79 @@ join_stat( {A1, B1, C1, D1}, {A2, B2, C2, D2} ) ->
   {A1++A2, B1++B2, C1++C2, D1++D2}.
 
 
--spec visit_import( {filelit, L, S} ) -> {import, pos_integer(), string()}
-when L :: pos_integer(),
-     S :: string().
+-spec visit_import( {filelit, L :: _, S :: string()} ) -> {import, _, string()}.
 
-visit_import( {filelit, L, S} ) -> {import, L, S}.
+visit_import( {filelit, L, S} ) ->
+  {import, L, S}.
 
 
--spec visit_r_var( {id, L, S}, T ) -> r()
-when L :: pos_integer(),
-     S :: string(),
-     T :: t().
+-spec visit_r_var( {id, L :: _, S :: string()}, T :: t() ) -> r().
 
 visit_r_var( {id, L, S}, T ) ->
   cuneiform_lang:r_var( L, list_to_atom( S ), T ).
 
 
--spec visit_var( {id, L :: pos_integer(), Varname :: string()} ) -> e().
+-spec visit_var( {id, L :: _, Varname :: string()} ) -> e().
 
 visit_var( {id, L, Varname} ) ->
   cuneiform_lang:var( L, list_to_atom( Varname ) ).
 
 
--spec visit_file( {filelit, L :: pos_integer(), S :: string()} ) -> e().
+-spec visit_file( {filelit, L :: _, S :: string()} ) -> e().
 
 visit_file( {filelit, L, S} ) ->
   cuneiform_lang:file( L, list_to_binary( S ) ).
 
 
--spec visit_str( {_, L :: pos_integer(), S :: string()} ) -> e().
+-spec visit_str( {_, L :: _, S :: string()} ) -> e().
 
 visit_str( {_, L, S} ) ->
   cuneiform_lang:str( L, list_to_binary( S ) ).
 
 
--spec visit_true( {true, L :: pos_integer(), _} ) -> e().
+-spec visit_true( {true, L :: _, _} ) -> e().
 
 visit_true( {true, L, _} ) ->
   cuneiform_lang:true( L ).
 
 
--spec visit_false( {false, L :: pos_integer(), _} ) -> e().
+-spec visit_false( {false, L :: _, _} ) -> e().
 
 visit_false( {false, L, _} ) ->
   cuneiform_lang:false( L ).
 
 
--spec visit_cmp( E1 :: e(), {cmp, L :: pos_integer(), _}, E2 :: e() ) -> e().
+-spec visit_cmp( E1 :: e(), {cmp, L :: _, _}, E2 :: e() ) -> e().
 
 visit_cmp( E1, {cmp, L, _}, E2 ) ->
   cuneiform_lang:cmp( L, E1, E2 ).
 
 
--spec visit_conj( E1 :: e(), {wedge, L :: pos_integer(), _}, E2 :: e() ) -> e().
+-spec visit_conj( E1 :: e(), {wedge, L :: _, _}, E2 :: e() ) -> e().
 
 visit_conj( E1, {wedge, L, _}, E2 ) ->
   cuneiform_lang:conj( L, E1, E2 ).
 
 
--spec visit_disj( E1 :: e(), {vee, L :: pos_integer(), _}, E2 :: e() ) -> e().
+-spec visit_disj( E1 :: e(), {vee, L :: _, _}, E2 :: e() ) -> e().
 
 visit_disj( E1, {vee, L, _}, E2 ) ->
   cuneiform_lang:disj( L, E1, E2 ).
 
 
--spec visit_neg( {neg, L :: pos_integer(), _}, E :: e() ) -> e().
+-spec visit_neg( {neg, L :: _, _}, E :: e() ) -> e().
 
 visit_neg( {neg, L, _}, E ) ->
   cuneiform_lang:neg( L, E ).
 
 
--spec visit_cnd( {cnd, L, _}, EIf, EThen, EElse ) -> e()
-when L     :: pos_integer(),
-     EIf   :: e(),
-     EThen :: e(),
-     EElse :: e().
+-spec visit_cnd( {cnd, L :: _, _}, E1 :: e(), E2 :: e(), E3 :: e() ) -> e().
 
 visit_cnd( {cnd, L, _}, EIf, EThen, EElse ) ->
   cuneiform_lang:cnd( L, EIf, EThen, EElse ).
 
 
--spec visit_lambda( {lambda, L, _}, ArgLst, EBody ) -> e()
-when L      :: pos_integer(),
-     ArgLst :: [lam_ntv_arg()],
-     EBody  :: e().
+-spec visit_lambda( {lambda, L :: _, _}, ArgLst :: [lam_ntv_arg()], E :: e() ) -> e().
 
 visit_lambda( {lambda, L, _}, ArgLst, EBody ) ->
   cuneiform_lang:lam_ntv( L, ArgLst, EBody ).
@@ -228,39 +238,44 @@ visit_lambda( {lambda, L, _}, ArgLst, EBody ) ->
 
 visit_lam_ntv_arg( {id, _, S}, T ) ->
   X = list_to_atom( S ),
-  cuneiform_lang:lam_ntv_arg( X, X, T ).
+  cuneiform_lang:lam_ntv_arg( X, T ).
 
 -spec visit_def_frn( Id, ArgLst, RetType, Lang, Body ) -> {r(), e()}
-when Id      :: {id, pos_integer(), string()},
+when Id      :: {id, _, string()},
      ArgLst  :: [t_arg()],
      RetType :: t(),
      Lang    :: l(),
      Body    :: {body, _, string()}.
 
-visit_def_frn( {id, Line, SName}, ArgLst, UArgLst, Lang, {body, _, SBody} ) ->
+visit_def_frn( {id, L, SName}, ArgLst, UArgLst, Lang, {body, _, SBody} ) ->
   BBody = list_to_binary( SBody ),
   FName = list_to_atom( SName ),
   RetType = cuneiform_lang:t_rcd( UArgLst ),
   T = cuneiform_lang:t_fn( frn, ArgLst, RetType ), 
-  Ptn = cuneiform_lang:r_var( Line, FName, T ),
-  Lam = cuneiform_lang:lam_frn( Line, FName, ArgLst, RetType, Lang, BBody ),
+  Ptn = cuneiform_lang:r_var( L, FName, T ),
+  Lam = cuneiform_lang:lam_frn( L, FName, ArgLst, RetType, Lang, BBody ),
   {Ptn, Lam}.
 
 
-visit_u_arg( {id, _, X}, T ) ->
-  cuneiform_lang:t_arg( list_to_atom( X ), T ).
+-spec visit_u_arg( {id, _, S :: string()}, T :: t() ) -> t_arg().
+
+visit_u_arg( {id, _, S}, T ) ->
+  cuneiform_lang:t_arg( list_to_atom( S ), T ).
 
 
--spec visit_app( {id, L, X}, ArgLst ) -> e()
-when L      :: pos_integer(),
-     X      :: string(),
-     ArgLst :: [x_bind()].
+-spec visit_app( {id, L :: _, S :: string()}, ArgLst :: [x_bind()] ) -> e().
 
-visit_app( {id, L, X}, ArgLst ) ->
-  cuneiform_lang:app( L, cuneiform_lang:var( L, list_to_atom( X ) ), ArgLst ).
+visit_app( {id, L, S}, ArgLst ) ->
+  cuneiform_lang:app( L, cuneiform_lang:var( L, list_to_atom( S ) ), ArgLst ).
 
 
 -spec visit_x_bind( {id, _, S :: string()}, E :: e() ) -> e().
 
 visit_x_bind( {id, _, S}, E ) ->
   cuneiform_lang:x_bind( list_to_atom( S ), E ).
+
+
+-spec visit_fix( {fix, L :: _, _}, E :: e() ) -> e().
+
+visit_fix( {fix, L, _}, E ) ->
+  cuneiform_lang:fix( L, E ).

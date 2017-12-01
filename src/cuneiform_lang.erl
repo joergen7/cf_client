@@ -10,7 +10,7 @@
 -export( [t_str/0, t_file/0, t_bool/0, t_fn/3, t_rcd/1, t_lst/1] ).
 
 %% Expression constructors
--export( [lam_ntv_arg/3, x_bind/2, r_bind/2] ).
+-export( [lam_ntv_arg/2, x_bind/2, r_bind/2] ).
 -export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, lam_frn/5,
           app/2, cmp/2, conj/2, disj/2, neg/1, fut/1, lst/2, append/2, isnil/1,
           for/2, fold/3, rcd/1, proj/2, fix/1, assign/2] ).
@@ -85,11 +85,8 @@ when Tau =:= ntv orelse Tau =:= frn,
 %% Expression constructors
 %%====================================================================
 
--spec lam_ntv_arg( XIn :: x(), XEx :: x(), T :: t() ) -> lam_ntv_arg().
-
-lam_ntv_arg( XIn, XEx, T )
-when is_atom( XIn ), is_atom( XEx ) ->
-  {XIn, XEx, T}.
+-spec lam_ntv_arg( X :: x(), T :: t() )     -> lam_ntv_arg().
+      lam_ntv_arg( X, T ) when is_atom( X ) -> {X, X, T}.
 
 -spec x_bind( X :: x(), E :: e() )     -> x_bind().
       x_bind( X, E ) when is_atom( X ) -> {X, E}.
