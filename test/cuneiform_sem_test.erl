@@ -10,7 +10,7 @@
 -import( cuneiform_sem, [in_hole/2, find_context/1] ).
 
 -import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3] ).
--import( cuneiform_lang, [lam_ntv_arg/2, x_bind/2] ).
+-import( cuneiform_lang, [lam_ntv_arg/2, e_bind/2] ).
 -import( cuneiform_lang, [str/1, file/1, true/0, false/0, cnd/3, var/1,
                              lam_ntv/2, app/2] ).
  
@@ -33,7 +33,7 @@ e_lam_id() ->
   lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ).
 
 e_app_id() ->
-  app( e_lam_id(), [x_bind( x, str( <<"blub">> ) )] ).
+  app( e_lam_id(), [e_bind( x, str( <<"blub">> ) )] ).
 
 %%====================================================================
 %% Notion of reduction
@@ -176,7 +176,7 @@ rename_test_() ->
      fun rename_propagates_to_app_function/0},
 
     {"rename propagates to application arguments",
-     fun rename_propagates_to_x_bind_lst/0}
+     fun rename_propagates_to_e_bind_lst/0}
    ]
   }.
 
@@ -240,9 +240,9 @@ rename_propagates_to_app_function() ->
   E2 = app( var( y ), [] ),
   ?assertEqual( E2, rename( E1, x, y ) ).
 
-rename_propagates_to_x_bind_lst() ->
-  E1 = app( var( f ), [x_bind( x, var( x ) )] ),
-  E2 = app( var( f ), [x_bind( x, var( y ) )] ),
+rename_propagates_to_e_bind_lst() ->
+  E1 = app( var( f ), [e_bind( x, var( x ) )] ),
+  E2 = app( var( f ), [e_bind( x, var( y ) )] ),
   ?assertEqual( E2, rename( E1, x, y ) ).
 
 
@@ -289,7 +289,7 @@ subst_test_() ->
      fun subst_propagates_to_app_function/0},
 
     {"substitution propagates to application arguments",
-     fun subst_propagates_to_x_bind_lst/0}
+     fun subst_propagates_to_e_bind_lst/0}
    ]
   }.
 
@@ -359,9 +359,9 @@ subst_propagates_to_app_function() ->
   E2 = app( var( y ), [] ),
   ?assertEqual( E2, subst( E1, x, var( y ) ) ).
 
-subst_propagates_to_x_bind_lst() ->
-  E1 = app( var( f ), [x_bind( x, var( x ) )] ),
-  E2 = app( var( f ), [x_bind( x, var( y ) )] ),
+subst_propagates_to_e_bind_lst() ->
+  E1 = app( var( f ), [e_bind( x, var( x ) )] ),
+  E2 = app( var( f ), [e_bind( x, var( y ) )] ),
   ?assertEqual( E2, subst( E1, x, var( y ) ) ).
 
 

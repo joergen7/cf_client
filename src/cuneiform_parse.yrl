@@ -3,7 +3,7 @@
 %%====================================================================
 
 Nonterminals
-  define e imp l t_arg_lst t_arg r script t stat x_bind_lst x_bind r_bind_lst
+  define e imp l t_arg_lst t_arg r script t stat e_bind_lst e_bind r_bind_lst
   r_bind.
 
 Terminals
@@ -82,21 +82,22 @@ e               -> neg e                      : visit_neg( '$1', '$2' ).
 e               -> lparen e wedge e rparen    : visit_conj( '$2', '$3', '$4' ).
 e               -> lparen e vee e rparen      : visit_disj( '$2', '$3', '$4' ).
 e               -> id lparen rparen           : visit_app( '$1', [] ).
-e               -> id lparen x_bind_lst rparen
+e               -> id lparen e_bind_lst rparen
                                               : visit_app( '$1', '$3' ).
+e               -> ltag e_bind_lst rtag       : visit_rcd( '$1', '$2' ).
+
 % TODO: list literal
 % TODO: list append
 % TODO: isnil test
 % TODO: for
 % TODO: fold
-% TODO: record literal
 % TODO: projection
 
 
-x_bind_lst      -> x_bind                     : ['$1'].
-x_bind_lst      -> x_bind comma x_bind_lst    : ['$1'|'$3'].
+e_bind_lst      -> e_bind                     : ['$1'].
+e_bind_lst      -> e_bind comma e_bind_lst    : ['$1'|'$3'].
 
-x_bind          -> id eq e                    : visit_x_bind( '$1', '$3' ).
+e_bind          -> id eq e                    : visit_e_bind( '$1', '$3' ).
 
 r_bind_lst      -> r_bind                     : ['$1'].
 r_bind_lst      -> r_bind comma r_bind_lst    : ['$1'|'$3'].
@@ -262,13 +263,30 @@ visit_t_arg( {id, _, S}, T ) ->
   cuneiform_lang:t_arg( list_to_atom( S ), T ).
 
 
--spec visit_app( {id, L :: _, S :: string()}, ArgLst :: [x_bind()] ) -> e().
+-spec visit_app( {id, L :: _, S :: string()}, EBindLst :: [e_bind()] ) -> e().
 
-visit_app( {id, L, S}, ArgLst ) ->
-  cuneiform_lang:app( L, cuneiform_lang:var( L, list_to_atom( S ) ), ArgLst ).
+visit_app( {id, L, S}, EBindLst ) ->
+  cuneiform_lang:app( L, cuneiform_lang:var( L, list_to_atom( S ) ), EBindLst ).
 
 
--spec visit_x_bind( {id, _, S :: string()}, E :: e() ) -> e().
+-spec visit_e_bind( {id, _, S :: string()}, E :: e() ) -> e().
 
-visit_x_bind( {id, _, S}, E ) ->
-  cuneiform_lang:x_bind( list_to_atom( S ), E ).
+visit_e_bind( {id, _, S}, E ) ->
+  cuneiform_lang:e_bind( list_to_atom( S ), E ).
+
+
+-spec visit_r_bind( {id, _, S :: string()}, R :: r() ) -> r_bind().
+
+visit_r_bind( {id, _, S}, R ) ->
+  cuneiform_lang:r_bind( list_to_atom( S ), R ).
+
+
+-spec visit_r_rcd( {ltag, L :: _, _}, RBindLst :: [r_bind()] ) -> r().
+
+visit_r_rcd( {ltag, L, _}, RBindLst ) ->
+  cuneiform_lang:r_rcd( L, RBindLst ).
+
+-spec visit_rcd( {ltag, L :: _, _}, EBindLst :: [e_bind()] ) -> e().
+
+visit_rcd( {ltag, L, _}, EBindLst ) ->
+  cuneiform_lang:rcd( L, EBindLst ).

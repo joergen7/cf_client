@@ -10,7 +10,7 @@
 -export( [t_str/0, t_file/0, t_bool/0, t_fn/3, t_rcd/1, t_lst/1] ).
 
 %% Expression constructors
--export( [lam_ntv_arg/2, x_bind/2, r_bind/2] ).
+-export( [lam_ntv_arg/2, e_bind/2, r_bind/2] ).
 -export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, lam_frn/5,
           app/2, cmp/2, conj/2, disj/2, neg/1, fut/1, lst/2, append/2, isnil/1,
           for/2, fold/3, rcd/1, proj/2, fix/1, assign/2] ).
@@ -19,7 +19,6 @@
           for/3, fold/4, rcd/2, proj/3, fix/2, assign/3] ).
 
 %% Pattern constructors
--export( [r_arg/2] ).
 -export( [r_var/3, r_rcd/2] ).
 
 %% Language constructors
@@ -40,13 +39,10 @@
 %% Pattern constructors
 %%====================================================================
 
--spec r_arg( X :: x(), R :: r() )     -> {x(), r()}.
-      r_arg( X, R ) when is_atom( X ) -> {X, R}.
-
 -spec r_var( Info :: info(), X :: x(), T :: t() ) -> r().
       r_var( Info, X, T ) when is_atom( X )       -> {r_var, Info, X, T}.
 
--spec r_rcd( Info :: info(), RLst :: [r_arg()] ) -> r().
+-spec r_rcd( Info :: info(), RLst :: [r_bind()] ) -> r().
       r_rcd( Info, RLst ) when is_list( RLst )   -> {r_rcd, Info, RLst}.
 
 
@@ -88,11 +84,11 @@ when Tau =:= ntv orelse Tau =:= frn,
 -spec lam_ntv_arg( X :: x(), T :: t() )     -> lam_ntv_arg().
       lam_ntv_arg( X, T ) when is_atom( X ) -> {X, X, T}.
 
--spec x_bind( X :: x(), E :: e() )     -> x_bind().
-      x_bind( X, E ) when is_atom( X ) -> {X, E}.
+-spec e_bind( X :: x(), E :: e() )     -> e_bind().
+      e_bind( X, E ) when is_atom( X ) -> {X, E}.
 
--spec r_bind( R :: r(), E :: e() )     -> r_bind().
-      r_bind( R, E )                   -> {R, E}.
+-spec r_bind( X :: x(), R :: r() )     -> r_bind().
+      r_bind( X, R ) when is_atom( X ) -> {X, R}.
 
 -spec str( S :: s() ) -> e().
       str( S )        -> str( na, S ).
@@ -171,10 +167,10 @@ when is_atom( FName ),
   {lam_frn, Info, FName, ArgLst, RetType, L, Body}.
 
 
--spec app( F :: e(), ArgLst :: [x_bind()] ) -> e().
+-spec app( F :: e(), ArgLst :: [e_bind()] ) -> e().
       app( F, ArgLst )                      -> app( na, F, ArgLst ).
 
--spec app( Info :: info(), F :: e(), ArgLst :: [x_bind()] ) -> e().
+-spec app( Info :: info(), F :: e(), ArgLst :: [e_bind()] ) -> e().
       app( Info, F, ArgLst ) when is_list( ArgLst ) -> {app, Info, F, ArgLst}.
 
 -spec cmp( E1 :: e(), E2 :: e() ) -> e().
@@ -225,20 +221,20 @@ when is_atom( FName ),
 -spec isnil( Info :: info(), E :: e() ) -> e().
       isnil( Info, E )                  -> {isnil, Info, E}.
 
--spec for( ArgLst :: [x_bind()], E :: e() ) -> e().
+-spec for( ArgLst :: [e_bind()], E :: e() ) -> e().
       for( ArgLst, E )                      -> for( na, ArgLst, E ).
 
--spec for( Info :: info(), ArgLst :: [x_bind()], E :: e() ) -> e().
+-spec for( Info :: info(), ArgLst :: [e_bind()], E :: e() ) -> e().
       for( Info, ArgLst, E ) when is_list( ArgLst ) -> {for, Info, ArgLst, E}.
 
--spec fold( InitArg :: x_bind(), ArgLst :: [x_bind()], E :: e() ) -> e().
+-spec fold( InitArg :: e_bind(), ArgLst :: [e_bind()], E :: e() ) -> e().
       fold( InitArg, ArgLst, E ) -> fold( na, InitArg, ArgLst, E ).
 
 
 -spec fold( Info, InitArg, ArgLst, E ) -> e()
 when Info    :: info(),
-     InitArg :: x_bind(),
-     ArgLst  :: [x_bind()],
+     InitArg :: e_bind(),
+     ArgLst  :: [e_bind()],
      E       :: e().
 
 fold( Info, InitArg, ArgLst, E )
@@ -247,10 +243,10 @@ when is_tuple( InitArg ),
   {fold, Info, InitArg, ArgLst, E}.
 
 
--spec rcd( ArgLst :: [x_bind()] ) -> e().
+-spec rcd( ArgLst :: [e_bind()] ) -> e().
       rcd( ArgLst ) -> rcd( na, ArgLst ).
 
--spec rcd( Info :: info(), ArgLst :: [x_bind()] ) -> e().
+-spec rcd( Info :: info(), ArgLst :: [e_bind()] ) -> e().
       rcd( Info, ArgLst ) when is_list( ArgLst )  -> {rcd, Info, ArgLst}.
 
 -spec proj( X :: x(), E :: e() ) -> e().

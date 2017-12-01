@@ -34,8 +34,8 @@
 
 -type lam_ntv_arg() :: {x(), x(), t()}.
 
--type x_bind()      :: {x(), e()}.
--type r_bind()      :: {r(), e()}.
+-type e_bind()      :: {x(), e()}.
+-type r_bind()      :: {x(), r()}.
 
 -type e()           :: {str, info(), s()}
                      | {cmp, info(), e(), e()}
@@ -49,24 +49,22 @@
                      | {var, info(), x()}
                      | {lam_ntv, info(), [lam_ntv_arg()], e()}
                      | {lam_frn, info(), x(), [t_arg()], t(), l(), s()}
-                     | {app, info(), e(), [x_bind()]}
+                     | {app, info(), e(), [e_bind()]}
                      | {fut, info(), hash()}
                      | {lst, info(), t(), [e()]}
                      | {append, info(), e, e}
                      | {isnil, info(), e}
-                     | {for, info(), [x_bind()], e()}
-                     | {fold, info(), x_bind(), [x_bind()], e()}
-                     | {rcd, info(), [x_bind()]}
+                     | {for, info(), [e_bind()], e()}
+                     | {fold, info(), e_bind(), [e_bind()], e()}
+                     | {rcd, info(), [e_bind()]}
                      | {proj, info(), x(), e()}
                      | {fix, info(), e()}
-                     | {assign, r_bind(), e()}.
-
--type r_arg()       :: {x(), r()}.
+                     | {assign, r(), e()}.
 
 -type r()           :: {r_var, info(), x(), t()}
-                     | {r_rcd, info(), [r_arg()]}.
+                     | {r_rcd, info(), [r_bind()]}.
 
 -type ctx()         :: hole
                      | {cnd, info(), ctx(), e(), e()}
-                     | {app, info(), ctx(), [x_bind()]}.
+                     | {app, info(), ctx(), [e_bind()]}.
 

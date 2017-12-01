@@ -8,8 +8,8 @@
                           lam_ntv_arg/2, t_str/0, t_file/0, app/3,
                           r_var/3, t_fn/3, t_rcd/1, t_arg/2,
                           l_bash/0, lam_frn/6, t_lst/1, l_octave/0, t_bool/0,
-                          l_perl/0, l_python/0, l_r/0, x_bind/2, l_racket/0,
-                          fix/2, t_fn/4, r_arg/2, rcd/2, r_rcd/2] ).
+                          l_perl/0, l_python/0, l_r/0, e_bind/2, l_racket/0,
+                          fix/2, t_fn/4, rcd/2, r_rcd/2, r_bind/2] ).
 
 parse_test_() ->
   {foreach,
@@ -174,8 +174,8 @@ two_arg_function() ->
               {id, 5, "f"}, {lparen, 5, "("}, {id, 5, "a"}, {eq, 5, "="},
               {strlit, 5, "bla"}, {comma, 5, ","}, {id, 5, "b"}, {eq, 5, "="},
               {filelit, 5, "blub.txt"}, {rparen, 5, ")"}, {dot, 1, "."}],
-  E = app( 5, var( 5, f ), [x_bind( a, str( 5, <<"bla">> ) ),
-                  x_bind( b, file( 5, <<"blub.txt">> ) )] ),
+  E = app( 5, var( 5, f ), [e_bind( a, str( 5, <<"bla">> ) ),
+                  e_bind( b, file( 5, <<"blub.txt">> ) )] ),
   T = t_fn( ntv, [t_arg( a, t_str() ), t_arg( b, t_file() )], t_str() ),
   F = fix( 1, lam_ntv( 1, [lam_ntv_arg( f, T ),
                         lam_ntv_arg( a, t_str() ),
@@ -274,7 +274,7 @@ foreign_function_r() ->
               {in, 1, "in"}, {l_r, 1, "R"}, {body, 1, "blablub"},
               {id, 5, "f"}, {lparen, 5, "("}, {id, 5, "x"}, {eq, 5, "="},
               {id, 5, "x"}, {rparen, 5, ")"}, {dot, 5, "."}],
-  E = app( 5, var( 5, f ), [x_bind( x, var( 5, x ) )] ),
+  E = app( 5, var( 5, f ), [e_bind( x, var( 5, x ) )] ),
   DefLst = [{r_var( 1, f, t_fn( frn, [t_arg( x, t_str() )], t_rcd( [t_arg( out, t_str() )] ) ) ),
              lam_frn( 1, f, [t_arg( x, t_str() )], t_rcd( [t_arg( out, t_str() )] ),
                       l_r(), <<"blablub">> )}],
@@ -296,7 +296,7 @@ foreign_function_racket() ->
               {id, 5, "x"}, {comma, 5, ","}, 
               {id, 5, "y"}, {eq, 5, "="}, {id, 5, "y"},
               {rparen, 5, ")"}, {dot, 5, "."}],
-  E = app( 5, var( 5, f ), [x_bind( x, var( 5, x ) ), x_bind( y, var( 5, y ) )] ),
+  E = app( 5, var( 5, f ), [e_bind( x, var( 5, x ) ), e_bind( y, var( 5, y ) )] ),
   DefLst = [{r_var( 1, f, t_fn( frn, [t_arg( x, t_str() ), t_arg( y, t_file() )], t_rcd( [t_arg( out, t_str() )] ) ) ),
              lam_frn( 1, f, [t_arg( x, t_str() ), t_arg( y, t_file() )], t_rcd( [t_arg( out, t_str() )] ),
                       l_racket(), <<"blablub">> )}],
@@ -364,6 +364,6 @@ record_pattern_match() ->
               {semicolon, 1, ";"},
               {id, 2, "x"},
               {dot, 2, "."}],
-  R = r_rcd( 1, [r_arg( a, r_var( 1, x, t_str() ) )] ),
-  E = rcd( 1, [x_bind( a, str( 1, <<"blub">> ) )] ),
+  R = r_rcd( 1, [r_bind( a, r_var( 1, x, t_str() ) )] ),
+  E = rcd( 1, [e_bind( a, str( 1, <<"blub">> ) )] ),
   ?assertEqual( {ok, {[], [], [{R, E}], [var( 2, x )]}}, parse( TokenLst ) ).
