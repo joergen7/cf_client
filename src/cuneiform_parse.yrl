@@ -3,12 +3,12 @@
 %%====================================================================
 
 Nonterminals
-  define e imp l t_arg_lst t_arg
-  lam_ntv_arg lam_ntv_arg_lst r script t stat x_bind_lst x_bind.
+  define e imp l t_arg_lst t_arg r script t stat x_bind_lst x_bind r_bind_lst
+  r_bind.
 
 Terminals
   l_bash l_octave l_perl l_python l_r l_racket
-  t_str t_file t_bool t_lam_frn t_lam_ntv
+  t_str t_file t_bool t_fn_frn t_fn_ntv
   assign bar wedge cmp cnd colon
   comma def do dot else eq false fold for import in
   isnil larrow lbrace lparen lsquarebr ltag neg vee plus
@@ -40,13 +40,8 @@ define          -> def id lparen rparen rarrow t lbrace e rbrace
 define          -> def id lparen t_arg_lst rparen rarrow t lbrace e rbrace
                                               : visit_def_ntv( '$2', '$4', '$7', '$9' ).
 
-% TODO: native function definition with no arguments and no let bindings before e
-% TODO: native function definition with no arguments but a number of let bindings before e
-% TODO: native function definition with non-empty argument list but no let bindings before e
-% TODO: native function definition with non-empty argument list and a number of let bindings before e
-
 r               -> id colon t                 : visit_r_var( '$1', '$3' ).
-% TODO: r_rcd
+r               -> ltag r_bind_lst rtag       : visit_r_rcd( '$1', '$2' ).
 
 l               -> l_bash                     : cuneiform_lang:l_bash().
 l               -> l_octave                   : cuneiform_lang:l_octave().
@@ -58,13 +53,15 @@ l               -> l_racket                   : cuneiform_lang:l_racket().
 t               -> t_str                      : cuneiform_lang:t_str().
 t               -> t_file                     : cuneiform_lang:t_file().
 t               -> t_bool                     : cuneiform_lang:t_bool().
-t               -> t_lam_ntv lparen rparen rarrow t
+t               -> t_fn_ntv lparen rparen rarrow t
                                               : cuneiform_lang:t_fn( ntv, [], '$5' ).
+t               -> t_fn_frn lparen rparen rarrow t
+                                              : cuneiform_lang:t_fn( frn, [], '$5' ).
 t               -> lsquarebr t rsquarebr      : cuneiform_lang:t_lst( '$2' ).
+t               -> ltag t_arg_lst rtag        : cuneiform_lang:t_rcd( '$2' ).
 
 % TODO: Native function type with non-empty argument list
-% TODO: Foreign function type
-% TODO: Record type
+% TODO: Foreign function type with non-empty argument list
 % TODO: List type
 
 t_arg           -> id colon t                 : visit_t_arg( '$1', '$3' ).
@@ -84,14 +81,6 @@ e               -> cnd e then e else e        : visit_cnd( '$1', '$2', '$4', '$6
 e               -> neg e                      : visit_neg( '$1', '$2' ).
 e               -> lparen e wedge e rparen    : visit_conj( '$2', '$3', '$4' ).
 e               -> lparen e vee e rparen      : visit_disj( '$2', '$3', '$4' ).
-
-
-% e               -> lambda lparen rparen e     : visit_lambda( '$1', [], '$4' ).
-% TODO: lambda with no arguments but a number of let bindings before e
-% e               -> lambda lparen lam_ntv_arg_lst rparen e
-%                                               : visit_lambda( '$1', '$3', '$5' ).
-% TODO: lambda with non-empty argument list and a number of let bindings before e
-
 e               -> id lparen rparen           : visit_app( '$1', [] ).
 e               -> id lparen x_bind_lst rparen
                                               : visit_app( '$1', '$3' ).
@@ -103,16 +92,16 @@ e               -> id lparen x_bind_lst rparen
 % TODO: record literal
 % TODO: projection
 
-lam_ntv_arg_lst -> lam_ntv_arg                : ['$1'].
-lam_ntv_arg_lst -> lam_ntv_arg comma lam_ntv_arg_lst
-                                              : ['$1'|'$3'].
-
-lam_ntv_arg     -> id colon t                 : visit_lam_ntv_arg( '$1', '$3' ).
 
 x_bind_lst      -> x_bind                     : ['$1'].
 x_bind_lst      -> x_bind comma x_bind_lst    : ['$1'|'$3'].
 
 x_bind          -> id eq e                    : visit_x_bind( '$1', '$3' ).
+
+r_bind_lst      -> r_bind                     : ['$1'].
+r_bind_lst      -> r_bind comma r_bind_lst    : ['$1'|'$3'].
+
+r_bind          -> id eq r                    : visit_r_bind( '$1', '$3' ).
 
 
 %%====================================================================
@@ -230,12 +219,6 @@ visit_cnd( {cnd, L, _}, EIf, EThen, EElse ) ->
   cuneiform_lang:cnd( L, EIf, EThen, EElse ).
 
 
--spec visit_lam_ntv_arg( {id, _, X :: string()}, T :: t() ) -> lam_ntv_arg().
-
-visit_lam_ntv_arg( {id, _, S}, T ) ->
-  X = list_to_atom( S ),
-  cuneiform_lang:lam_ntv_arg( X, T ).
-
 -spec visit_def_frn( Id, ArgLst, RetType, Lang, Body ) -> {r(), e()}
 when Id      :: {id, _, string()},
      ArgLst  :: [t_arg()],
@@ -248,9 +231,9 @@ visit_def_frn( {id, L, SName}, ArgLst, UArgLst, Lang, {body, _, SBody} ) ->
   FName = list_to_atom( SName ),
   RetType = cuneiform_lang:t_rcd( UArgLst ),
   T = cuneiform_lang:t_fn( frn, ArgLst, RetType ), 
-  Ptn = cuneiform_lang:r_var( L, FName, T ),
+  R = cuneiform_lang:r_var( L, FName, T ),
   Lam = cuneiform_lang:lam_frn( L, FName, ArgLst, RetType, Lang, BBody ),
-  {Ptn, Lam}.
+  {R, Lam}.
 
 
 -spec visit_def_ntv( {id, L, SName}, ArgLst, RetType, EBody ) -> {r(), e()}
@@ -261,7 +244,16 @@ when L       :: _,
      EBody   :: e().
 
 visit_def_ntv( {id, L, SName}, ArgLst, RetType, EBody ) ->
-  error( nyi ).
+  FName = list_to_atom( SName ),
+  TFn = cuneiform_lang:t_fn( ntv, ArgLst, RetType ),
+  Lam = cuneiform_lang:fix(
+          L,
+          cuneiform_lang:lam_ntv(
+            L,
+            [cuneiform_lang:lam_ntv_arg( FName, TFn )|[{X, X, T} || {X, T} <- ArgLst]],
+            EBody ) ),
+  R = cuneiform_lang:r_var( L, FName, TFn ),
+  {R, Lam}.
 
 
 -spec visit_t_arg( {id, _, S :: string()}, T :: t() ) -> t_arg().

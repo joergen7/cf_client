@@ -15,8 +15,8 @@ LRACKET   = Racket
 TSTR      = Str
 TFILE     = File
 TBOOL     = Bool
-TLAMNTV   = Ntv
-TLAMFRN   = Frn
+TFNNTV   = Ntv
+TFNFRN   = Frn
 
 ASSIGN    = let
 BAR       = |
@@ -30,13 +30,11 @@ DOT       = \.
 ELSE      = else
 EQ        = =
 FALSE     = false
-% FIX       = fix
 FOLD      = fold
 FOR       = for
 IMPORT    = import
 IN        = in
 ISNIL     = isnil
-% LAMBDA    = \\
 LARROW    = <-
 LBRACE    = \{
 LPAREN    = \(
@@ -81,8 +79,8 @@ Rules.
 {TSTR}      : {token, {t_str, TokenLine, TokenChars}}.
 {TFILE}     : {token, {t_file, TokenLine, TokenChars}}.
 {TBOOL}     : {token, {t_bool, TokenLine, TokenChars}}.
-{TLAMNTV}   : {token, {t_lam_ntv, TokenLine, TokenChars}}.
-{TLAMFRN}   : {token, {t_lam_frn, TokenLine, TokenChars}}.
+{TFNNTV}   : {token, {t_fn_ntv, TokenLine, TokenChars}}.
+{TFNFRN}   : {token, {t_fn_frn, TokenLine, TokenChars}}.
 
 {ASSIGN}    : {token, {assign, TokenLine, TokenChars}}.
 {BAR}       : {token, {bar, TokenLine, TokenChars}}.
@@ -96,13 +94,11 @@ Rules.
 {ELSE}      : {token, {else, TokenLine, TokenChars}}.
 {EQ}        : {token, {eq, TokenLine, TokenChars}}.
 {FALSE}     : {token, {false, TokenLine, TokenChars}}.
-% {FIX}       : {token, {fix, TokenLine, TokenChars}}.
 {FOLD}      : {token, {fold, TokenLine, TokenChars}}.
 {FOR}       : {token, {for, TokenLine, TokenChars}}.
 {IMPORT}    : {token, {import, TokenLine, TokenChars}}.
 {IN}        : {token, {in, TokenLine, TokenChars}}.
 {ISNIL}     : {token, {isnil, TokenLine, TokenChars}}.
-% {LAMBDA}    : {token, {lambda, TokenLine, TokenChars}}.
 {LARROW}    : {token, {larrow, TokenLine, TokenChars}}.
 {LBRACE}    : {token, {lbrace, TokenLine, TokenChars}}.
 {LPAREN}    : {token, {lparen, TokenLine, TokenChars}}.
