@@ -9,7 +9,7 @@
                           r_var/3, t_fn/3, t_rcd/1, t_arg/2,
                           l_bash/0, lam_frn/6, t_lst/1, l_octave/0, t_bool/0,
                           l_perl/0, l_python/0, l_r/0, x_bind/2, l_racket/0,
-                          fix/2] ).
+                          fix/2, t_fn/4] ).
 
 parse_test_() ->
   {foreach,
@@ -34,15 +34,14 @@ parse_test_() ->
     {"negation",                fun negation/0},
     {"conjunction",             fun conjunction/0},
     {"disjunction",             fun disjunction/0},
-    {"no arg lambda",           fun no_arg_lambda/0},
-    {"two arg lambda",          fun two_arg_lambda/0},
+    {"no arg function",           fun no_arg_function/0},
+    {"two arg function",          fun two_arg_function/0},
     {"foreign function bash",   fun foreign_function_bash/0},
     {"foreign function octave", fun foreign_function_octave/0},
     {"foreign function perl",   fun foreign_function_perl/0},
     {"foreign function python", fun foreign_function_python/0},
     {"foreign function r",      fun foreign_function_r/0},
-    {"foreign function racket", fun foreign_function_racket/0},
-    {"fixpoint operator",       fun fixpoint_operator/0}
+    {"foreign function racket", fun foreign_function_racket/0}
    ]
   }.
 
@@ -152,20 +151,35 @@ disjunction() ->
   ?assertEqual( {ok, {[], [], [], [disj( 1, true( 1 ), false( 1 ) )]}},
                 parse( TokenLst ) ).
 
-no_arg_lambda() ->
-  TokenLst = [{lambda, 1, "\\"}, {lparen, 1, "("},
-              {rparen, 1, ")"}, {id, 1, "a"}, {dot, 1, "."}],
-  E = lam_ntv( 1, [], var( 1, a ) ),
-  ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
+no_arg_function() ->
+  TokenLst = [{def, 1, "def"}, {id, 1, "f"}, {lparen, 1, "("},
+              {rparen, 1, ")"}, {rarrow, 1, "->"}, {t_str, "1", "Str"},
+              {lbrace, 1, "{"}, {strlit, 2, "blub"}, {rbrace, 3, "}"},
+              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {dot, 5, "."}],
+  E = app( 5, f, [] ),
+  F = lam_ntv( 1, [], str( 2, <<"blub">> ) ),
+  T = t_fn( ntv, [], t_str() ),
+  R = r_var( 1, f, T ),
+  Def = {R, F},
+  ?assertEqual( {ok, {[], [], [Def], [E]}}, parse( TokenLst ) ).
 
-two_arg_lambda() ->
-  TokenLst = [{lambda, 1, "\\"}, {lparen, 1, "("}, {id, 1, "a"},
+two_arg_function() ->
+  TokenLst = [{def, 1, "def"}, {id, 1, "f"}, {lparen, 1, "("}, {id, 1, "a"},
               {colon, 1, ":"}, {t_str, 1, "Str"}, {comma, 1, ","},
               {id, 1, "b"}, {colon, 1, ":"}, {t_file, 1, "File"},
-              {rparen, 1, ")"}, {id, 1, "a"}, {dot, 1, "."}],
-  E = lam_ntv( 1, [lam_ntv_arg( a, t_str() ),
-                   lam_ntv_arg( b, t_file() )], var( 1, a ) ),
-  ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
+              {rparen, 1, ")"}, {rarrow, 1, "->"}, {t_str, 1, "Str"},
+              {lbrace, 1, "{"}, {id, 2, "a"}, {rbrace, 3, "}"},
+              {id, 5, "f"}, {lparen, 5, "("}, {id, 5, "a"}, {eq, 5, "="},
+              {strlit, 5, "bla"}, {comma, 5, ","}, {id, 5, "b"}, {eq, 5, "="},
+              {filelit, 5, "blub.txt"}, {rparen, 5, ")"}, {dot, 1, "."}],
+  E = app( 5, f, [x_bind( a, str( 5, <<"bla">> ) ),
+                  x_bind( b, file( 5, <<"blub.txt">> ) )] ),
+  F = lam_ntv( 1, [lam_ntv_arg( a, t_str() ),
+                   lam_ntv_arg( b, t_file() )], var( 2, a ) ),
+  T = t_fn( ntv, [t_arg( a, t_str() ), t_arg( b, t_file() )], t_str() ),
+  R = r_var( 1, f, T ),
+  Def = {R, F},
+  ?assertEqual( {ok, {[], [], [Def], [E]}}, parse( TokenLst ) ).
 
 foreign_function_bash() ->
   TokenLst = [{def, 1, "def"},
@@ -285,22 +299,3 @@ foreign_function_racket() ->
                       l_racket(), <<"blablub">> )}],
   ?assertEqual( {ok, {[], [], DefLst, [E]}}, parse( TokenLst ) ).
 
-fixpoint_operator() ->
-  TokenLst = [{fix, 1, "fix"},
-              {lambda, 1, "\\"},
-              {lparen, 1, "("},
-              {id, 1, "f"},
-              {colon, 1, ":"},
-              {t_lam_ntv, 1, "Ntv"},
-              {lparen, 1, "("},
-              {rparen, 1, ")"},
-              {rarrow, 1, "->"},
-              {t_bool, 1, "Bool"},
-              {rparen, 1, ")"},
-              {id, 2, "f"},
-              {lparen, 2, "("},
-              {rparen, 2, ")"},
-              {dot, 2, "."}],
-  E = fix( 1, lam_ntv( 1, [lam_ntv_arg( f, t_fn( ntv, [], t_bool() ) )],
-      app( 2, var( 2, f ), [] ) ) ),
-  ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).

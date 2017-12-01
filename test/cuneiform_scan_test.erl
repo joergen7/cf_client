@@ -25,7 +25,6 @@ scan_test_() ->
     {"conjunction",          fun conjunction/0},
     {"disjunction",          fun disjunction/0},
     {"variable",             fun variable/0},
-    {"anonymous function",   fun anonymous_function/0},
     {"function application", fun function_application/0},
     {"list literal",         fun list_literal/0},
     {"list append",          fun list_append/0},
@@ -35,7 +34,6 @@ scan_test_() ->
     {"fold",                 fun fold/0},
     {"record literal",       fun record_literal/0},
     {"record field access",  fun record_field_access/0},
-    {"fixpoint operator",    fun fixpoint_operator/0},
     {"let variable pattern", fun let_variable_pattern/0},
     {"let record pattern",   fun let_record_pattern/0},
     {"native function def",  fun native_function_def/0},
@@ -269,12 +267,6 @@ record_field_access() ->
   ?assertEqual( [{id, 1, "x"},
                  {dot, 1, "."},
                  {id, 1, "a"}], TokenLst ).
-
-fixpoint_operator() ->
-  S = "fix f",
-  {ok, TokenLst, _} = string( S ),
-  ?assertEqual( [{fix, 1, "fix"},
-                 {id, 1, "f"}], TokenLst ).
 
 let_variable_pattern() ->
   S = "x : Str = \"blub\"; x",

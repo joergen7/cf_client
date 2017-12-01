@@ -30,13 +30,13 @@ DOT       = \.
 ELSE      = else
 EQ        = =
 FALSE     = false
-FIX       = fix
+% FIX       = fix
 FOLD      = fold
 FOR       = for
 IMPORT    = import
 IN        = in
 ISNIL     = isnil
-LAMBDA    = \\
+% LAMBDA    = \\
 LARROW    = <-
 LBRACE    = \{
 LPAREN    = \(
@@ -96,13 +96,13 @@ Rules.
 {ELSE}      : {token, {else, TokenLine, TokenChars}}.
 {EQ}        : {token, {eq, TokenLine, TokenChars}}.
 {FALSE}     : {token, {false, TokenLine, TokenChars}}.
-{FIX}       : {token, {fix, TokenLine, TokenChars}}.
+% {FIX}       : {token, {fix, TokenLine, TokenChars}}.
 {FOLD}      : {token, {fold, TokenLine, TokenChars}}.
 {FOR}       : {token, {for, TokenLine, TokenChars}}.
 {IMPORT}    : {token, {import, TokenLine, TokenChars}}.
 {IN}        : {token, {in, TokenLine, TokenChars}}.
 {ISNIL}     : {token, {isnil, TokenLine, TokenChars}}.
-{LAMBDA}    : {token, {lambda, TokenLine, TokenChars}}.
+% {LAMBDA}    : {token, {lambda, TokenLine, TokenChars}}.
 {LARROW}    : {token, {larrow, TokenLine, TokenChars}}.
 {LBRACE}    : {token, {lbrace, TokenLine, TokenChars}}.
 {LPAREN}    : {token, {lparen, TokenLine, TokenChars}}.
