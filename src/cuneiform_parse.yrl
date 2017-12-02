@@ -227,10 +227,10 @@ visit_cnd( {cnd, L, _}, EIf, EThen, EElse ) ->
   cuneiform_lang:cnd( L, EIf, EThen, EElse ).
 
 
--spec visit_def_frn( Id, ArgLst, RetType, Lang, Body ) -> {r(), e()}
+-spec visit_def_frn( Id, ArgLst, UArgLst, Lang, Body ) -> {r(), e()}
 when Id      :: {id, _, string()},
      ArgLst  :: [t_arg()],
-     RetType :: t(),
+     UArgLst :: [t_arg()],
      Lang    :: l(),
      Body    :: {body, _, string()}.
 
@@ -276,7 +276,7 @@ visit_app( {id, L, S}, EBindLst ) ->
   cuneiform_lang:app( L, cuneiform_lang:var( L, list_to_atom( S ) ), EBindLst ).
 
 
--spec visit_e_bind( {id, _, S :: string()}, E :: e() ) -> e().
+-spec visit_e_bind( {id, _, S :: string()}, E :: e() ) -> e_bind().
 
 visit_e_bind( {id, _, S}, E ) ->
   cuneiform_lang:e_bind( list_to_atom( S ), E ).

@@ -69,7 +69,7 @@ main( [CreNodeStr] ) ->
   io:format( "connected nodes: ~p~n", [nodes()] ),
 
   % a workflow expression falls from the sky
-  E = cuneiform_lang:str( "blub" ),
+  E = cuneiform_lang:str( <<"blub">> ),
 
   io:format( "state:           starting workflow~n" ),
 
