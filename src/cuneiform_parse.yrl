@@ -4,12 +4,12 @@
 
 Nonterminals
   define e imp l t_arg_lst t_arg r script t stat e_bind_lst e_bind r_bind_lst
-  r_bind.
+  r_bind e_lst.
 
 Terminals
   l_bash l_octave l_perl l_python l_r l_racket
   t_str t_file t_bool t_fn_frn t_fn_ntv
-  assign bar wedge cmp cnd colon
+  assign wedge cmp cnd colon
   comma def do dot else eq false fold for import in
   isnil larrow lbrace lparen lsquarebr ltag neg vee plus
   rarrow rbrace rparen rsquarebr rtag semicolon then true id
@@ -62,7 +62,6 @@ t               -> ltag t_arg_lst rtag        : cuneiform_lang:t_rcd( '$2' ).
 
 % TODO: Native function type with non-empty argument list
 % TODO: Foreign function type with non-empty argument list
-% TODO: List type
 
 t_arg           -> id colon t                 : visit_t_arg( '$1', '$3' ).
 
@@ -85,14 +84,22 @@ e               -> id lparen rparen           : visit_app( '$1', [] ).
 e               -> id lparen e_bind_lst rparen
                                               : visit_app( '$1', '$3' ).
 e               -> ltag e_bind_lst rtag       : visit_rcd( '$1', '$2' ).
+e               -> lparen e dot id rparen     : visit_proj( '$2', '$4' ).
+e               -> lparen e plus e rparen     : visit_append( '$2', '$3', '$4' ).
+e               -> lsquarebr colon t rsquarebr
+                                              : visit_lst( [], '$2', '$3' ).
+e               -> lsquarebr e_lst colon t rsquarebr
+                                              : visit_lst( '$2', '$3', '$4' ).
+e               -> isnil e                    : visit_isnil( '$1', '$2' ).
 
 % TODO: list literal
 % TODO: list append
 % TODO: isnil test
 % TODO: for
 % TODO: fold
-% TODO: projection
 
+e_lst           -> e                          : ['$1'].
+e_lst           -> e comma e_lst              : ['$1'|'$3'].
 
 e_bind_lst      -> e_bind                     : ['$1'].
 e_bind_lst      -> e_bind comma e_bind_lst    : ['$1'|'$3'].
@@ -286,7 +293,32 @@ visit_r_bind( {id, _, S}, R ) ->
 visit_r_rcd( {ltag, L, _}, RBindLst ) ->
   cuneiform_lang:r_rcd( L, RBindLst ).
 
+
 -spec visit_rcd( {ltag, L :: _, _}, EBindLst :: [e_bind()] ) -> e().
 
 visit_rcd( {ltag, L, _}, EBindLst ) ->
   cuneiform_lang:rcd( L, EBindLst ).
+
+
+-spec visit_proj( E :: e(), {id, L :: _, S :: string()} ) -> e().
+
+visit_proj( E, {id, L, S} ) ->
+  cuneiform_lang:proj( L, list_to_atom( S ), E ).
+
+
+-spec visit_append( E :: e(), {plus, L :: _, _}, E :: e() ) -> e().
+
+visit_append( E1, {plus, L, _}, E2 ) ->
+  cuneiform_lang:append( L, E1, E2 ).
+
+
+-spec visit_lst( ELst :: [e()], {colon, L :: _, _}, T :: t() ) -> e().
+
+visit_lst( ELst, {colon, L, _}, T ) ->
+  cuneiform_lang:lst( L, T, ELst ).
+
+
+-spec visit_isnil( {isnil, L :: _, _}, E :: e() ) -> e().
+
+visit_isnil( {isnil, L, _}, E ) ->
+  cuneiform_lang:isnil( L, E ).

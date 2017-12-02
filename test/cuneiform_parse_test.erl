@@ -9,7 +9,8 @@
                           r_var/3, t_fn/3, t_rcd/1, t_arg/2,
                           l_bash/0, lam_frn/6, t_lst/1, l_octave/0, t_bool/0,
                           l_perl/0, l_python/0, l_r/0, e_bind/2, l_racket/0,
-                          fix/2, t_fn/4, rcd/2, r_rcd/2, r_bind/2] ).
+                          fix/2, t_fn/4, rcd/2, r_rcd/2, r_bind/2, proj/3,
+                          append/3, lst/3, isnil/2] ).
 
 parse_test_() ->
   {foreach,
@@ -44,7 +45,11 @@ parse_test_() ->
     {"foreign function racket",    fun foreign_function_racket/0},
     {"foreign function alias",     fun foreign_function_alias/0},
     {"record pattern match",       fun record_pattern_match/0},
-    {"record pattern multi match", fun record_pattern_multi_match/0}
+    {"record pattern multi match", fun record_pattern_multi_match/0},
+    {"record field access",        fun record_field_access/0},
+    {"empty list",                 fun empty_list/0},
+    {"isnil list",                 fun isnil_list/0},
+    {"list append",                fun list_append/0}
    ]
   }.
 
@@ -395,3 +400,83 @@ record_pattern_multi_match() ->
                  r_bind( b, r_var( 1, y, t_lst( t_file() ) ) )] ),
   E = var( 1, z ),
   ?assertEqual( {ok, {[], [], [{R, E}], [var( 2, y )]}}, parse( TokenLst ) ).
+
+record_field_access() ->
+  TokenLst = [{assign, 1, "let"},
+              {id, 1, "x"},
+              {colon, 1, ":"},
+              {ltag, 1, "<"},
+              {id, 1, "a"},
+              {colon, 1, ":"},
+              {t_str, 1, "Str"},
+              {rtag, 1, ">"},
+              {eq, 1, "="},
+              {ltag, 1, "<"},
+              {id, 1, "a"},
+              {eq, 1, "="},
+              {strlit, 1, "blub"},
+              {rtag, 1, ">"},
+              {semicolon, 1, ";"},
+              {lparen, 1, "("},
+              {id, 2, "x"},
+              {dot, 2, "."},
+              {id, 2, "a"},
+              {rparen, 2, ")"},
+              {dot, 2, "."}],
+  R = r_var( 1, x, t_rcd( [t_arg( a, t_str() )] ) ),
+  E1 = rcd( 1, [e_bind( a, str( 1, <<"blub">> ) )] ),
+  E2 = proj( 2, a, var( 2, x ) ),
+  ?assertEqual( {ok, {[], [], [{R, E1}], [E2]}}, parse( TokenLst ) ).
+
+empty_list() ->
+  TokenLst = [{lsquarebr, 1, "["},
+              {colon, 1, ":"},
+              {t_str, 1, "Str"},
+              {rsquarebr, 1, "]"},
+               {dot, 1, "."}],
+  E = lst( 1, t_str(), [] ),
+  ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
+
+isnil_list() ->
+  TokenLst = [{assign, 1, "let"},
+              {id, 1, "l"},
+              {colon, 1, ":"},
+              {lsquarebr, 1, "["},
+              {t_str, 1, "Str"},
+              {rsquarebr, 1, "]"},
+              {eq, 1, "="},
+              {lsquarebr, 2, "["},
+              {strlit, 2, "bla"},
+              {comma, 2, ","},
+              {strlit, 2, "blub"},
+              {colon, 2, ":"},
+              {t_str, 2, "Str"},
+              {rsquarebr, 2, "]"},
+              {semicolon, 2, ";"},
+              {isnil, 3, "isnil"},
+              {id, 3, "l"},
+              {dot, 3, "."}],
+  R = r_var( 1, l, t_lst( t_str() ) ),
+  E1 = lst( 2, t_str(), [str( 2, <<"bla">> ), str( 2, <<"blub">> )] ),
+  E2 = isnil( 3, var( 3, l ) ),
+  ?assertEqual( {ok, {[], [], [{R, E1}], [E2]}}, parse( TokenLst ) ).
+
+list_append() ->
+  TokenLst = [{lparen, 1, "("},
+              {lsquarebr, 1, "["},
+              {strlit, 1, "bla"},
+              {colon, 1, ":"},
+              {t_str, 1, "Str"},
+              {rsquarebr, 1, "]"},
+              {plus, 1, "+"},
+              {lsquarebr, 1, "["},
+              {strlit, 1, "blub"},
+              {colon, 1, ":"},
+              {t_str, 1, "Str"},
+              {rsquarebr, 1, "]"},
+              {rparen, 1, ")"},
+              {dot, 1, "."}],
+  E = append( 1, lst( 1, t_str(), [str( 1, <<"bla">> )] ),
+                 lst( 1, t_str(), [str( 1, <<"blub">> )] ) ),
+  ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
+

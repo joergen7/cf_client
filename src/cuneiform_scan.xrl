@@ -19,7 +19,6 @@ TFNNTV   = Ntv
 TFNFRN   = Frn
 
 ASSIGN    = let
-BAR       = |
 CMP       = ==
 CND       = if
 COLON     = :
@@ -83,7 +82,6 @@ Rules.
 {TFNFRN}   : {token, {t_fn_frn, TokenLine, TokenChars}}.
 
 {ASSIGN}    : {token, {assign, TokenLine, TokenChars}}.
-{BAR}       : {token, {bar, TokenLine, TokenChars}}.
 {CMP}       : {token, {cmp, TokenLine, TokenChars}}.
 {CND}       : {token, {cnd, TokenLine, TokenChars}}.
 {COLON}     : {token, {colon, TokenLine, TokenChars}}.
