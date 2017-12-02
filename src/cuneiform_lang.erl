@@ -231,16 +231,16 @@ when is_atom( FName ),
       fold( InitArg, ArgLst, E ) -> fold( na, InitArg, ArgLst, E ).
 
 
--spec fold( Info, InitArg, ArgLst, E ) -> e()
+-spec fold( Info, InitArg, LstBind, E ) -> e()
 when Info    :: info(),
      InitArg :: e_bind(),
-     ArgLst  :: [e_bind()],
+     LstBind :: e_bind(),
      E       :: e().
 
-fold( Info, InitArg, ArgLst, E )
+fold( Info, InitArg, LstBind, E )
 when is_tuple( InitArg ),
-     is_list( ArgLst ) ->
-  {fold, Info, InitArg, ArgLst, E}.
+     is_tuple( LstBind ) ->
+  {fold, Info, InitArg, LstBind, E}.
 
 
 -spec rcd( ArgLst :: [e_bind()] ) -> e().

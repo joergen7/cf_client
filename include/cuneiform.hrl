@@ -55,7 +55,7 @@
                      | {append, info(), e, e}
                      | {isnil, info(), e}
                      | {for, info(), [e_bind()], e()}
-                     | {fold, info(), e_bind(), [e_bind()], e()}
+                     | {fold, info(), e_bind(), e_bind(), e()}
                      | {rcd, info(), [e_bind()]}
                      | {proj, info(), x(), e()}
                      | {fix, info(), e()}

@@ -31,6 +31,7 @@ EQ        = =
 FALSE     = false
 FOLD      = fold
 FOR       = for
+HALT      = end
 IMPORT    = import
 IN        = in
 ISNIL     = isnil
@@ -90,6 +91,7 @@ Rules.
 {DO}        : {token, {do, TokenLine, TokenChars}}.
 {DOT}       : {token, {dot, TokenLine, TokenChars}}.
 {ELSE}      : {token, {else, TokenLine, TokenChars}}.
+{HALT}      : {token, {halt, TokenLine, TokenChars}}.
 {EQ}        : {token, {eq, TokenLine, TokenChars}}.
 {FALSE}     : {token, {false, TokenLine, TokenChars}}.
 {FOLD}      : {token, {fold, TokenLine, TokenChars}}.
