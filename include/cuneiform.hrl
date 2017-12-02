@@ -59,7 +59,7 @@
                      | {rcd, info(), [e_bind()]}
                      | {proj, info(), x(), e()}
                      | {fix, info(), e()}
-                     | {assign, info(), r(), e()}.
+                     | {assign, info(), r(), e(), e()}.
 
 -type r()           :: {r_var, info(), x(), t()}
                      | {r_rcd, info(), [r_bind()]}.

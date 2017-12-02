@@ -4,7 +4,7 @@
 
 Nonterminals
   define e imp l t_arg_lst t_arg r script t stat e_bind_lst e_bind r_bind_lst
-  r_bind e_lst.
+  r_bind e_lst define_lst.
 
 Terminals
   l_bash l_octave l_perl l_python l_r l_racket
@@ -30,15 +30,16 @@ stat            -> e dot                      : {[], [], [], ['$1']}.
 
 imp             -> import filelit semicolon   : visit_import( '$2' ).
 
-define          -> assign r eq e semicolon    : {'$2', '$4'}.
-define          -> def id lparen rparen rarrow ltag t_arg_lst rtag in l body
-                                              : visit_def_frn( '$2', [], '$7', '$10', '$11' ).
-define          -> def id lparen t_arg_lst rparen rarrow ltag t_arg_lst rtag in l body
-                                              : visit_def_frn( '$2', '$4', '$8', '$11', '$12' ).
-define          -> def id lparen rparen rarrow t lbrace e rbrace
-                                              : visit_def_ntv( '$2', [], '$6', '$8' ).
-define          -> def id lparen t_arg_lst rparen rarrow t lbrace e rbrace
-                                              : visit_def_ntv( '$2', '$4', '$7', '$9' ).
+define          -> assign r eq e semicolon                                             : {'$2', '$4'}.
+define          -> def id lparen rparen rarrow ltag t_arg_lst rtag in l body           : visit_def_frn( '$2', [], '$7', '$10', '$11' ).
+define          -> def id lparen t_arg_lst rparen rarrow ltag t_arg_lst rtag in l body : visit_def_frn( '$2', '$4', '$8', '$11', '$12' ).
+
+define          -> def id lparen rparen rarrow t lbrace e rbrace                       : visit_def_ntv( '$2', [], '$6', [], '$8' ).
+define          -> def id lparen rparen rarrow t lbrace define_lst e rbrace            : visit_def_ntv( '$2', [], '$6', '$8', '$9' ).
+define          -> def id lparen t_arg_lst rparen rarrow t lbrace e rbrace             : visit_def_ntv( '$2', '$4', '$7', [], '$9' ).
+
+define_lst      -> define                     : ['$1'].
+define_lst      -> define define_lst          : ['$1'|'$2'].
 
 r               -> id colon t                 : visit_r_var( '$1', '$3' ).
 r               -> ltag r_bind_lst rtag       : visit_r_rcd( '$1', '$2' ).
@@ -50,18 +51,15 @@ l               -> l_python                   : cuneiform_lang:l_python().
 l               -> l_r                        : cuneiform_lang:l_r().
 l               -> l_racket                   : cuneiform_lang:l_racket().
 
-t               -> t_str                      : cuneiform_lang:t_str().
-t               -> t_file                     : cuneiform_lang:t_file().
-t               -> t_bool                     : cuneiform_lang:t_bool().
-t               -> t_fn_ntv lparen rparen rarrow t
-                                              : cuneiform_lang:t_fn( ntv, [], '$5' ).
-t               -> t_fn_frn lparen rparen rarrow t
-                                              : cuneiform_lang:t_fn( frn, [], '$5' ).
-t               -> lsquarebr t rsquarebr      : cuneiform_lang:t_lst( '$2' ).
-t               -> ltag t_arg_lst rtag        : cuneiform_lang:t_rcd( '$2' ).
-
-% TODO: Native function type with non-empty argument list
-% TODO: Foreign function type with non-empty argument list
+t               -> t_str                                     : cuneiform_lang:t_str().
+t               -> t_file                                    : cuneiform_lang:t_file().
+t               -> t_bool                                    : cuneiform_lang:t_bool().
+t               -> t_fn_ntv lparen rparen rarrow t           : cuneiform_lang:t_fn( ntv, [], '$5' ).
+t               -> t_fn_ntv lparen t_arg_lst rparen rarrow t : cuneiform_lang:t_fn( ntv, '$3', '$6' ).
+t               -> t_fn_frn lparen rparen rarrow t           : cuneiform_lang:t_fn( frn, [], '$5' ).
+t               -> t_fn_frn lparen t_arg_lst rparen rarrow t : cuneiform_lang:t_fn( frn, '$3', '$6' ).
+t               -> lsquarebr t rsquarebr                     : cuneiform_lang:t_lst( '$2' ).
+t               -> ltag t_arg_lst rtag                       : cuneiform_lang:t_rcd( '$2' ).
 
 t_arg           -> id colon t                 : visit_t_arg( '$1', '$3' ).
 
@@ -69,32 +67,26 @@ t_arg_lst       -> t_arg                      : ['$1'].
 t_arg_lst       -> t_arg comma t_arg_lst      : ['$1'|'$3'].
 
 
-e               -> id                         : visit_var( '$1' ).
-e               -> strlit                     : visit_str( '$1' ).
-e               -> intlit                     : visit_str( '$1' ).
-e               -> filelit                    : visit_file( '$1' ).
-e               -> true                       : visit_true( '$1' ).
-e               -> false                      : visit_false( '$1' ).
-e               -> lparen e cmp e rparen      : visit_cmp( '$2', '$3', '$4' ).
-e               -> cnd e then e else e        : visit_cnd( '$1', '$2', '$4', '$6' ).
-e               -> neg e                      : visit_neg( '$1', '$2' ).
-e               -> lparen e wedge e rparen    : visit_conj( '$2', '$3', '$4' ).
-e               -> lparen e vee e rparen      : visit_disj( '$2', '$3', '$4' ).
-e               -> id lparen rparen           : visit_app( '$1', [] ).
-e               -> id lparen e_bind_lst rparen
-                                              : visit_app( '$1', '$3' ).
-e               -> ltag e_bind_lst rtag       : visit_rcd( '$1', '$2' ).
-e               -> lparen e dot id rparen     : visit_proj( '$2', '$4' ).
-e               -> lparen e plus e rparen     : visit_append( '$2', '$3', '$4' ).
-e               -> lsquarebr colon t rsquarebr
-                                              : visit_lst( [], '$2', '$3' ).
-e               -> lsquarebr e_lst colon t rsquarebr
-                                              : visit_lst( '$2', '$3', '$4' ).
-e               -> isnil e                    : visit_isnil( '$1', '$2' ).
+e               -> id                                : visit_var( '$1' ).
+e               -> strlit                            : visit_str( '$1' ).
+e               -> intlit                            : visit_str( '$1' ).
+e               -> filelit                           : visit_file( '$1' ).
+e               -> true                              : visit_true( '$1' ).
+e               -> false                             : visit_false( '$1' ).
+e               -> lparen e cmp e rparen             : visit_cmp( '$2', '$3', '$4' ).
+e               -> cnd e then e else e               : visit_cnd( '$1', '$2', '$4', '$6' ).
+e               -> neg e                             : visit_neg( '$1', '$2' ).
+e               -> lparen e wedge e rparen           : visit_conj( '$2', '$3', '$4' ).
+e               -> lparen e vee e rparen             : visit_disj( '$2', '$3', '$4' ).
+e               -> id lparen rparen                  : visit_app( '$1', [] ).
+e               -> id lparen e_bind_lst rparen       : visit_app( '$1', '$3' ).
+e               -> ltag e_bind_lst rtag              : visit_rcd( '$1', '$2' ).
+e               -> lparen e dot id rparen            : visit_proj( '$2', '$4' ).
+e               -> lparen e plus e rparen            : visit_append( '$2', '$3', '$4' ).
+e               -> lsquarebr colon t rsquarebr       : visit_lst( [], '$2', '$3' ).
+e               -> lsquarebr e_lst colon t rsquarebr : visit_lst( '$2', '$3', '$4' ).
+e               -> isnil e                           : visit_isnil( '$1', '$2' ).
 
-% TODO: list literal
-% TODO: list append
-% TODO: isnil test
 % TODO: for
 % TODO: fold
 
@@ -244,14 +236,21 @@ visit_def_frn( {id, L, SName}, ArgLst, UArgLst, Lang, {body, _, SBody} ) ->
   {R, Lam}.
 
 
--spec visit_def_ntv( {id, L, SName}, ArgLst, RetType, EBody ) -> {r(), e()}
+-spec visit_def_ntv( {id, L, SName}, ArgLst, RetType, DefLst, EBody ) -> {r(), e()}
 when L       :: _,
      SName   :: string(),
      ArgLst  :: [t_arg()],
      RetType :: t(),
+     DefLst  :: [{r(), e()}],
      EBody   :: e().
 
-visit_def_ntv( {id, L, SName}, ArgLst, RetType, EBody ) ->
+visit_def_ntv( {id, L, SName}, ArgLst, RetType, DefLst, EBody ) ->
+
+  F =
+    fun( {R1, E1}, EAcc ) ->
+      cuneiform_lang:assign( element( 2, R1 ), R1, E1, EAcc )
+    end,
+
   FName = list_to_atom( SName ),
   TFn = cuneiform_lang:t_fn( ntv, ArgLst, RetType ),
   Lam = cuneiform_lang:fix(
@@ -259,7 +258,7 @@ visit_def_ntv( {id, L, SName}, ArgLst, RetType, EBody ) ->
           cuneiform_lang:lam_ntv(
             L,
             [cuneiform_lang:lam_ntv_arg( FName, TFn )|[{X, X, T} || {X, T} <- ArgLst]],
-            EBody ) ),
+            lists:foldr( F, EBody, DefLst ) ) ),
   R = cuneiform_lang:r_var( L, FName, TFn ),
   {R, Lam}.
 
