@@ -68,3 +68,4 @@
                      | {cnd, info(), ctx(), e(), e()}
                      | {app, info(), ctx(), [e_bind()]}.
 
+-type type_error()  :: {unbound, info(), x()}.
