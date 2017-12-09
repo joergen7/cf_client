@@ -6,7 +6,7 @@
 
 -import( cuneiform_lang, [str/1, t_str/0, file/1, t_file/0, true/0, false/0,
                           t_bool/0, cmp/2, var/1, lam_ntv/2, lam_ntv_arg/2,
-                          t_arg/2, t_fn/3] ).
+                          t_arg/2, t_fn/3, neg/1] ).
 
 type_test_() ->
   {foreach,
@@ -30,7 +30,14 @@ type_test_() ->
     {"comparison with file lhs untypable",
      fun comparison_with_file_lhs_untypable/0},
     {"comparison with file rhs untypable",
-     fun comparison_with_file_rhs_untypable/0}
+     fun comparison_with_file_rhs_untypable/0},
+    {"comparison with lhs variable typable",
+     fun comparison_with_lhs_variable_typable/0},
+    {"comparison with rhs variable typable",
+     fun comparison_with_rhs_variable_typable/0},
+    {"negation typable",           fun negation_typable/0},
+    {"negation of non-Boolean untypable",
+     fun negation_of_nonbool_untypable/0}
    ]
   }.
 
@@ -78,3 +85,20 @@ comparison_with_file_lhs_untypable() ->
 comparison_with_file_rhs_untypable() ->
   E = cmp( str( <<"bla">> ), file( <<"blub.txt">> ) ),
   ?assertEqual( {error, {type_mismatch, na, {t_str(), t_file()}}}, type( E ) ).
+
+comparison_with_lhs_variable_typable() ->
+  E = lam_ntv( [lam_ntv_arg( x, t_str() )],
+               cmp( var( x ), str( <<"blub">> ) ) ),
+  ?assertEqual( {ok, t_fn( ntv, [t_arg( x, t_str() )], t_bool() )}, type( E ) ).
+
+comparison_with_rhs_variable_typable() ->
+  E = lam_ntv( [lam_ntv_arg( x, t_str() )],
+               cmp( str( <<"bla">> ), var( x ) ) ),
+  ?assertEqual( {ok, t_fn( ntv, [t_arg( x, t_str() )], t_bool() )}, type( E ) ).
+
+negation_typable() ->
+  ?assertEqual( {ok, t_bool()}, type( neg( true() ) ) ).
+
+negation_of_nonbool_untypable() ->
+  E = neg( str( <<"blub">> ) ),
+  ?assertEqual( {error, {type_mismatch, na, {t_bool(), t_str()}}}, type( E ) ).

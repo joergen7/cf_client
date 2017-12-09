@@ -24,11 +24,11 @@ type( _Gamma, {true, _Info} ) ->
 type( _Gamma, {false, _Info} ) ->
   {ok, cuneiform_lang:t_bool()};
 
-type( _Gamma, {cmp, Info, E1, E2} ) ->
-  case type( E1 ) of % TODO: pull in Gamma
+type( Gamma, {cmp, Info, E1, E2} ) ->
+  case type( Gamma, E1 ) of
 
     {ok, 'Str'} ->
-      case type( E2 ) of % TODO: pull in Gamma
+      case type( Gamma, E2 ) of
 
         {ok, 'Str'} ->
           {ok, cuneiform_lang:t_bool()};
@@ -64,5 +64,8 @@ type( Gamma, {var, Info, X} ) ->
     true  -> {ok, maps:get( X, Gamma )};
     false -> {error, {unbound, Info, X}}
   end;
+
+type( _Gamma, {neg, _Info, _E} ) ->
+  {ok, cuneiform_lang:t_bool()};
 
 type( _Gamma, _E ) -> error( bad_expr ).
