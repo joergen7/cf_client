@@ -26,7 +26,11 @@ type_test_() ->
     {"comparison with invalid lhs untypable",
      fun comparison_with_invalid_lhs_untypable/0},
     {"comparison with invalid rhs untypable",
-     fun comparison_with_invalid_rhs_untypable/0}
+     fun comparison_with_invalid_rhs_untypable/0},
+    {"comparison with file lhs untypable",
+     fun comparison_with_file_lhs_untypable/0},
+    {"comparison with file rhs untypable",
+     fun comparison_with_file_rhs_untypable/0}
    ]
   }.
 
@@ -47,8 +51,10 @@ string_comparison_typable() ->
   ?assertEqual( {ok, t_bool()}, type( E ) ).
 
 native_lambda_typable() ->
-  E = lam_ntv( [], str( <<"blub">> ) ),
-  ?assertEqual( {ok, t_fn( ntv, [], t_str() )}, type( E ) ).
+  E1 = lam_ntv( [], str( <<"blub">> ) ),
+  E2 = lam_ntv( [], file( <<"bla.txt">> ) ),
+  ?assertEqual( {ok, t_fn( ntv, [], t_str() )}, type( E1 ) ),
+  ?assertEqual( {ok, t_fn( ntv, [], t_file() )}, type( E2 ) ).
 
 bound_variable_typable() ->
   E = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
@@ -64,3 +70,11 @@ comparison_with_invalid_lhs_untypable() ->
 comparison_with_invalid_rhs_untypable() ->
   E = cmp( str( <<"bla">> ), var( y ) ),
   ?assertEqual( {error, {unbound, na, y}}, type( E ) ).
+
+comparison_with_file_lhs_untypable() ->
+  E = cmp( file( <<"bla.txt">> ), str( <<"blub">> ) ),
+  ?assertEqual( {error, {type_mismatch, na, {t_str(), t_file()}}}, type( E ) ).
+
+comparison_with_file_rhs_untypable() ->
+  E = cmp( str( <<"bla">> ), file( <<"blub.txt">> ) ),
+  ?assertEqual( {error, {type_mismatch, na, {t_str(), t_file()}}}, type( E ) ).
