@@ -68,5 +68,5 @@
                      | {cnd, info(), ctx(), e(), e()}
                      | {app, info(), ctx(), [e_bind()]}.
 
--type type_error()  :: {unbound, info(), x()}
+-type type_error()  :: {unbound_var, info(), x()}
                      | {type_mismatch, info(), {t(), t()}}.
