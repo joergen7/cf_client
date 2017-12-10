@@ -6,7 +6,7 @@
 
 -import( cuneiform_lang, [str/1, t_str/0, file/1, t_file/0, true/0, false/0,
                           t_bool/0, cmp/2, var/1, lam_ntv/2, lam_ntv_arg/2,
-                          t_arg/2, t_fn/3, neg/1, cnd/3, conj/2] ).
+                          t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2] ).
 
 type_test_() ->
   {foreach,
@@ -71,7 +71,20 @@ type_test_() ->
     {"conjunction with variable lhs typable",
      fun conjunction_with_variable_lhs_typable/0},
     {"conjunction with variable rhs typable",
-     fun conjunction_with_variable_rhs_typable/0}
+     fun conjunction_with_variable_rhs_typable/0},
+    {"disjunction typable",        fun disjunction_typable/0},
+    {"disjunction with invalid lhs untypable",
+     fun disjunction_with_invalid_lhs_untypable/0},
+    {"disjunction with invalid rhs untypable",
+     fun disjunction_with_invalid_rhs_untypable/0},
+    {"disjunction with non-Boolean lhs untypable",
+     fun disjunction_with_nonboolean_lhs_untypable/0},
+    {"disjunction with non-Boolean rhs untypable",
+     fun disjunction_with_nonboolean_rhs_untypable/0},
+    {"disjunction with variable lhs typable",
+     fun disjunction_with_variable_lhs_typable/0},
+    {"disjunction with variable rhs typable",
+     fun disjunction_with_variable_rhs_typable/0}
    ]
   }.
 
@@ -212,4 +225,31 @@ conjunction_with_variable_lhs_typable() ->
 
 conjunction_with_variable_rhs_typable() ->
   E = lam_ntv( [lam_ntv_arg( y, t_bool() )], conj( true(), var( y ) ) ),
+  ?assertEqual( {ok, t_fn( ntv, [t_arg( y, t_bool() )], t_bool() )}, type( E ) ).
+
+disjunction_typable() ->
+  ?assertEqual( {ok, t_bool()}, type( disj( true(), false() ) ) ).
+
+disjunction_with_invalid_lhs_untypable() ->
+  E = disj( var( x ), true() ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E ) ).
+
+disjunction_with_invalid_rhs_untypable() ->
+  E = disj( true(), var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
+
+disjunction_with_nonboolean_lhs_untypable() ->
+  E = disj( str( <<"bla">> ), true() ),
+  ?assertEqual( {error, {type_mismatch, na, {t_bool(), t_str()}}}, type( E ) ).
+
+disjunction_with_nonboolean_rhs_untypable() ->
+  E = disj( true(), str( <<"blub">> ) ),
+  ?assertEqual( {error, {type_mismatch, na, {t_bool(), t_str()}}}, type( E ) ).
+
+disjunction_with_variable_lhs_typable() ->
+  E = lam_ntv( [lam_ntv_arg( x, t_bool() )], disj( var( x ), true() ) ),
+  ?assertEqual( {ok, t_fn( ntv, [t_arg( x, t_bool() )], t_bool() )}, type( E ) ).
+
+disjunction_with_variable_rhs_typable() ->
+  E = lam_ntv( [lam_ntv_arg( y, t_bool() )], disj( true(), var( y ) ) ),
   ?assertEqual( {ok, t_fn( ntv, [t_arg( y, t_bool() )], t_bool() )}, type( E ) ).

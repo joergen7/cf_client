@@ -139,4 +139,23 @@ type( Gamma, {conj, Info, E1, E2} ) ->
 
   end;
 
+type( Gamma, {disj, Info, E1, E2} ) ->
+
+  case type( Gamma, E1 ) of
+
+    {ok, 'Bool'} ->
+      case type( Gamma, E2 ) of
+        {ok, 'Bool'}     -> {ok, t_bool()};
+        {ok, T2}         -> {error, {type_mismatch, Info, {t_bool(), T2}}};
+        {error, Reason2} -> {error, Reason2}
+      end;
+
+    {ok, T1} ->
+      {error, {type_mismatch, Info, {t_bool(), T1}}};
+
+    {error, Reason1} ->
+      {error, Reason1}
+
+  end;
+
 type( _Gamma, E ) -> error( {bad_expr, E} ).
