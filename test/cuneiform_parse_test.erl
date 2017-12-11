@@ -72,7 +72,7 @@ one_variable_definition() ->
   TokenLst = [{assign, 1, "let"}, {id, 1, "x"}, {colon, 1, ":"},
               {t_str, 1, "Str"}, {eq, 1, "="}, {strlit, 1, "bla"},
               {semicolon, 1, ";"},
-              {id, 2, "x"}, {dot, 2, "."}],
+              {id, 2, "x"}, {semicolon, 2, ";"}],
   ?assertEqual( {ok, {[],
                       [],
                       [{r_var( 1, x, 'Str' ), str( 1, <<"bla">> )}],
@@ -84,7 +84,7 @@ two_variable_definition() ->
               {semicolon, 1, ";"},
               {assign, 2, "let"}, {id, 2, "y"}, {colon, 2, ":"},
               {t_str, 2, "Str"}, {eq, 2, "="}, {strlit, 2, "blub"},
-              {semicolon, 2, ";"}, {id, 3, "x"}, {dot, 3, "."}],
+              {semicolon, 2, ";"}, {id, 3, "x"}, {semicolon, 3, ";"}],
   ?assertEqual( {ok, {[],
                       [],
                       [{r_var( 1, x, t_str() ), str( 1, <<"bla">> )},
@@ -93,7 +93,7 @@ two_variable_definition() ->
 
 one_single_import() ->
   TokenLst = [{import, 1, "import"}, {filelit, 1, "a.cuf"}, {semicolon, 1, ";"},
-              {strlit, 2, "bla"}, {dot, 2, "."}],
+              {strlit, 2, "bla"}, {semicolon, 2, ";"}],
   ?assertEqual( {ok, {[{import, 1, "a.cuf"}],
                       [],
                       [],
@@ -102,7 +102,7 @@ one_single_import() ->
 two_single_imports() ->
   TokenLst = [{import, 1, "import"}, {filelit, 1, "a.cuf"}, {semicolon, 1, ";"},
               {import, 2, "import"}, {filelit, 2, "b.cuf"}, {semicolon, 2, ";"},
-              {strlit, 3, "bla"}, {dot, 3, "."}],
+              {strlit, 3, "bla"}, {semicolon, 3, ";"}],
   ?assertEqual( {ok, {[{import, 1, "a.cuf"}, {import, 2, "b.cuf"}],
                       [],
                       [],
@@ -113,39 +113,39 @@ import_definition() ->
               {assign, 2, "let"}, {id, 2, "x"}, {colon, 2, ":"},
               {t_str, 2, "Str"}, {eq, 2, "="}, {strlit, 2, "bla"},
               {semicolon, 2, ";"},
-              {id, 3, "x"}, {dot, 3, "."}],
+              {id, 3, "x"}, {semicolon, 3, ";"}],
   ?assertEqual( {ok, {[{import, 1, "a.cuf"}],
                       [],
                       [{r_var( 2, x, t_str() ), str( 2, <<"bla">> )}],
                       [var( 3, x )]}}, parse( TokenLst ) ).
 
 variable() ->
-  TokenLst = [{id, 1, "x"}, {dot, 1, "."}],
+  TokenLst = [{id, 1, "x"}, {semicolon, 1, ";"}],
   ?assertEqual( {ok, {[], [], [], [var( 1, x )]}}, parse( TokenLst ) ).
 
 string() ->
-  TokenLst = [{strlit, 1, "bla"}, {dot, 1, "."}],
+  TokenLst = [{strlit, 1, "bla"}, {semicolon, 1, ";"}],
   ?assertEqual( {ok, {[], [], [], [str( 1, <<"bla">> )]}}, parse( TokenLst ) ).
 
 integer() ->
-  TokenLst = [{intlit, 1, "-5"}, {dot, 1, "."}],
+  TokenLst = [{intlit, 1, "-5"}, {semicolon, 1, ";"}],
   ?assertEqual( {ok, {[], [], [], [str( 1, <<"-5">> )]}}, parse( TokenLst ) ).
 
 file() ->
-  TokenLst = [{filelit, 1, "blub.txt"}, {dot, 1, "."}],
+  TokenLst = [{filelit, 1, "blub.txt"}, {semicolon, 1, ";"}],
   ?assertEqual( {ok, {[], [], [], [file( 1, <<"blub.txt">> )]}}, parse( TokenLst ) ).
 
 true() ->
-  TokenLst = [{true, 1, "true"}, {dot, 1, "."}],
+  TokenLst = [{true, 1, "true"}, {semicolon, 1, ";"}],
   ?assertEqual( {ok, {[], [], [], [true( 1 )]}}, parse( TokenLst ) ).
 
 false() ->
-  TokenLst = [{false, 1, "false"}, {dot, 1, "."}],
+  TokenLst = [{false, 1, "false"}, {semicolon, 1, ";"}],
   ?assertEqual( {ok, {[], [], [], [false( 1 )]}}, parse( TokenLst ) ).
 
 compare_string() ->
   TokenLst = [{lparen, 1, "("}, {strlit, 1, "bla"}, {cmp, 1, "=="},
-              {strlit, 1, "blub"}, {rparen, 1, ")"}, {dot, 1, "."}],
+              {strlit, 1, "blub"}, {rparen, 1, ")"}, {semicolon, 1, ";"}],
   ?assertEqual( {ok, {[], [], [], [cmp( 1, str( 1, <<"bla">> ), str( 1, <<"blub">> ) )]}},
                 parse( TokenLst ) ).
 
@@ -157,7 +157,7 @@ conditional() ->
               {else, 4, "else"},
               {strlit, 5, "blub"},
               {halt, 6, "end"},
-              {dot, 6, "."}],
+              {semicolon, 6, ";"}],
   E = cnd( 1, true( 1 ), str( 3, <<"bla">> ), str( 5, <<"blub">> ) ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
 
@@ -176,7 +176,7 @@ conditional_let_then_block() ->
               {else, 5, "else"},
               {strlit, 6, "blub"},
               {halt, 7, "end"},
-              {dot, 7, "."}],
+              {semicolon, 7, ";"}],
   E = cnd( 1, true( 1 ), assign( 3, r_var( 3, x, t_str() ), str( 3, <<"bla">> ), var( 4, x ) ), str( 6, <<"blub">> ) ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
 
@@ -195,7 +195,7 @@ conditional_let_else_block() ->
               {semicolon, 5, ";"},
               {id, 6, "x"},
               {halt, 7, "end"},
-              {dot, 7, "."}],
+              {semicolon, 7, ";"}],
   E = cnd( 1, true( 1 ), str( 3, <<"bla">> ), assign( 5, r_var( 5, x, t_str() ), str( 5, <<"blub">> ), var( 6, x ) ) ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
 
@@ -221,24 +221,24 @@ conditional_let_both_blocks() ->
               {semicolon, 6, ";"},
               {id, 7, "x"},
               {halt, 8, "end"},
-              {dot, 8, "."}],
+              {semicolon, 8, ";"}],
   E = cnd( 1, true( 1 ), assign( 3, r_var( 3, x, t_str() ), str( 3, <<"bla">> ), var( 4, x ) ),
                          assign( 6, r_var( 6, x, t_str() ), str( 6, <<"blub">> ), var( 7, x ) ) ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
 
 negation() ->
-  TokenLst = [{neg, 1, "not"}, {false, 1, "false"}, {dot, 1, "."}],
+  TokenLst = [{neg, 1, "not"}, {false, 1, "false"}, {semicolon, 1, ";"}],
   ?assertEqual( {ok, {[], [], [], [neg( 1, false( 1 ) )]}}, parse( TokenLst ) ).
 
 conjunction() ->
   TokenLst = [{lparen, 1, "("}, {true, 1, "true"}, {wedge, 1, "and"},
-              {false, 1, "false"}, {rparen, 1, ")"}, {dot, 1, "."}],
+              {false, 1, "false"}, {rparen, 1, ")"}, {semicolon, 1, ";"}],
   ?assertEqual( {ok, {[], [], [], [conj( 1, true( 1 ), false( 1 ) )]}},
                 parse( TokenLst ) ).
 
 disjunction() ->
   TokenLst = [{lparen, 1, "("}, {true, 1, "true"}, {vee, 1, "or"},
-              {false, 1, "false"}, {rparen, 1, ")"}, {dot, 1, "."}],
+              {false, 1, "false"}, {rparen, 1, ")"}, {semicolon, 1, ";"}],
   ?assertEqual( {ok, {[], [], [], [disj( 1, true( 1 ), false( 1 ) )]}},
                 parse( TokenLst ) ).
 
@@ -246,7 +246,7 @@ no_arg_function() ->
   TokenLst = [{def, 1, "def"}, {id, 1, "f"}, {lparen, 1, "("},
               {rparen, 1, ")"}, {rarrow, 1, "->"}, {t_str, "1", "Str"},
               {lbrace, 1, "{"}, {strlit, 2, "blub"}, {rbrace, 3, "}"},
-              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {dot, 5, "."}],
+              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {semicolon, 5, ";"}],
   E = app( 5, var( 5, f ), [] ),
   T = t_fn( ntv, [], t_str() ),
   F = fix( 1, lam_ntv( 1, [lam_ntv_arg( f, T )], str( 2, <<"blub">> ) ) ),
@@ -262,7 +262,7 @@ two_arg_function() ->
               {lbrace, 1, "{"}, {id, 2, "a"}, {rbrace, 3, "}"},
               {id, 5, "f"}, {lparen, 5, "("}, {id, 5, "a"}, {eq, 5, "="},
               {strlit, 5, "bla"}, {comma, 5, ","}, {id, 5, "b"}, {eq, 5, "="},
-              {filelit, 5, "blub.txt"}, {rparen, 5, ")"}, {dot, 1, "."}],
+              {filelit, 5, "blub.txt"}, {rparen, 5, ")"}, {semicolon, 1, ";"}],
   E = app( 5, var( 5, f ), [e_bind( a, str( 5, <<"bla">> ) ),
                   e_bind( b, file( 5, <<"blub.txt">> ) )] ),
   T = t_fn( ntv, [t_arg( a, t_str() ), t_arg( b, t_file() )], t_str() ),
@@ -283,7 +283,7 @@ foreign_function_bash() ->
               {id, 1, "out"}, {colon, 1, ":"}, {t_str, 1, "Str"},
               {rtag, 1, ">"},
               {in, 1, "in"}, {l_bash, 1, "Bash"}, {body, 1, "blablub"},
-              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {dot, 5, "."}],
+              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {semicolon, 5, ";"}],
   E = app( 5, var( 5, f ), [] ),
   DefLst = [{r_var( 1, f, t_fn( frn, [], t_rcd( [t_arg( out, t_str() )] ) ) ),
              lam_frn( 1, f, [], t_rcd( [t_arg( out, t_str() )] ),
@@ -302,7 +302,7 @@ foreign_function_octave() ->
               {id, 1, "out2"}, {colon, 1, ":"}, {t_file, 1, "File"},
               {rtag, 1, ">"},
               {in, 1, "in"}, {l_octave, 1, "Octave"}, {body, 1, "blablub"},
-              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {dot, 5, "."}],
+              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {semicolon, 5, ";"}],
   E = app( 5, var( 5, f ), [] ),
   DefLst = [{r_var( 1, f, t_fn( frn, [], t_rcd( [t_arg( out1, t_lst( t_str() ) ),
                                                  t_arg( out2, t_file() )] ) ) ),
@@ -323,7 +323,7 @@ foreign_function_perl() ->
               {id, 1, "out2"}, {colon, 1, ":"}, {t_bool, 1, "Bool"},
               {rtag, 1, ">"},
               {in, 1, "in"}, {l_perl, 1, "Perl"}, {body, 1, "blablub"},
-              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {dot, 5, "."}],
+              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {semicolon, 5, ";"}],
   E = app( 5, var( 5, f ), [] ),
   DefLst = [{r_var( 1, f, t_fn( frn, [], t_rcd( [t_arg( out1, t_lst( t_file() ) ),
                                                  t_arg( out2, t_bool() )] ) ) ),
@@ -343,7 +343,7 @@ foreign_function_python() ->
               {t_bool, 1, "Bool"}, {rsquarebr, 1, "]"},
               {rtag, 1, ">"},
               {in, 1, "in"}, {l_python, 1, "Python"}, {body, 1, "blablub"},
-              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {dot, 5, "."}],
+              {id, 5, "f"}, {lparen, 5, "("}, {rparen, 5, ")"}, {semicolon, 5, ";"}],
   E = app( 5, var( 5, f ), [] ),
   DefLst = [{r_var( 1, f, t_fn( frn, [], t_rcd( [t_arg( out, t_lst( t_bool() ) )] ) ) ),
              lam_frn( 1, f, [], t_rcd( [t_arg( out, t_lst( t_bool() ) )] ),
@@ -362,7 +362,7 @@ foreign_function_r() ->
               {rtag, 1, ">"},
               {in, 1, "in"}, {l_r, 1, "R"}, {body, 1, "blablub"},
               {id, 5, "f"}, {lparen, 5, "("}, {id, 5, "x"}, {eq, 5, "="},
-              {id, 5, "x"}, {rparen, 5, ")"}, {dot, 5, "."}],
+              {id, 5, "x"}, {rparen, 5, ")"}, {semicolon, 5, ";"}],
   E = app( 5, var( 5, f ), [e_bind( x, var( 5, x ) )] ),
   DefLst = [{r_var( 1, f, t_fn( frn, [t_arg( x, t_str() )], t_rcd( [t_arg( out, t_str() )] ) ) ),
              lam_frn( 1, f, [t_arg( x, t_str() )], t_rcd( [t_arg( out, t_str() )] ),
@@ -384,7 +384,7 @@ foreign_function_racket() ->
               {id, 5, "f"}, {lparen, 5, "("}, {id, 5, "x"}, {eq, 5, "="},
               {id, 5, "x"}, {comma, 5, ","}, 
               {id, 5, "y"}, {eq, 5, "="}, {id, 5, "y"},
-              {rparen, 5, ")"}, {dot, 5, "."}],
+              {rparen, 5, ")"}, {semicolon, 5, ";"}],
   E = app( 5, var( 5, f ), [e_bind( x, var( 5, x ) ), e_bind( y, var( 5, y ) )] ),
   DefLst = [{r_var( 1, f, t_fn( frn, [t_arg( x, t_str() ), t_arg( y, t_file() )], t_rcd( [t_arg( out, t_str() )] ) ) ),
              lam_frn( 1, f, [t_arg( x, t_str() ), t_arg( y, t_file() )], t_rcd( [t_arg( out, t_str() )] ),
@@ -423,7 +423,7 @@ const_foreign_function_alias() ->
               {id, 3, "g"},
               {lparen, 3, "("},
               {rparen, 3, ")"},
-              {dot, 3, "."}],
+              {semicolon, 3, ";"}],
   RetType = t_rcd( [t_arg( x, t_str() )] ),
   T = t_fn( frn, [], RetType ),
   F = lam_frn( 1, f, [], RetType, l_bash(), <<"blub">> ),
@@ -459,7 +459,7 @@ const_native_function_alias() ->
               {id, 6, "g"},
               {lparen, 6, "("},
               {rparen, 6, ")"},
-              {dot, 6, "."}],
+              {semicolon, 6, ";"}],
   RetType = t_str(),
   T = t_fn( ntv, [], RetType ),
   F = fix( 1, lam_ntv( 1, [lam_ntv_arg( f, T )], str( 2, <<"blub">> ) ) ),
@@ -512,7 +512,7 @@ arg_foreign_function_alias() ->
               {eq, 3, "="},
               {strlit, 3, "a"},
               {rparen, 3, ")"},
-              {dot, 3, "."}],
+              {semicolon, 3, ";"}],
   RetType = t_rcd( [t_arg( x, t_str() )] ),
   T = t_fn( frn, [t_arg( a, t_str() )], RetType ),
   F = lam_frn( 1, f, [t_arg( a, t_str() )], RetType, l_bash(), <<"blub">> ),
@@ -557,7 +557,7 @@ arg_native_function_alias() ->
               {eq, 6, "="},
               {strlit, 6, "a"},
               {rparen, 6, ")"},
-              {dot, 6, "."}],
+              {semicolon, 6, ";"}],
   RetType = t_str(),
   T = t_fn( ntv, [t_arg( a, t_str() )], RetType ),
   F = fix( 1, lam_ntv( 1, [lam_ntv_arg( f, T ),
@@ -587,7 +587,7 @@ record_pattern_match() ->
               {rtag, 1, ">"},
               {semicolon, 1, ";"},
               {id, 2, "x"},
-              {dot, 2, "."}],
+              {semicolon, 2, ";"}],
   R = r_rcd( 1, [r_bind( a, r_var( 1, x, t_str() ) )] ),
   E = rcd( 1, [e_bind( a, str( 1, <<"blub">> ) )] ),
   ?assertEqual( {ok, {[], [], [{R, E}], [var( 2, x )]}}, parse( TokenLst ) ).
@@ -613,7 +613,7 @@ record_pattern_multi_match() ->
               {id, 1, "z"},
               {semicolon, 1, ";"},
               {id, 2, "y"},
-              {dot, 2, "."}],
+              {semicolon, 2, ";"}],
   R = r_rcd( 1, [r_bind( a, r_var( 1, x, t_bool() ) ),
                  r_bind( b, r_var( 1, y, t_lst( t_file() ) ) )] ),
   E = var( 1, z ),
@@ -637,10 +637,10 @@ record_field_access() ->
               {semicolon, 1, ";"},
               {lparen, 1, "("},
               {id, 2, "x"},
-              {dot, 2, "."},
+              {bar, 2, "|"},
               {id, 2, "a"},
               {rparen, 2, ")"},
-              {dot, 2, "."}],
+              {semicolon, 2, ";"}],
   R = r_var( 1, x, t_rcd( [t_arg( a, t_str() )] ) ),
   E1 = rcd( 1, [e_bind( a, str( 1, <<"blub">> ) )] ),
   E2 = proj( 2, a, var( 2, x ) ),
@@ -651,7 +651,7 @@ empty_list() ->
               {colon, 1, ":"},
               {t_str, 1, "Str"},
               {rsquarebr, 1, "]"},
-               {dot, 1, "."}],
+               {semicolon, 1, ";"}],
   E = lst( 1, t_str(), [] ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
 
@@ -673,7 +673,7 @@ isnil_list() ->
               {semicolon, 2, ";"},
               {isnil, 3, "isnil"},
               {id, 3, "l"},
-              {dot, 3, "."}],
+              {semicolon, 3, ";"}],
   R = r_var( 1, l, t_lst( t_str() ) ),
   E1 = lst( 2, t_str(), [str( 2, <<"bla">> ), str( 2, <<"blub">> )] ),
   E2 = isnil( 3, var( 3, l ) ),
@@ -693,7 +693,7 @@ list_append() ->
               {t_str, 1, "Str"},
               {rsquarebr, 1, "]"},
               {rparen, 1, ")"},
-              {dot, 1, "."}],
+              {semicolon, 1, ";"}],
   E = append( 1, lst( 1, t_str(), [str( 1, <<"bla">> )] ),
                  lst( 1, t_str(), [str( 1, <<"blub">> )] ) ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
@@ -718,7 +718,7 @@ const_native_function_let() ->
               {id, 6, "f"},
               {lparen, 6, "("},
               {rparen, 6, ")"},
-              {dot, 6, "."}],
+              {semicolon, 6, ";"}],
   TFn = t_fn( ntv, [], t_str() ),
   R = r_var( 1, f, TFn ),
   EBody = assign( 2, r_var( 2, x, t_str() ), str( 2, <<"blub">> ), var( 3, x ) ),
@@ -749,7 +749,7 @@ arg_native_function_let() ->
               {id, 6, "f"},
               {lparen, 6, "("},
               {rparen, 6, ")"},
-              {dot, 6, "."}],
+              {semicolon, 6, ";"}],
   TFn = t_fn( ntv, [t_arg( a, t_file() )], t_str() ),
   R = r_var( 1, f, TFn ),
   EBody = assign( 2, r_var( 2, x, t_str() ), str( 2, <<"blub">> ), var( 3, x ) ),
@@ -784,7 +784,7 @@ latest_let_binds_closest() ->
               {id, 7, "f"},
               {lparen, 7, "("},
               {rparen, 7, ")"},
-              {dot, 7, "."}],
+              {semicolon, 7, ";"}],
   TFn = t_fn( ntv, [], t_str() ),
   R = r_var( 1, f, TFn ),
   EBody = assign( 2, r_var( 2, x, t_str() ), str( 2, <<"blub">> ),
@@ -807,7 +807,7 @@ map() ->
               {id, 2, "x"},
               {rparen, 2, ")"},
               {halt, 3, "end"},
-              {dot, 3, "."}],
+              {semicolon, 3, ";"}],
   EBody = app( 2, var( 2, f ), [e_bind( x, var( 2, x ) )] ),
   E = for( 1, [e_bind( x, var( 1, x_lst ) )], EBody ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
@@ -832,7 +832,7 @@ map_let() ->
               {semicolon, 2, ";"},
               {id, 3, "y"},
               {halt, 4, "end"},
-              {dot, 4, "."}],
+              {semicolon, 4, ";"}],
   EBody = assign( 2, r_var( 2, y, t_str() ), app( 2, var( 2, f ), [e_bind( x, var( 2, x ) )] ), var( 3, y ) ),
   E = for( 1, [e_bind( x, var( 1, x_lst ) )], EBody ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
@@ -858,7 +858,7 @@ zip_pair() ->
               {id, 2, "y"},
               {rparen, 2, ")"},
               {halt, 3, "end"},
-              {dot, 3, "."}],
+              {semicolon, 3, ";"}],
   EBody = app( 2, var( 2, f ), [e_bind( x, var( 2, x ) ), e_bind( y, var( 2, y ) )] ),
   E = for( 1, [e_bind( x, var( 1, x_lst ) ), e_bind( y, var( 1, y_lst ) )], EBody ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
@@ -892,7 +892,7 @@ zip_triple() ->
               {id, 2, "z"},
               {rparen, 2, ")"},
               {halt, 3, "end"},
-              {dot, 3, "."}],
+              {semicolon, 3, ";"}],
   EBody = app( 2, var( 2, f ), [e_bind( x, var( 2, x ) ), e_bind( y, var( 2, y ) ), e_bind( z, var( 2, z ) )] ),
   E = for( 1, [e_bind( x, var( 1, x_lst ) ), e_bind( y, var( 1, y_lst ) ), e_bind( z, var( 1, z_lst ) )], EBody ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
@@ -918,7 +918,7 @@ fold() ->
               {id, 2, "x_acc"},
               {rparen, 2, ")"},
               {halt, 3, "end"},
-              {dot, 3, "."}],
+              {semicolon, 3, ";"}],
   EBody = app( 2, var( 2, f), [e_bind( x, var( 2, x ) ), e_bind( x_acc, var( 2, x_acc ) )] ),
   E = fold( 1, e_bind( x_acc, str( 1, <<"0">> ) ), e_bind( x, var( 1, x_lst ) ), EBody ),
   ?assertEqual( {ok, {[], [], [], [E]}}, parse( TokenLst ) ).
@@ -951,7 +951,7 @@ fold_let() ->
               {semicolon, 2, ";"},
               {id, 3, "y"},
               {halt, 4, "end"},
-              {dot, 4, "."}],
+              {semicolon, 4, ";"}],
   EBody = assign( 2,
                   r_var( 2, y, t_str() ),
                   app( 2, var( 2, f), [e_bind( x, var( 2, x ) ), e_bind( x_acc, var( 2, x_acc ) )] ),

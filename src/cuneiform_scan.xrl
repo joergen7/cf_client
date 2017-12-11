@@ -19,6 +19,7 @@ TFNNTV    = Ntv
 TFNFRN    = Frn
 
 ASSIGN    = let
+BAR       = \|
 CMP       = ==
 CND       = if
 COLON     = :
@@ -53,7 +54,7 @@ TRUE      = true
 VEE       = or
 WEDGE     = and
 
-ID        = [A-Za-z][A-Za-z0-9\-_]*
+ID        = [A-Za-z][A-Za-z0-9\.\-_]*
 INTLIT    = -?([0-9]|[1-9][0-9]*)
 STRLIT    = "[^"]*"
 FILELIT   = '[^']*'
@@ -83,6 +84,7 @@ Rules.
 {TFNFRN}    : {token, {t_fn_frn, TokenLine, TokenChars}}.
 
 {ASSIGN}    : {token, {assign, TokenLine, TokenChars}}.
+{BAR}       : {token, {bar, TokenLine, TokenChars}}.
 {CMP}       : {token, {cmp, TokenLine, TokenChars}}.
 {CND}       : {token, {cnd, TokenLine, TokenChars}}.
 {COLON}     : {token, {colon, TokenLine, TokenChars}}.

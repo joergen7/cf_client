@@ -9,8 +9,8 @@ Nonterminals
 Terminals
   l_bash l_octave l_perl l_python l_r l_racket
   t_str t_file t_bool t_fn_frn t_fn_ntv
-  assign wedge cmp cnd colon
-  comma def do dot else eq false fold for halt import in
+  assign bar wedge cmp cnd colon
+  comma def do else eq false fold for halt import in
   isnil larrow lbrace lparen lsquarebr ltag neg vee plus
   rarrow rbrace rparen rsquarebr rtag semicolon then true id
   intlit strlit filelit body.
@@ -26,7 +26,7 @@ script          -> stat script                : join_stat( '$1', '$2' ).
 
 stat            -> imp                        : {['$1'], [], [], []}.
 stat            -> define                     : {[], [], ['$1'], []}.
-stat            -> e dot                      : {[], [], [], ['$1']}.
+stat            -> e semicolon                : {[], [], [], ['$1']}.
 
 imp             -> import filelit semicolon   : visit_import( '$2' ).
 
@@ -84,7 +84,7 @@ e               -> lparen e vee e rparen                          : visit_disj( 
 e               -> id lparen rparen                               : visit_app( '$1', [] ).
 e               -> id lparen e_bind_lst rparen                    : visit_app( '$1', '$3' ).
 e               -> ltag e_bind_lst rtag                           : visit_rcd( '$1', '$2' ).
-e               -> lparen e dot id rparen                         : visit_proj( '$2', '$4' ).
+e               -> lparen e bar id rparen                         : visit_proj( '$2', '$4' ).
 e               -> lparen e plus e rparen                         : visit_append( '$2', '$3', '$4' ).
 e               -> lsquarebr colon t rsquarebr                    : visit_lst( [], '$2', '$3' ).
 e               -> lsquarebr e_lst colon t rsquarebr              : visit_lst( '$2', '$3', '$4' ).

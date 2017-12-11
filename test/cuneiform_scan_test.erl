@@ -110,21 +110,6 @@ variable() ->
   {ok, TokenLst, _} = string( S ),
   ?assertEqual( [{id, 1, "x"}], TokenLst ).
 
-anonymous_function() ->
-  S = "\\( a : Str, b : File ) a",
-  {ok, TokenLst, _} = string( S ),
-  ?assertEqual( [{lambda, 1, "\\"},
-                 {lparen, 1, "("},
-                 {id, 1, "a"},
-                 {colon, 1, ":"},
-                 {t_str, 1, "Str"},
-                 {comma, 1, ","},
-                 {id, 1, "b"},
-                 {colon, 1, ":"},
-                 {t_file, 1, "File"},
-                 {rparen, 1, ")"},
-                 {id, 1, "a"}], TokenLst ).
-
 function_application() ->
   S = "f( a = \"bla\", b = 'blub.txt' )",
   {ok, TokenLst, _} = string( S ),
@@ -262,10 +247,10 @@ record_literal() ->
                  {rtag, 1, ">"}], TokenLst ).
 
 record_field_access() ->
-  S = "x.a",
+  S = "x|a",
   {ok, TokenLst, _} = string( S ),
   ?assertEqual( [{id, 1, "x"},
-                 {dot, 1, "."},
+                 {bar, 1, "|"},
                  {id, 1, "a"}], TokenLst ).
 
 let_variable_pattern() ->
