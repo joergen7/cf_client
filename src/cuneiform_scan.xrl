@@ -15,8 +15,8 @@ LRACKET   = Racket
 TSTR      = Str
 TFILE     = File
 TBOOL     = Bool
-TFNNTV   = Ntv
-TFNFRN   = Frn
+TFNNTV    = Ntv
+TFNFRN    = Frn
 
 ASSIGN    = let
 CMP       = ==
@@ -79,8 +79,8 @@ Rules.
 {TSTR}      : {token, {t_str, TokenLine, TokenChars}}.
 {TFILE}     : {token, {t_file, TokenLine, TokenChars}}.
 {TBOOL}     : {token, {t_bool, TokenLine, TokenChars}}.
-{TFNNTV}   : {token, {t_fn_ntv, TokenLine, TokenChars}}.
-{TFNFRN}   : {token, {t_fn_frn, TokenLine, TokenChars}}.
+{TFNNTV}    : {token, {t_fn_ntv, TokenLine, TokenChars}}.
+{TFNFRN}    : {token, {t_fn_frn, TokenLine, TokenChars}}.
 
 {ASSIGN}    : {token, {assign, TokenLine, TokenChars}}.
 {CMP}       : {token, {cmp, TokenLine, TokenChars}}.

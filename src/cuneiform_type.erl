@@ -30,6 +30,39 @@ find_ambigious( NameLst ) ->
   F( NameLst, [] ).
 
 
+-spec check_binding( Gamma, Info, TArgLst, EBindLst ) -> Result
+when Gamma    :: #{ x() => t() },
+     Info     :: info(),
+     TArgLst  :: [t_arg()],
+     EBindLst :: [e_bind()],
+     Result   :: ok | {error, type_error()}.
+
+check_binding( _Gamma, _Info, [], [] ) ->
+  ok;
+
+check_binding( _Gamma, Info, [{X, _}|_], [] ) ->
+  {error, {argument_missing, Info, X}};
+
+check_binding( _Gamma, Info, [], [{X, _}] ) ->
+  {error, {superfluous_argument, Info, X}};
+
+check_binding( Gamma, Info, [{X, TLam}|T1], [{X, EArg}|T2] ) ->
+
+  case type( Gamma, EArg ) of
+
+    {ok, TLam} ->
+      check_binding( Gamma, Info, T1, T2 );
+
+    {ok, TArg} ->
+      {error, {type_mismatch, Info, {TLam, TArg}}};
+
+    {error, Reason} ->
+      {error, Reason}
+
+  end;
+
+check_binding( _Gamma, Info, [{X, _}|_], [{Y, _}|_] ) ->
+  {error, {argument_mismatch, Info, {X, Y}}}.
 
 -spec type( E :: e() ) -> {ok, t()} | {error, type_error()}.
 
@@ -229,10 +262,19 @@ type( _Gamma, {lam_frn, Info, _FName, TArgLst, TRet, _Lang, _SBody} ) ->
     unambigious    -> {ok, t_fn( frn, TArgLst, TRet )}
   end;
 
-type( Gamma, {app, _Info, E, _EBindLst} ) ->
-  case type( Gamma, E ) of
-    {error, Reason}                    -> {error, Reason};
-    {ok, {'Fn', _Tau, _TArgLst, TRet}} -> {ok, TRet}
+type( Gamma, {app, Info, F, EBindLst} ) ->
+
+  case type( Gamma, F ) of
+    
+    {error, Reason1} ->
+      {error, Reason1};
+    
+    {ok, {'Fn', _Tau, TArgLst, TRet}} ->
+      case check_binding( Gamma, Info, TArgLst, EBindLst ) of
+        {error, Reason2} -> {error, Reason2};
+        ok               -> {ok, TRet}
+      end
+
   end;
 
 type( _Gamma, E ) -> error( {bad_expr, E} ).

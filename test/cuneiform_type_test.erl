@@ -109,7 +109,19 @@ type_test_() ->
     {"application with invalid function expression untypable",
      fun application_with_invalid_function_expression_untypable/0},
     {"application with variable function expression typable",
-     fun application_with_variable_function_expression_typable/0}
+     fun application_with_variable_function_expression_typable/0},
+    {"application with too few arguments untypable",
+     fun application_with_too_few_arguments_untypable/0},
+    {"application with too many arguments untypable",
+     fun application_with_too_many_arguments_untypable/0},
+    {"application with argument name mismatch untypable",
+     fun application_with_argument_name_mismatch_untypable/0},
+    {"application with invalid argument untypable",
+     fun application_with_invalid_argument_untypable/0},
+    {"application with argument type mismatch untypable",
+     fun application_with_argument_type_mismatch_untypable/0},
+    {"application with variable argument typable",
+     fun application_with_variable_argument_typable/0}
    ]
   }.
 
@@ -350,4 +362,37 @@ application_with_variable_function_expression_typable() ->
   EA = app( var( f ), [] ),
   ELam = lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )], EA ),
   TLam = t_fn( ntv, [t_arg( f, t_fn( ntv, [], t_str() ) )], t_str() ),
+  ?assertEqual( {ok, TLam}, type( ELam ) ).
+
+application_with_too_few_arguments_untypable() ->
+  ELam = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
+  EA = app( ELam, [] ),
+  ?assertEqual( {error, {argument_missing, na, x}}, type( EA ) ).
+
+application_with_too_many_arguments_untypable() ->
+  ELam = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
+  EA = app( ELam, [e_bind( x, str( <<"bla">> ) ),
+                   e_bind( y, str( <<"blub">> ) )] ),
+  ?assertEqual( {error, {superfluous_argument, na, y}}, type( EA ) ).
+
+application_with_argument_name_mismatch_untypable() ->
+  EF = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
+  EA = app( EF, [e_bind( y, str( <<"bla">> ) )] ),
+  ?assertEqual( {error, {argument_mismatch, na, {x, y}}}, type( EA ) ).
+
+application_with_invalid_argument_untypable() ->
+  EF = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
+  EA = app( EF, [e_bind( x, var( y ) )] ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( EA ) ).
+
+application_with_argument_type_mismatch_untypable() ->
+  EF = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
+  EA = app( EF, [e_bind( x, file( <<"bla">> ) )] ),
+  ?assertEqual( {error, {type_mismatch, na, {t_str(), t_file()}}}, type( EA ) ).
+
+application_with_variable_argument_typable() ->
+  EF = lam_ntv( [lam_ntv_arg( y, t_str() )], var( y ) ),
+  EA = app( EF, [e_bind( y, var( x ) )] ),
+  ELam = lam_ntv( [lam_ntv_arg( x, t_str() )], EA ),
+  TLam = t_fn( ntv, [t_arg( x, t_str() )], t_str() ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
