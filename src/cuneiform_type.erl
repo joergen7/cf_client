@@ -2,9 +2,34 @@
 
 -include( "cuneiform.hrl" ).
 
--import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2] ).
+-import( cuneiform_lang, [lam_ntv/3, rcd/2] ).
+-import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2,
+                          t_rcd/1] ).
 
 -export( [type/1] ).
+
+
+-spec find_ambigious( NameLst :: [x()] ) -> unambigious | {ambigious, x()}.
+
+find_ambigious( NameLst ) ->
+
+  F =
+    fun
+
+      F( [], _SeenLst ) ->
+        unambigious;
+      
+      F( [H|T], SeenLst ) when is_atom( H ) ->
+        case lists:member( H, SeenLst ) of
+          true  -> {ambigious, H};
+          false -> F( T, [H|SeenLst] )
+        end
+
+    end,
+
+  F( NameLst, [] ).
+
+
 
 -spec type( E :: e() ) -> {ok, t()} | {error, type_error()}.
 
@@ -27,6 +52,7 @@ type( _Gamma, {false, _Info} ) ->
   {ok, t_bool()};
 
 type( Gamma, {cmp, Info, E1, E2} ) ->
+
   case type( Gamma, E1 ) of
 
     {ok, 'Str'} ->
@@ -62,14 +88,23 @@ type( Gamma, {lam_ntv, _Info, [], EBody} ) ->
   end;
 
 type( Gamma, {lam_ntv, Info, [{XIn, XOut, TX}|LamNtvArgLst], EBody} ) ->
-  case type( Gamma#{ XIn => TX }, {lam_ntv, Info, LamNtvArgLst, EBody} ) of
 
-    {ok, {'Fn', ntv, TArgLst, TRet}} ->
-      TArgLst1 = [t_arg( XOut, TX )|TArgLst],
-      {ok, t_fn( ntv, TArgLst1, TRet )};
-    
-    {error, Reason} ->
-      {error, Reason}
+  case find_ambigious( [XOut|[X || {_, X, _} <- LamNtvArgLst]] ) of
+
+    {ambigious, X} ->
+      {error, {ambigious_name, Info, X}};
+
+    unambigious ->
+      case type( Gamma#{ XIn => TX }, lam_ntv( Info, LamNtvArgLst, EBody ) ) of
+
+        {ok, {'Fn', ntv, TArgLst, TRet}} ->
+          TArgLst1 = [t_arg( XOut, TX )|TArgLst],
+          {ok, t_fn( ntv, TArgLst1, TRet )};
+        
+        {error, Reason} ->
+          {error, Reason}
+
+      end
 
   end;
 
@@ -158,4 +193,36 @@ type( Gamma, {disj, Info, E1, E2} ) ->
 
   end;
 
+type( _Gamma, {rcd, _Info, []} ) ->
+  {ok, t_rcd( [] )};
+
+type( Gamma, {rcd, Info, [{X, E}|EBindLst]} ) ->
+
+  case find_ambigious( [X|[Y || {Y, _} <- EBindLst]] ) of
+
+    {ambigious, Z} ->
+      {error, {ambigious_name, Info, Z}};
+
+    unambigious ->
+      case type( Gamma, E ) of
+
+        {error, Reason1} ->
+          {error, Reason1};
+
+        {ok, T} ->
+          case type( Gamma, rcd( Info, EBindLst ) ) of
+            {error, Reason2}       -> {error, Reason2};
+            {ok, {'Rcd', TArgLst}} -> {ok, t_rcd( [t_arg( X, T )|TArgLst])}
+          end
+
+      end
+
+  end;
+
+type( _Gamma, {lam_frn, _Info, _FName, TArgLst, TRet, _Lang, _SBody} ) ->
+  {ok, t_fn( frn, TArgLst, TRet )};
+
+
 type( _Gamma, E ) -> error( {bad_expr, E} ).
+
+

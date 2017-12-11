@@ -6,7 +6,8 @@
 
 -import( cuneiform_lang, [str/1, t_str/0, file/1, t_file/0, true/0, false/0,
                           t_bool/0, cmp/2, var/1, lam_ntv/2, lam_ntv_arg/2,
-                          t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2] ).
+                          t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2,
+                          t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1] ).
 
 type_test_() ->
   {foreach,
@@ -21,6 +22,8 @@ type_test_() ->
     {"false typable",              fun false_typable/0},
     {"string comparison typable",  fun string_comparison_typable/0},
     {"native lambda typable",      fun native_lambda_typable/0},
+    {"native lambda with ambigious argument name untypable",
+     fun native_lambda_with_ambigious_argument_name_untypable/0},
     {"bound variable typable",     fun bound_variable_typable/0},
     {"unbound variable untypable", fun unbound_variable_untypable/0},
     {"comparison with invalid lhs untypable",
@@ -84,7 +87,16 @@ type_test_() ->
     {"disjunction with variable lhs typable",
      fun disjunction_with_variable_lhs_typable/0},
     {"disjunction with variable rhs typable",
-     fun disjunction_with_variable_rhs_typable/0}
+     fun disjunction_with_variable_rhs_typable/0},
+    {"record_typable",             fun record_typable/0},
+    {"record with invalid field untypable",
+     fun record_with_invalid_field_untypable/0},
+    {"record with variable field typable",
+     fun record_with_variable_field_typable/0},
+    {"record with ambigious field name untypable",
+     fun record_with_ambigious_field_name_untypable/0},
+    {"foreign lambda typable",
+     fun foreign_lambda_typable/0}
    ]
   }.
 
@@ -109,6 +121,11 @@ native_lambda_typable() ->
   E2 = lam_ntv( [], file( <<"bla.txt">> ) ),
   ?assertEqual( {ok, t_fn( ntv, [], t_str() )}, type( E1 ) ),
   ?assertEqual( {ok, t_fn( ntv, [], t_file() )}, type( E2 ) ).
+
+native_lambda_with_ambigious_argument_name_untypable() ->
+  E = lam_ntv(  [lam_ntv_arg( x, t_str() ),
+                 lam_ntv_arg( x, t_file() )], var( x ) ),
+  ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
 
 bound_variable_typable() ->
   E = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
@@ -156,7 +173,8 @@ negation_with_invalid_expression_untypable() ->
 
 negation_with_variable_typable() ->
   E = lam_ntv( [lam_ntv_arg( x, t_bool() )], neg( var( x ) ) ),
-  ?assertEqual( {ok, t_fn( ntv, [t_arg( x, t_bool() )], t_bool() )}, type( E ) ).
+  T = t_fn( ntv, [t_arg( x, t_bool() )], t_bool() ),
+  ?assertEqual( {ok, T}, type( E ) ).
 
 condition_typable() ->
   E1 = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
@@ -221,11 +239,13 @@ conjunction_with_nonboolean_rhs_untypable() ->
 
 conjunction_with_variable_lhs_typable() ->
   E = lam_ntv( [lam_ntv_arg( x, t_bool() )], conj( var( x ), true() ) ),
-  ?assertEqual( {ok, t_fn( ntv, [t_arg( x, t_bool() )], t_bool() )}, type( E ) ).
+  T = t_fn( ntv, [t_arg( x, t_bool() )], t_bool() ),
+  ?assertEqual( {ok, T}, type( E ) ).
 
 conjunction_with_variable_rhs_typable() ->
   E = lam_ntv( [lam_ntv_arg( y, t_bool() )], conj( true(), var( y ) ) ),
-  ?assertEqual( {ok, t_fn( ntv, [t_arg( y, t_bool() )], t_bool() )}, type( E ) ).
+  T = t_fn( ntv, [t_arg( y, t_bool() )], t_bool() ),
+  ?assertEqual( {ok, T}, type( E ) ).
 
 disjunction_typable() ->
   ?assertEqual( {ok, t_bool()}, type( disj( true(), false() ) ) ).
@@ -248,8 +268,42 @@ disjunction_with_nonboolean_rhs_untypable() ->
 
 disjunction_with_variable_lhs_typable() ->
   E = lam_ntv( [lam_ntv_arg( x, t_bool() )], disj( var( x ), true() ) ),
-  ?assertEqual( {ok, t_fn( ntv, [t_arg( x, t_bool() )], t_bool() )}, type( E ) ).
+  T = t_fn( ntv, [t_arg( x, t_bool() )], t_bool() ),
+  ?assertEqual( {ok, T}, type( E ) ).
 
 disjunction_with_variable_rhs_typable() ->
   E = lam_ntv( [lam_ntv_arg( y, t_bool() )], disj( true(), var( y ) ) ),
-  ?assertEqual( {ok, t_fn( ntv, [t_arg( y, t_bool() )], t_bool() )}, type( E ) ).
+  T = t_fn( ntv, [t_arg( y, t_bool() )], t_bool() ),
+  ?assertEqual( {ok, T}, type( E ) ).
+
+record_typable() ->
+  E = rcd( [e_bind( x, str( <<"blub">> ) )] ),
+  ?assertEqual( {ok, t_rcd( [t_arg( x, t_str() )] )}, type( E ) ).
+
+record_with_invalid_field_untypable() ->
+  E1 = rcd( [e_bind( x, var( y ) )] ),
+  E2 = rcd( [e_bind( x, str( <<"blub">> ) ), e_bind( y, var( z ) )] ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E1 ) ),
+  ?assertEqual( {error, {unbound_var, na, z}}, type( E2 ) ).
+
+record_with_variable_field_typable() ->
+  E1 = lam_ntv( [lam_ntv_arg( x, t_str() )], rcd( [e_bind( y, var( x ) )] ) ),
+  T1 = t_fn( ntv, [t_arg( x, t_str() )], t_rcd( [t_arg( y, t_str() )] ) ),
+  E2 = lam_ntv( [lam_ntv_arg( x, t_str() )],
+                rcd( [e_bind( y, file( <<"bla.txt">> ) ),
+                      e_bind( z, var( x ) )] ) ),
+  T2 = t_fn( ntv, [t_arg( x, t_str() )], t_rcd( [t_arg( y, t_file() ),
+                                                 t_arg( z, t_str() )] ) ),
+  ?assertEqual( {ok, T1}, type( E1 ) ),
+  ?assertEqual( {ok, T2}, type( E2 ) ).
+
+record_with_ambigious_field_name_untypable() ->
+  E = rcd( [e_bind( x, str( <<"bla">> ) ),
+            e_bind( x, file( <<"blub.txt">> ) )] ),
+  ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
+
+foreign_lambda_typable() ->
+  TRet = t_rcd( [t_arg( out, t_str() )] ),
+  E = lam_frn( f, [], TRet, l_bash(), <<"blub">> ),
+  T = t_fn( frn, [], TRet ),
+  ?assertEqual( {ok, T}, type( E ) ).

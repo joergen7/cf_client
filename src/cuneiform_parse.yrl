@@ -99,9 +99,6 @@ from_lst        -> from comma from_lst        : ['$1'|'$3'].
 
 from            -> id larrow e                : visit_from( '$1', '$3' ).
 
-% TODO: for
-% TODO: fold
-
 e_lst           -> e                          : ['$1'].
 e_lst           -> e comma e_lst              : ['$1'|'$3'].
 
