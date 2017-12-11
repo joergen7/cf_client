@@ -227,20 +227,20 @@ when is_atom( FName ),
 -spec for( Info :: info(), ArgLst :: [e_bind()], E :: e() ) -> e().
       for( Info, ArgLst, E ) when is_list( ArgLst ) -> {for, Info, ArgLst, E}.
 
--spec fold( InitArg :: e_bind(), LstBind :: e_bind(), E :: e() ) -> e().
-      fold( InitArg, LstBind, E ) -> fold( na, InitArg, LstBind, E ).
+-spec fold( InitBind :: e_bind(), LstBind :: e_bind(), E :: e() ) -> e().
+      fold( InitBind, LstBind, E ) -> fold( na, InitBind, LstBind, E ).
 
 
--spec fold( Info, EInit, LstBind, E ) -> e()
+-spec fold( Info, InitBind, LstBind, E ) -> e()
 when Info    :: info(),
-     InitArg :: e_bind(),
+     InitBind :: e_bind(),
      LstBind :: e_bind(),
      E       :: e().
 
-fold( Info, InitArg, LstBind, E )
-when is_tuple( InitArg ),
+fold( Info, InitBind, LstBind, E )
+when is_tuple( InitBind ),
      is_tuple( LstBind ) ->
-  {fold, Info, InitArg, LstBind, E}.
+  {fold, Info, InitBind, LstBind, E}.
 
 
 -spec rcd( ArgLst :: [e_bind()] ) -> e().

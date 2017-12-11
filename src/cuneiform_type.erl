@@ -385,6 +385,29 @@ type( Gamma, {for, Info, [{X1, E1}|EBindLst], EBody} ) ->
 
   end;
 
+type( Gamma, {fold, Info, {XAcc, EAcc}, {X, ELst}, EBody} ) ->
+  case type( Gamma, EAcc ) of
+
+    {error, ReasonAcc} ->
+      {error, ReasonAcc};
+
+    {ok, TAcc} ->
+      case type( ELst ) of
+
+        {error, ReasonLst} ->
+          {error, ReasonLst};
+
+        {ok, {'Lst', TElem}} ->
+          {ok, T} = type( #{ X => TElem }, EBody ),
+          {ok, T};
+
+        {ok, TLst} ->
+          {error, {no_list_type, Info, TLst}}
+        
+      end
+
+  end;
+
 type( _Gamma, E ) -> error( {bad_expr, E} ).
 
 

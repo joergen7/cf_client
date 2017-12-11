@@ -9,7 +9,7 @@
                           t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2,
                           t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1, app/2,
                           proj/2, fix/1, lst/2, t_lst/1, append/2, isnil/1,
-                          for/2
+                          for/2, fold/3
                          ] ).
 
 type_test_() ->
@@ -190,7 +190,25 @@ type_test_() ->
      fun for_body_expression_can_access_closure/0},
     {"for with invalid body expression untypable",
      fun for_with_invalid_body_expression_untypable/0},
-    {"fold typable",               fun fold_typable/0}
+    {"fold typable",               fun fold_typable/0},
+    {"fold with invalid accumulator expression untypable",
+     fun fold_with_invalid_accumulator_expression_untypable/0},
+    {"fold with variable accumulator expression typable",
+     fun fold_with_variable_accumulator_expression_typable/0},
+    {"fold with invalid list expression untypable",
+     fun fold_with_invalid_list_expression_untypable/0},
+    {"fold with non-list list expression untypable",
+     fun fold_with_nonlist_list_expression_untypable/0}
+    % {"fold with variable list expression typable",
+    %  fun fold_with_variable_list_expression_typable/0},
+    % {"fold with invalid body expression untypable",
+    %  fun fold_with_invalid_body_expression_untypable/0},
+    % {"fold with variable body expression typable",
+    %  fun fold_with_variable_body_expression_typable/0},
+    % {"fold body expression can access closure",
+    %  fun fold_body_expression_can_access_closure/0},
+    % {"fold with non-matching accumulator and body untypable",
+    %  fun fold_with_nonmatching_accumulator_and_body_untypable/0}
    ]
   }.
 
@@ -670,4 +688,33 @@ for_with_invalid_body_expression_untypable() ->
   ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 fold_typable() ->
-  true.
+  E = fold( e_bind( x_acc, str( <<"0">> ) ),
+            e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+            var( x ) ),
+  ?assertEqual( {ok, t_str()}, type( E ) ).
+
+fold_with_invalid_accumulator_expression_untypable() ->
+  E = fold( e_bind( x_acc, var( y ) ),
+            e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+            var( x ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
+
+fold_with_variable_accumulator_expression_typable() ->
+  EFold = fold( e_bind( x_acc, var( y ) ),
+                e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+                var( x ) ),
+  ELam = lam_ntv( [lam_ntv_arg( y, t_str() )], EFold ),
+  TLam = t_fn( ntv, [t_arg( y, t_str() )], t_str() ),
+  ?assertEqual( {ok, TLam}, type( ELam ) ).
+
+fold_with_invalid_list_expression_untypable() ->
+  E = fold( e_bind( x_acc, str( <<"bla">> ) ),
+            e_bind( x, var( y ) ),
+            var( x ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
+
+fold_with_nonlist_list_expression_untypable() ->
+  E = fold( e_bind( x_acc, str( <<"bla">> ) ),
+            e_bind( x, str( <<"blub">> ) ),
+            var( x ) ),
+  ?assertEqual( {error, {no_list_type, na, t_str()}}, type( E ) ).
