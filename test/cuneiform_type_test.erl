@@ -19,12 +19,16 @@ type_test_() ->
    fun( _ ) -> ok end,
 
    [
+    {"not well formed expression produces error",
+     fun not_well_formed_expression_produces_error/0},
     {"string literal typable",     fun string_literal_typable/0},
     {"file literal typable",       fun file_literal_typable/0},
     {"true typable",               fun true_typable/0},
     {"false typable",              fun false_typable/0},
     {"string comparison typable",  fun string_comparison_typable/0},
     {"native lambda typable",      fun native_lambda_typable/0},
+    {"native lambda with invalid body expression untypable",
+     fun native_lambda_with_invalid_body_expression_untypable/0},
     {"native lambda with ambigious argument name untypable",
      fun native_lambda_with_ambigious_argument_name_untypable/0},
     {"native lambda body expression can access closure",
@@ -209,8 +213,12 @@ type_test_() ->
      fun fold_with_nonmatching_accumulator_and_body_expression_untypable/0},
     {"fold with ambigious accumulator and list expression name untypable",
      fun fold_with_ambigious_accumulator_and_list_expression_name_untypable/0}
+    % TODO: assign
    ]
   }.
+
+not_well_formed_expression_produces_error() ->
+  ?assertError( {bad_expr, x}, type( x ) ).
 
 string_literal_typable() ->
   ?assertEqual( {ok, t_str()}, type( str( <<"blub">> ) ) ).
@@ -233,6 +241,12 @@ native_lambda_typable() ->
   E2 = lam_ntv( [], file( <<"bla.txt">> ) ),
   ?assertEqual( {ok, t_fn( ntv, [], t_str() )}, type( E1 ) ),
   ?assertEqual( {ok, t_fn( ntv, [], t_file() )}, type( E2 ) ).
+
+native_lambda_with_invalid_body_expression_untypable() ->
+  E1 = lam_ntv( [], var( x ) ),
+  E2 = lam_ntv( [lam_ntv_arg( x, t_str() )], var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E1 ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E2 ) ).
 
 native_lambda_with_ambigious_argument_name_untypable() ->
   E = lam_ntv( [lam_ntv_arg( x, t_str() ),
