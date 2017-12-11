@@ -2,9 +2,9 @@
 
 -include( "cuneiform.hrl" ).
 
--import( cuneiform_lang, [lam_ntv/3, rcd/2] ).
+-import( cuneiform_lang, [lam_ntv/3, rcd/2, lst/3] ).
 -import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2,
-                          t_rcd/1] ).
+                          t_rcd/1, t_lst/1] ).
 
 -export( [type/1] ).
 
@@ -30,28 +30,28 @@ find_ambigious( NameLst ) ->
   F( NameLst, [] ).
 
 
--spec check_binding( Gamma, Info, TArgLst, EBindLst ) -> Result
+-spec check_argument_binding( Gamma, Info, TArgLst, EBindLst ) -> Result
 when Gamma    :: #{ x() => t() },
      Info     :: info(),
      TArgLst  :: [t_arg()],
      EBindLst :: [e_bind()],
      Result   :: ok | {error, type_error()}.
 
-check_binding( _Gamma, _Info, [], [] ) ->
+check_argument_binding( _Gamma, _Info, [], [] ) ->
   ok;
 
-check_binding( _Gamma, Info, [{X, _}|_], [] ) ->
-  {error, {argument_missing, Info, X}};
+check_argument_binding( _Gamma, Info, [{X, _}|_], [] ) ->
+  {error, {key_missing, Info, X}};
 
-check_binding( _Gamma, Info, [], [{X, _}] ) ->
-  {error, {superfluous_argument, Info, X}};
+check_argument_binding( _Gamma, Info, [], [{X, _}] ) ->
+  {error, {superfluous_key, Info, X}};
 
-check_binding( Gamma, Info, [{X, TLam}|T1], [{X, EArg}|T2] ) ->
+check_argument_binding( Gamma, Info, [{X, TLam}|T1], [{X, EArg}|T2] ) ->
 
   case type( Gamma, EArg ) of
 
     {ok, TLam} ->
-      check_binding( Gamma, Info, T1, T2 );
+      check_argument_binding( Gamma, Info, T1, T2 );
 
     {ok, TArg} ->
       {error, {type_mismatch, Info, {TLam, TArg}}};
@@ -61,8 +61,9 @@ check_binding( Gamma, Info, [{X, TLam}|T1], [{X, EArg}|T2] ) ->
 
   end;
 
-check_binding( _Gamma, Info, [{X, _}|_], [{Y, _}|_] ) ->
-  {error, {argument_mismatch, Info, {X, Y}}}.
+check_argument_binding( _Gamma, Info, [{X, _}|_], [{Y, _}|_] ) ->
+  {error, {key_mismatch, Info, {X, Y}}}.
+
 
 -spec type( E :: e() ) -> {ok, t()} | {error, type_error()}.
 
@@ -270,10 +271,63 @@ type( Gamma, {app, Info, F, EBindLst} ) ->
       {error, Reason1};
     
     {ok, {'Fn', _Tau, TArgLst, TRet}} ->
-      case check_binding( Gamma, Info, TArgLst, EBindLst ) of
+      case check_argument_binding( Gamma, Info, TArgLst, EBindLst ) of
         {error, Reason2} -> {error, Reason2};
         ok               -> {ok, TRet}
       end
+
+  end;
+
+type( Gamma, {proj, Info, X, E} ) ->
+
+  case type( Gamma, E ) of
+
+    {ok, {'Rcd', TArgLst}} ->
+      case lists:keyfind( X, 1, TArgLst ) of
+        {X, T} -> {ok, T};
+        false  -> {error, {key_missing, Info, X}}
+      end;
+
+    {ok, T} ->
+      {error, {no_record_type, Info, T}};
+
+    {error, Reason} ->
+      {error, Reason}
+
+  end;
+
+type( Gamma, {fix, Info, E} ) ->
+  case type( Gamma, E ) of
+
+    {error, Reason} ->
+      {error, Reason};
+
+    {ok, T={'Fn', ntv, [], _}} ->
+      {error, {no_argument, Info, T}};
+
+    {ok, {'Fn', ntv, [_|LamNtvArgLst], TRet}} ->
+      {ok, t_fn( ntv, LamNtvArgLst, TRet )};
+
+    {ok, T} ->
+      {error, {no_native_function_type, Info, T}}
+
+  end;
+
+type( _Gamma, {lst, _Info, T, []} ) ->
+  {ok, t_lst( T )};
+
+type( Gamma, {lst, Info, T, [E1|ELst]} ) ->
+
+  case type( Gamma, E1 ) of
+
+    {ok, T} ->
+      type( Gamma, lst( Info, T, ELst ) );
+
+    {ok, TE} ->
+      {error, {type_mismatch, Info, {T, TE}}};
+
+    {error, Reason} ->
+      {error, Reason}
 
   end;
 

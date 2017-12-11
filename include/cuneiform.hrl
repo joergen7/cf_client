@@ -71,6 +71,9 @@
 -type type_error()  :: {unbound_var, info(), x()}
                      | {type_mismatch, info(), {t(), t()}}
                      | {ambigious_name, info(), x()}
-                     | {argument_missing, info(), x()}
-                     | {superfluous_argument, info(), x()}
-                     | {argument_mismatch, info(), {x(), x()}}.
+                     | {key_missing, info(), x()}
+                     | {superfluous_key, info(), x()}
+                     | {key_mismatch, info(), {x(), x()}}
+                     | {no_record_type, info(), t()}
+                     | {no_native_function_type, info(), t()}
+                     | {no_argument, info(), t()}.

@@ -7,7 +7,8 @@
 -import( cuneiform_lang, [str/1, t_str/0, file/1, t_file/0, true/0, false/0,
                           t_bool/0, cmp/2, var/1, lam_ntv/2, lam_ntv_arg/2,
                           t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2,
-                          t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1, app/2
+                          t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1, app/2,
+                          proj/2, fix/1, lst/2, t_lst/1
                          ] ).
 
 type_test_() ->
@@ -121,7 +122,38 @@ type_test_() ->
     {"application with argument type mismatch untypable",
      fun application_with_argument_type_mismatch_untypable/0},
     {"application with variable argument typable",
-     fun application_with_variable_argument_typable/0}
+     fun application_with_variable_argument_typable/0},
+    {"record field access typable",
+     fun record_field_access_typable/0},
+    {"record field access with invalid record expression untypable",
+     fun record_field_access_with_invalid_record_expression_untypable/0},
+    {"record field access with non-record record expression untypable",
+     fun record_field_access_with_nonrecord_record_expression_untypable/0},
+    {"record field access with variable record expression typable",
+     fun record_field_access_with_variable_record_expression_typable/0},
+    {"record field access with non-existing field name untypable",
+     fun record_field_access_with_nonexisting_field_name_untypable/0},
+    {"fixpoint typable",           fun fixpoint_typable/0},
+    {"fixpoint with argument typable",
+     fun fixpoint_with_argument_typable/0},
+    {"fixpoint with invalid function expression untypable",
+     fun fixpoint_with_invalid_function_expression_untypable/0},
+    {"fixpoint with non-function function expression untypable",
+     fun fixpoint_with_nonfunction_function_expression_untypable/0},
+    {"fixpoint with foreign function expression untypable",
+     fun fixpoint_with_foreign_function_expression_untypable/0},
+    {"fixpoint with variable function expression typable",
+     fun fixpoint_with_variable_function_expression_typable/0},
+    {"fixpoint with constant function expression untypable",
+     fun fixpoint_with_constant_function_expression_untypable/0},
+    {"recursive fixpoint typable", fun recursive_fixpoint_typable/0},
+    {"list typable",               fun list_typable/0},
+    {"list with invalid element untypable",
+     fun list_with_invalid_element_untypable/0},
+    {"list with non-matching element untypable",
+     fun list_with_nonmatching_element_untypable/0},
+    {"list with variable element typable",
+     fun list_with_variable_element_typable/0}
    ]
   }.
 
@@ -367,18 +399,18 @@ application_with_variable_function_expression_typable() ->
 application_with_too_few_arguments_untypable() ->
   ELam = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
   EA = app( ELam, [] ),
-  ?assertEqual( {error, {argument_missing, na, x}}, type( EA ) ).
+  ?assertEqual( {error, {key_missing, na, x}}, type( EA ) ).
 
 application_with_too_many_arguments_untypable() ->
   ELam = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
   EA = app( ELam, [e_bind( x, str( <<"bla">> ) ),
                    e_bind( y, str( <<"blub">> ) )] ),
-  ?assertEqual( {error, {superfluous_argument, na, y}}, type( EA ) ).
+  ?assertEqual( {error, {superfluous_key, na, y}}, type( EA ) ).
 
 application_with_argument_name_mismatch_untypable() ->
   EF = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
   EA = app( EF, [e_bind( y, str( <<"bla">> ) )] ),
-  ?assertEqual( {error, {argument_mismatch, na, {x, y}}}, type( EA ) ).
+  ?assertEqual( {error, {key_mismatch, na, {x, y}}}, type( EA ) ).
 
 application_with_invalid_argument_untypable() ->
   EF = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
@@ -396,3 +428,96 @@ application_with_variable_argument_typable() ->
   ELam = lam_ntv( [lam_ntv_arg( x, t_str() )], EA ),
   TLam = t_fn( ntv, [t_arg( x, t_str() )], t_str() ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
+
+record_field_access_typable() ->
+  E1 = proj( x, rcd( [e_bind( x, str( <<"blub">> ) )] ) ),
+  E2 = proj( x, rcd( [e_bind( x, file( <<"blub">> ) )] ) ),
+  ?assertEqual( {ok, t_str()}, type( E1 ) ),
+  ?assertEqual( {ok, t_file()}, type( E2 ) ).
+
+record_field_access_with_invalid_record_expression_untypable() ->
+  E = proj( x, var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
+
+record_field_access_with_nonrecord_record_expression_untypable() ->
+  E = proj( x, str( <<"blub">> ) ),
+  ?assertEqual( {error, {no_record_type, na, t_str()}}, type( E ) ).
+
+record_field_access_with_variable_record_expression_typable() ->
+  EProj = proj( x, rcd( [e_bind( x, var( y ) )] ) ),
+  ELam = lam_ntv( [lam_ntv_arg( y, t_str() )], EProj ),
+  T = t_fn( ntv, [t_arg( y, t_str() )], t_str() ),
+  ?assertEqual( {ok, T}, type( ELam ) ).
+
+record_field_access_with_nonexisting_field_name_untypable() ->
+  E = proj( y, rcd( [e_bind( x, str( <<"blub">> ) )] ) ),
+  ?assertEqual( {error, {key_missing, na, y}}, type( E ) ).
+
+fixpoint_typable() ->
+  E1 = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+                     str( <<"blub">> ) ) ),
+  E2 = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_file() ) )],
+                     file( <<"blub">> ) ) ),
+  ?assertEqual( {ok, t_fn( ntv, [], t_str() )}, type( E1 ) ),
+  ?assertEqual( {ok, t_fn( ntv, [], t_file() )}, type( E2 ) ).
+  
+
+fixpoint_with_argument_typable() ->
+  E = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_file() ) ),
+                      lam_ntv_arg( x, t_str() )],
+                    var( x ) ) ),
+  ?assertEqual( {ok, t_fn( ntv, [t_arg( x, t_str() )], t_str() )}, type( E ) ).
+
+fixpoint_with_invalid_function_expression_untypable() ->
+  ?assertEqual( {error, {unbound_var, na, f}}, type( fix( var( f ) ) ) ).
+
+fixpoint_with_nonfunction_function_expression_untypable() ->
+  E = fix( str( <<"blub">> ) ),
+  ?assertEqual( {error, {no_native_function_type, na, t_str()}}, type( E ) ).
+
+fixpoint_with_foreign_function_expression_untypable() ->
+  TRet = t_rcd( [t_arg( out, t_str() )] ),
+  ELam = lam_frn( f, [t_arg( f, t_str() )], TRet, l_bash(), <<"blub">> ),
+  TLam = t_fn( frn, [t_arg( f, t_str() )], TRet ),
+  E = fix( ELam ),
+  ?assertEqual( {error, {no_native_function_type, na, TLam}}, type( E ) ).
+
+fixpoint_with_variable_function_expression_typable() ->
+  EFix = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+                       var( x ) ) ),
+  ELam = lam_ntv( [lam_ntv_arg( x, t_str() )], EFix ),
+  TLam = t_fn( ntv, [t_arg( x, t_str() )], t_fn( ntv, [], t_str() ) ),
+  ?assertEqual( {ok, TLam}, type( ELam ) ).
+
+fixpoint_with_constant_function_expression_untypable() ->
+  E = fix( lam_ntv( [], str( <<"blub">> ) ) ),
+  T = t_fn( ntv, [], t_str() ),
+  ?assertEqual( {error, {no_argument, na, T}}, type( E ) ).
+
+recursive_fixpoint_typable() ->
+  E = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+                    app( var( f ), [] ) ) ),
+  ?assertEqual( {ok, t_fn( ntv, [], t_str() )}, type( E ) ).
+  
+list_typable() ->
+  E1 = lst( t_str(), [] ),
+  E2 = lst( t_file(), [file( <<"bla">> )] ),
+  E3 = lst( t_bool(), [true(), false()] ),
+  ?assertEqual( {ok, t_lst( t_str() )}, type( E1 ) ),
+  ?assertEqual( {ok, t_lst( t_file() )}, type( E2 ) ),
+  ?assertEqual( {ok, t_lst( t_bool() )}, type( E3 ) ).
+
+list_with_invalid_element_untypable() ->
+  E1 = lst( t_str(), [var( x )] ),
+  E2 = lst( t_str(), [str( <<"bla">> ), var( x )] ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E1 ) ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E2 ) ).
+
+list_with_nonmatching_element_untypable() ->
+  E = lst( t_str(), [file( <<"blub.txt">> )] ),
+  ?assertEqual( {error, {type_mismatch, na, {t_str(), t_file()}}}, type( E ) ).
+
+list_with_variable_element_typable() ->
+  E = lam_ntv( [lam_ntv_arg( x, t_str() )], lst( t_str(), [var( x )] ) ),
+  T = t_fn( ntv, [t_arg( x, t_str() )], t_lst( t_str() ) ),
+  ?assertEqual( {ok, T}, type( E ) ).
