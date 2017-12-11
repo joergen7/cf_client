@@ -385,6 +385,9 @@ type( Gamma, {for, Info, [{X1, E1}|EBindLst], EBody} ) ->
 
   end;
 
+type( _Gamma, {fold, Info, {X, _EAcc}, {X, _ELst}, _EBody} ) ->
+  {error, {ambigious_name, Info, X}};
+
 type( Gamma, {fold, Info, {XAcc, EAcc}, {X, ELst}, EBody} ) ->
   case type( Gamma, EAcc ) of
 
@@ -392,18 +395,20 @@ type( Gamma, {fold, Info, {XAcc, EAcc}, {X, ELst}, EBody} ) ->
       {error, ReasonAcc};
 
     {ok, TAcc} ->
-      case type( ELst ) of
+      case type( Gamma, ELst ) of
 
-        {error, ReasonLst} ->
-          {error, ReasonLst};
+        {ok, {'Lst', TAcc}} ->
+          type( Gamma#{ XAcc => TAcc, X => TAcc }, EBody );
 
         {ok, {'Lst', TElem}} ->
-          {ok, T} = type( #{ X => TElem }, EBody ),
-          {ok, T};
+          {error, {type_mismatch, Info, {t_lst( TAcc ), t_lst( TElem )}}};
 
         {ok, TLst} ->
-          {error, {no_list_type, Info, TLst}}
+          {error, {no_list_type, Info, TLst}};
         
+        {error, ReasonLst} ->
+          {error, ReasonLst}
+
       end
 
   end;

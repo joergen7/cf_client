@@ -186,10 +186,10 @@ type_test_() ->
      fun for_with_nonlist_list_expression_untypable/0},
     {"for with variable list expression typable",
      fun for_with_variable_list_expression_typable/0},
-    {"for body expression can access closure",
-     fun for_body_expression_can_access_closure/0},
     {"for with invalid body expression untypable",
      fun for_with_invalid_body_expression_untypable/0},
+    {"for variable body expression typable",
+     fun for_variable_body_expression_typable/0},
     {"fold typable",               fun fold_typable/0},
     {"fold with invalid accumulator expression untypable",
      fun fold_with_invalid_accumulator_expression_untypable/0},
@@ -198,17 +198,17 @@ type_test_() ->
     {"fold with invalid list expression untypable",
      fun fold_with_invalid_list_expression_untypable/0},
     {"fold with non-list list expression untypable",
-     fun fold_with_nonlist_list_expression_untypable/0}
-    % {"fold with variable list expression typable",
-    %  fun fold_with_variable_list_expression_typable/0},
-    % {"fold with invalid body expression untypable",
-    %  fun fold_with_invalid_body_expression_untypable/0},
-    % {"fold with variable body expression typable",
-    %  fun fold_with_variable_body_expression_typable/0},
-    % {"fold body expression can access closure",
-    %  fun fold_body_expression_can_access_closure/0},
-    % {"fold with non-matching accumulator and body untypable",
-    %  fun fold_with_nonmatching_accumulator_and_body_untypable/0}
+     fun fold_with_nonlist_list_expression_untypable/0},
+    {"fold with variable list expression typable",
+     fun fold_with_variable_list_expression_typable/0},
+    {"fold with invalid body expression untypable",
+     fun fold_with_invalid_body_expression_untypable/0},
+    {"fold with variable body expression typable",
+     fun fold_with_variable_body_expression_typable/0},
+    {"fold with non-matching accumulator and body expression untypable",
+     fun fold_with_nonmatching_accumulator_and_body_expression_untypable/0},
+    {"fold with ambigious accumulator and list expression name untypable",
+     fun fold_with_ambigious_accumulator_and_list_expression_name_untypable/0}
    ]
   }.
 
@@ -674,7 +674,11 @@ for_with_variable_list_expression_typable() ->
   TLam = t_fn( ntv, [t_arg( l, t_lst( t_str() ) )], t_lst( t_str() ) ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
-for_body_expression_can_access_closure() ->
+for_with_invalid_body_expression_untypable() ->
+  E = for( [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
+
+for_variable_body_expression_typable() ->
   EFor = for( [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )],
               rcd( [e_bind( a, var( x ) ), e_bind( b, var( y ) )] ) ),
   ELam = lam_ntv( [lam_ntv_arg( y, t_file() )], EFor ),
@@ -683,15 +687,15 @@ for_body_expression_can_access_closure() ->
                t_lst( t_rcd( [t_arg( a, t_str() ), t_arg( b, t_file() )] ) ) ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
-for_with_invalid_body_expression_untypable() ->
-  E = for( [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], var( y ) ),
-  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
-
 fold_typable() ->
-  E = fold( e_bind( x_acc, str( <<"0">> ) ),
-            e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
-            var( x ) ),
-  ?assertEqual( {ok, t_str()}, type( E ) ).
+  E1 = fold( e_bind( x_acc, str( <<"0">> ) ),
+             e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+             var( x ) ),
+  E2 = fold( e_bind( x_acc, str( <<"0">> ) ),
+             e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+             var( x_acc ) ),
+  ?assertEqual( {ok, t_str()}, type( E1 ) ),
+  ?assertEqual( {ok, t_str()}, type( E2 ) ).
 
 fold_with_invalid_accumulator_expression_untypable() ->
   E = fold( e_bind( x_acc, var( y ) ),
@@ -718,3 +722,38 @@ fold_with_nonlist_list_expression_untypable() ->
             e_bind( x, str( <<"blub">> ) ),
             var( x ) ),
   ?assertEqual( {error, {no_list_type, na, t_str()}}, type( E ) ).
+
+fold_with_variable_list_expression_typable() ->
+  EFold = fold( e_bind( x_acc, str( <<"bla">> ) ),
+                e_bind( x, var( l ) ),
+                var( x ) ),
+  ELam = lam_ntv( [lam_ntv_arg( l, t_lst( t_str() ) )], EFold ),
+  TLam = t_fn( ntv, [t_arg( l, t_lst( t_str() ) )], t_str() ),
+  ?assertEqual( {ok, TLam}, type( ELam ) ).
+
+fold_with_invalid_body_expression_untypable() ->
+  E = fold( e_bind( x_acc, str( <<"0">> ) ),
+            e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+            var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
+
+fold_with_variable_body_expression_typable() ->
+  EFold = fold( e_bind( x_acc, str( <<"bla">> ) ),
+                e_bind( x, lst( t_str(), [str( <<"blub">> )] ) ),
+                var( y ) ),
+  ELam = lam_ntv( [lam_ntv_arg( y, t_str() )], EFold ),
+  TLam = t_fn( ntv, [t_arg( y, t_str() )], t_str() ),
+  ?assertEqual( {ok, TLam}, type( ELam ) ).
+
+fold_with_nonmatching_accumulator_and_body_expression_untypable() ->
+  E = fold( e_bind( x_acc, file( <<"0">> ) ),
+            e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+            var( x ) ),
+  ?assertEqual( {error, {type_mismatch, na, {t_lst( t_file() ),
+                                             t_lst( t_str() )}}}, type( E ) ).
+
+fold_with_ambigious_accumulator_and_list_expression_name_untypable() ->
+  E = fold( e_bind( x, str( <<"0">> ) ),
+            e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+            var( x ) ),
+  ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
