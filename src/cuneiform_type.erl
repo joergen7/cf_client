@@ -331,6 +331,40 @@ type( Gamma, {lst, Info, T, [E1|ELst]} ) ->
 
   end;
 
+type( Gamma, {append, Info, E1, E2} ) ->
+  
+  case type( Gamma, E1 ) of
+
+    {ok, {'Lst', T1}} ->
+      case type( Gamma, E2 ) of
+        {ok, {'Lst', T1}} -> {ok, t_lst( T1 )};
+        {ok, {'Lst', T2}} -> {error, {type_mismatch, Info, {t_lst( T1 ), t_lst( T2 )}}};
+        {ok, T2}          -> {error, {no_list_type, Info, T2}};
+        {error, Reason2}  -> {error, Reason2}
+      end;
+
+    {ok, T1} ->
+      {error, {no_list_type, Info, T1}};
+
+    {error, Reason1} ->
+      {error, Reason1}
+
+  end;
+
+type( Gamma, {isnil, Info, E} ) ->
+  case type( Gamma, E ) of
+
+    {ok, {'Lst', _}} ->
+      {ok, t_bool()};
+
+    {ok, T} ->
+      {error, {no_list_type, Info, T}};
+
+    {error, Reason} ->
+      {error, Reason}
+
+  end;
+
 type( _Gamma, E ) -> error( {bad_expr, E} ).
 
 

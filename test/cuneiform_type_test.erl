@@ -8,7 +8,7 @@
                           t_bool/0, cmp/2, var/1, lam_ntv/2, lam_ntv_arg/2,
                           t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2,
                           t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1, app/2,
-                          proj/2, fix/1, lst/2, t_lst/1
+                          proj/2, fix/1, lst/2, t_lst/1, append/2, isnil/1
                          ] ).
 
 type_test_() ->
@@ -153,7 +153,29 @@ type_test_() ->
     {"list with non-matching element untypable",
      fun list_with_nonmatching_element_untypable/0},
     {"list with variable element typable",
-     fun list_with_variable_element_typable/0}
+     fun list_with_variable_element_typable/0},
+    {"list append typable",        fun list_append_typable/0},
+    {"list append with invalid lhs untypable",
+     fun list_append_with_invalid_lhs_untypable/0},
+    {"list append with invalid rhs untypable",
+     fun list_append_with_invalid_rhs_untypable/0},
+    {"list append with non-list lhs untypable",
+     fun list_append_with_nonlist_lhs_untypable/0},
+    {"list append with non-list rhs untypable",
+     fun list_append_with_nonlist_rhs_untypable/0},
+    {"list append with variable lhs typable",
+     fun list_append_with_variable_lhs_typable/0},
+    {"list append with variable rhs typable",
+     fun list_append_with_variable_rhs_typable/0},
+    {"list append with non-matching operands untypable",
+     fun list_append_with_nonmatching_operands_untypable/0},
+    {"isnil typable",              fun isnil_typable/0},
+    {"isnil with invalid list expression untypable",
+     fun isnil_with_invalid_list_expression_untypable/0},
+    {"isnil with non-list list expression untypable",
+     fun isnil_with_nonlist_list_expression_untypable/0},
+    {"isnil with variable list expression typable",
+     fun isnil_with_variable_list_expression_typable/0}
    ]
   }.
 
@@ -520,4 +542,70 @@ list_with_nonmatching_element_untypable() ->
 list_with_variable_element_typable() ->
   E = lam_ntv( [lam_ntv_arg( x, t_str() )], lst( t_str(), [var( x )] ) ),
   T = t_fn( ntv, [t_arg( x, t_str() )], t_lst( t_str() ) ),
+  ?assertEqual( {ok, T}, type( E ) ).
+
+list_append_typable() ->
+  L1 = lst( t_str(), [str( <<"bla">> )] ),
+  L2 = lst( t_str(), [str( <<"blub">> )] ),
+  L3 = lst( t_file(), [file( <<"bla.txt">> )] ),
+  L4 = lst( t_file(), [file( <<"blub.txt">> )] ),
+  E1 = append( L1, L2 ),
+  E2 = append( L3, L4 ),
+  ?assertEqual( {ok, t_lst( t_str() )}, type( E1 ) ),
+  ?assertEqual( {ok, t_lst( t_file() )}, type( E2 ) ).
+
+list_append_with_invalid_lhs_untypable() ->
+  E = append( var( l ), lst( t_str(), [] ) ),
+  ?assertEqual( {error, {unbound_var, na, l}}, type( E ) ).
+
+list_append_with_invalid_rhs_untypable() ->
+  E = append( lst( t_str(), [] ), var( l ) ),
+  ?assertEqual( {error, {unbound_var, na, l}}, type( E ) ).
+
+list_append_with_nonlist_lhs_untypable() ->
+  E = append( str( <<"blub">> ), lst( t_str(), [] ) ),
+  ?assertEqual( {error, {no_list_type, na, t_str()}}, type( E ) ).
+
+list_append_with_nonlist_rhs_untypable() ->
+  E = append( lst( t_str(), [] ), str( <<"blub">> ) ),
+  ?assertEqual( {error, {no_list_type, na, t_str()}}, type( E ) ).
+
+list_append_with_variable_lhs_typable() ->
+  EA = append( var( l ),
+               lst( t_str(), [str( <<"blub">> )] ) ),
+  ELam = lam_ntv( [lam_ntv_arg( l, t_lst( t_str() ) )], EA ),
+  TLam = t_fn( ntv, [t_arg( l, t_lst( t_str() ) )], t_lst( t_str() ) ),
+  ?assertEqual( {ok, TLam}, type( ELam ) ).
+
+list_append_with_variable_rhs_typable() ->
+  EA = append( lst( t_str(), [str( <<"blub">> )] ),
+               var( l ) ),
+  ELam = lam_ntv( [lam_ntv_arg( l, t_lst( t_str() ) )], EA ),
+  TLam = t_fn( ntv, [t_arg( l, t_lst( t_str() ) )], t_lst( t_str() ) ),
+  ?assertEqual( {ok, TLam}, type( ELam ) ).
+
+list_append_with_nonmatching_operands_untypable() ->
+  L1 = lst( t_str(), [] ),
+  L2 = lst( t_file(), [] ),
+  E = append( L1, L2 ),
+  ?assertEqual( {error, {type_mismatch,
+                         na,
+                         {t_lst( t_str() ), t_lst( t_file() )}}},
+                type( E ) ).
+
+isnil_typable() ->
+  E = isnil( lst( t_str(), [] ) ),
+  ?assertEqual( {ok, t_bool()}, type( E ) ).
+
+isnil_with_invalid_list_expression_untypable() ->
+  E = isnil( var( l ) ),
+  ?assertEqual( {error, {unbound_var, na, l}}, type( E ) ).
+
+isnil_with_nonlist_list_expression_untypable() ->
+  E = isnil( str( <<"blub">> ) ),
+  ?assertEqual( {error, {no_list_type, na, t_str()}}, type( E ) ).
+
+isnil_with_variable_list_expression_typable() ->
+  E = lam_ntv( [lam_ntv_arg( l, t_lst( t_str() ) )], isnil( var( l ) ) ),
+  T = t_fn( ntv, [t_arg( l, t_lst( t_str() ) )], t_bool() ),
   ?assertEqual( {ok, T}, type( E ) ).
