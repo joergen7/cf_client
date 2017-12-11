@@ -2,68 +2,17 @@
 
 -include( "cuneiform.hrl" ).
 
--import( cuneiform_lang, [lam_ntv/3, rcd/2, lst/3, for/3] ).
+-import( cuneiform_lang, [lam_ntv/3, rcd/2, lst/3, for/3, assign/4, proj/3] ).
 -import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2,
                           t_rcd/1, t_lst/1] ).
+-import( cuneiform_lang, [r_rcd/1] ).
 
 -export( [type/1] ).
 
 
--spec find_ambigious( NameLst :: [x()] ) -> unambigious | {ambigious, x()}.
-
-find_ambigious( NameLst ) ->
-
-  F =
-    fun
-
-      F( [], _SeenLst ) ->
-        unambigious;
-      
-      F( [H|T], SeenLst ) when is_atom( H ) ->
-        case lists:member( H, SeenLst ) of
-          true  -> {ambigious, H};
-          false -> F( T, [H|SeenLst] )
-        end
-
-    end,
-
-  F( NameLst, [] ).
-
-
--spec check_argument_binding( Gamma, Info, TArgLst, EBindLst ) -> Result
-when Gamma    :: #{ x() => t() },
-     Info     :: info(),
-     TArgLst  :: [t_arg()],
-     EBindLst :: [e_bind()],
-     Result   :: ok | {error, type_error()}.
-
-check_argument_binding( _Gamma, _Info, [], [] ) ->
-  ok;
-
-check_argument_binding( _Gamma, Info, [{X, _}|_], [] ) ->
-  {error, {key_missing, Info, X}};
-
-check_argument_binding( _Gamma, Info, [], [{X, _}] ) ->
-  {error, {superfluous_key, Info, X}};
-
-check_argument_binding( Gamma, Info, [{X, TLam}|T1], [{X, EArg}|T2] ) ->
-
-  case type( Gamma, EArg ) of
-
-    {ok, TLam} ->
-      check_argument_binding( Gamma, Info, T1, T2 );
-
-    {ok, TArg} ->
-      {error, {type_mismatch, Info, {TLam, TArg}}};
-
-    {error, Reason} ->
-      {error, Reason}
-
-  end;
-
-check_argument_binding( _Gamma, Info, [{X, _}|_], [{Y, _}|_] ) ->
-  {error, {key_mismatch, Info, {X, Y}}}.
-
+%%====================================================================
+%% Typing relation
+%%====================================================================
 
 -spec type( E :: e() ) -> {ok, t()} | {error, type_error()}.
 
@@ -413,6 +362,87 @@ type( Gamma, {fold, Info, {XAcc, EAcc}, {X, ELst}, EBody} ) ->
 
   end;
 
+type( Gamma, {assign, Info, {r_var, X, T}, E, EBody} ) ->
+
+  case type( Gamma, E ) of
+
+    {ok, T} ->
+      type( Gamma#{ X => T }, EBody );
+
+    {ok, TE} ->
+      {error, {type_mismatch, Info, {T, TE}}};
+
+    {error, ReasonE} ->
+      {error, ReasonE}
+
+  end;
+
+type( Gamma, {assign, _Info, {r_rcd, []}, _E, EBody} ) ->
+  type( Gamma, EBody );
+
+type( Gamma, {assign, Info, {r_rcd, [{X, R}|RBindLst]}, E, EBody} ) ->
+  Z = assign( Info, R, proj( Info, X, E ),
+              assign( Info, r_rcd( RBindLst ), E, EBody ) ),
+  type( Gamma, Z );
+
 type( _Gamma, E ) -> error( {bad_expr, E} ).
 
 
+%%====================================================================
+%% Internal functions
+%%====================================================================
+
+-spec find_ambigious( NameLst :: [x()] ) -> unambigious | {ambigious, x()}.
+
+find_ambigious( NameLst ) ->
+
+  F =
+    fun
+
+      F( [], _SeenLst ) ->
+        unambigious;
+      
+      F( [H|T], SeenLst ) when is_atom( H ) ->
+        case lists:member( H, SeenLst ) of
+          true  -> {ambigious, H};
+          false -> F( T, [H|SeenLst] )
+        end
+
+    end,
+
+  F( NameLst, [] ).
+
+
+-spec check_argument_binding( Gamma, Info, TArgLst, EBindLst ) -> Result
+when Gamma    :: #{ x() => t() },
+     Info     :: info(),
+     TArgLst  :: [t_arg()],
+     EBindLst :: [e_bind()],
+     Result   :: ok | {error, type_error()}.
+
+check_argument_binding( _Gamma, _Info, [], [] ) ->
+  ok;
+
+check_argument_binding( _Gamma, Info, [{X, _}|_], [] ) ->
+  {error, {key_missing, Info, X}};
+
+check_argument_binding( _Gamma, Info, [], [{X, _}] ) ->
+  {error, {superfluous_key, Info, X}};
+
+check_argument_binding( Gamma, Info, [{X, TLam}|T1], [{X, EArg}|T2] ) ->
+
+  case type( Gamma, EArg ) of
+
+    {ok, TLam} ->
+      check_argument_binding( Gamma, Info, T1, T2 );
+
+    {ok, TArg} ->
+      {error, {type_mismatch, Info, {TLam, TArg}}};
+
+    {error, Reason} ->
+      {error, Reason}
+
+  end;
+
+check_argument_binding( _Gamma, Info, [{X, _}|_], [{Y, _}|_] ) ->
+  {error, {key_mismatch, Info, {X, Y}}}.

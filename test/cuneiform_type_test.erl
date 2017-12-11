@@ -9,7 +9,7 @@
                           t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2,
                           t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1, app/2,
                           proj/2, fix/1, lst/2, t_lst/1, append/2, isnil/1,
-                          for/2, fold/3
+                          for/2, fold/3, assign/3, r_var/2, r_rcd/1, r_bind/2
                          ] ).
 
 type_test_() ->
@@ -212,8 +212,19 @@ type_test_() ->
     {"fold with non-matching accumulator and body expression untypable",
      fun fold_with_nonmatching_accumulator_and_body_expression_untypable/0},
     {"fold with ambigious accumulator and list expression name untypable",
-     fun fold_with_ambigious_accumulator_and_list_expression_name_untypable/0}
-    % TODO: assign
+     fun fold_with_ambigious_accumulator_and_list_expression_name_untypable/0},
+    {"variable match typable",
+     fun variable_match_typable/0},
+    {"variable match can access closure",
+     fun variable_match_can_access_closure/0},
+    {"variable match with invalid assign expression untypable",
+     fun variable_match_with_invalid_assign_expression_untypable/0},
+    {"variable match with non-matching assign expression untypable",
+     fun variable_match_with_nonmatching_assign_expression_untypable/0},
+    {"variable match with variable assign expression typable",
+     fun variable_match_with_variable_assign_expression_typable/0},
+    {"record match typable",
+     fun record_match_typable/0}
    ]
   }.
 
@@ -771,3 +782,33 @@ fold_with_ambigious_accumulator_and_list_expression_name_untypable() ->
             e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
             var( x ) ),
   ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
+
+variable_match_typable() ->
+  E = assign( r_var( x, t_str() ), str( <<"bla">> ), var( x ) ),
+  ?assertEqual( {ok, t_str()}, type( E ) ).
+
+variable_match_can_access_closure() ->
+  EA = assign( r_var( x, t_str() ), str( <<"bla">> ), var( y ) ),
+  ELam = lam_ntv( [lam_ntv_arg( y, t_file() )], EA ),
+  TLam = t_fn( ntv, [t_arg( y, t_file() )], t_file() ),
+  ?assertEqual( {ok, TLam}, type( ELam ) ).
+
+variable_match_with_invalid_assign_expression_untypable() ->
+  E = assign( r_var( x, t_str() ), var( y ), var( x ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
+
+variable_match_with_nonmatching_assign_expression_untypable() ->
+  E = assign( r_var( x, t_str() ), file( <<"blub.txt">> ), var( x ) ),
+  ?assertEqual( {error, {type_mismatch, na, {t_str(), t_file()}}}, type( E ) ).
+
+variable_match_with_variable_assign_expression_typable() ->
+  EA = assign( r_var( x, t_str() ), var( y ), var( x ) ),
+  ELam = lam_ntv( [lam_ntv_arg( y, t_str() )], EA ),
+  TLam = t_fn( ntv, [t_arg( y, t_str() )], t_str() ),
+  ?assertEqual( {ok, TLam}, type( ELam ) ).
+
+record_match_typable() ->
+  E = assign( r_rcd( [r_bind( x, r_var( y, t_str() ) )] ),
+              rcd( [e_bind( x, str( <<"blub">> ) )] ),
+              var( y ) ),
+  ?assertEqual( {ok, t_str()}, type( E ) ).

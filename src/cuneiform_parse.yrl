@@ -30,19 +30,19 @@ stat            -> e semicolon                : {[], [], [], ['$1']}.
 
 imp             -> import filelit semicolon   : visit_import( '$2' ).
 
-define          -> assign r eq e semicolon                                             : {'$2', '$4'}.
-define          -> def id lparen rparen rarrow ltag t_arg_lst rtag in l body           : visit_def_frn( '$2', [], '$7', '$10', '$11' ).
-define          -> def id lparen t_arg_lst rparen rarrow ltag t_arg_lst rtag in l body : visit_def_frn( '$2', '$4', '$8', '$11', '$12' ).
-define          -> def id lparen rparen rarrow t lbrace e rbrace                       : visit_def_ntv( '$2', [], '$6', [], '$8' ).
-define          -> def id lparen rparen rarrow t lbrace define_lst e rbrace            : visit_def_ntv( '$2', [], '$6', '$8', '$9' ).
-define          -> def id lparen t_arg_lst rparen rarrow t lbrace e rbrace             : visit_def_ntv( '$2', '$4', '$7', [], '$9' ).
-define          -> def id lparen t_arg_lst rparen rarrow t lbrace define_lst e rbrace  : visit_def_ntv( '$2', '$4', '$7', '$9', '$10' ).
+define          -> assign r eq e semicolon                                             : visit_assign( '$1', '$2', '$4' ).
+define          -> def id lparen rparen rarrow ltag t_arg_lst rtag in l body           : visit_def_frn( '$1', '$2', [], '$7', '$10', '$11' ).
+define          -> def id lparen t_arg_lst rparen rarrow ltag t_arg_lst rtag in l body : visit_def_frn( '$1', '$2', '$4', '$8', '$11', '$12' ).
+define          -> def id lparen rparen rarrow t lbrace e rbrace                       : visit_def_ntv( '$1', '$2', [], '$6', [], '$8' ).
+define          -> def id lparen rparen rarrow t lbrace define_lst e rbrace            : visit_def_ntv( '$1', '$2', [], '$6', '$8', '$9' ).
+define          -> def id lparen t_arg_lst rparen rarrow t lbrace e rbrace             : visit_def_ntv( '$1', '$2', '$4', '$7', [], '$9' ).
+define          -> def id lparen t_arg_lst rparen rarrow t lbrace define_lst e rbrace  : visit_def_ntv( '$1', '$2', '$4', '$7', '$9', '$10' ).
 
 define_lst      -> define                     : ['$1'].
 define_lst      -> define define_lst          : ['$1'|'$2'].
 
 r               -> id colon t                 : visit_r_var( '$1', '$3' ).
-r               -> ltag r_bind_lst rtag       : visit_r_rcd( '$1', '$2' ).
+r               -> ltag r_bind_lst rtag       : visit_r_rcd( '$2' ).
 
 l               -> l_bash                     : cuneiform_lang:l_bash().
 l               -> l_octave                   : cuneiform_lang:l_octave().
@@ -155,12 +155,12 @@ when T1 :: {[_], [_], [_], [_]},
 join_stat( {A1, B1, C1, D1}, {A2, B2, C2, D2} ) ->
   {A1++A2, B1++B2, C1++C2, D1++D2}.
 
--spec create_closure( DefLst :: [{r(), e()}], EBody :: e() ) -> e().
+-spec create_closure( DefLst :: [{_, r(), e()}], EBody :: e() ) -> e().
 
 create_closure( DefLst, EBody ) ->
   F =
-    fun( {R1, E1}, EAcc ) ->
-      cuneiform_lang:assign( element( 2, R1 ), R1, E1, EAcc )
+    fun( {L, R1, E1}, EAcc ) ->
+      cuneiform_lang:assign( L, R1, E1, EAcc )
     end,
   lists:foldr( F, EBody, DefLst ).
 
@@ -173,8 +173,8 @@ visit_import( {filelit, L, S} ) ->
 
 -spec visit_r_var( {id, L :: _, S :: string()}, T :: t() ) -> r().
 
-visit_r_var( {id, L, S}, T ) ->
-  cuneiform_lang:r_var( L, list_to_atom( S ), T ).
+visit_r_var( {id, _, S}, T ) ->
+  cuneiform_lang:r_var( list_to_atom( S ), T ).
 
 
 -spec visit_var( {id, L :: _, Varname :: string()} ) -> e().
@@ -245,32 +245,33 @@ visit_cnd( {cnd, L, _}, EIf, DefLstThen, EThen, DefLstElse, EElse ) ->
   cuneiform_lang:cnd( L, EIf, E2, E3 ).
 
 
--spec visit_def_frn( Id, ArgLst, UArgLst, Lang, Body ) -> {r(), e()}
-when Id      :: {id, _, string()},
+-spec visit_def_frn( Def, Id, ArgLst, UArgLst, Lang, Body ) -> {_, r(), e()}
+when Def     :: {def, _, _},
+     Id      :: {id, _, string()},
      ArgLst  :: [t_arg()],
      UArgLst :: [t_arg()],
      Lang    :: l(),
      Body    :: {body, _, string()}.
 
-visit_def_frn( {id, L, SName}, ArgLst, UArgLst, Lang, {body, _, SBody} ) ->
+visit_def_frn( {def, L, _}, {id, _, SName}, ArgLst, UArgLst, Lang, {body, _, SBody} ) ->
   BBody = list_to_binary( SBody ),
   FName = list_to_atom( SName ),
   RetType = cuneiform_lang:t_rcd( UArgLst ),
   T = cuneiform_lang:t_fn( frn, ArgLst, RetType ), 
-  R = cuneiform_lang:r_var( L, FName, T ),
+  R = cuneiform_lang:r_var( FName, T ),
   Lam = cuneiform_lang:lam_frn( L, FName, ArgLst, RetType, Lang, BBody ),
-  {R, Lam}.
+  {L, R, Lam}.
 
 
--spec visit_def_ntv( {id, L, SName}, ArgLst, RetType, DefLst, EBody ) -> {r(), e()}
-when L       :: _,
-     SName   :: string(),
+-spec visit_def_ntv( Def, Id, ArgLst, RetType, DefLst, EBody ) -> {_, r(), e()}
+when Def     :: {def, _, _},
+     Id      :: {id, _, string()},
      ArgLst  :: [t_arg()],
      RetType :: t(),
-     DefLst  :: [{r(), e()}],
+     DefLst  :: [{_, r(), e()}],
      EBody   :: e().
 
-visit_def_ntv( {id, L, SName}, ArgLst, RetType, DefLst, EBody ) ->
+visit_def_ntv( {def, L, _}, {id, _, SName}, ArgLst, RetType, DefLst, EBody ) ->
   FName = list_to_atom( SName ),
   TFn = cuneiform_lang:t_fn( ntv, ArgLst, RetType ),
   Lam = cuneiform_lang:fix(
@@ -279,8 +280,8 @@ visit_def_ntv( {id, L, SName}, ArgLst, RetType, DefLst, EBody ) ->
             L,
             [cuneiform_lang:lam_ntv_arg( FName, TFn )|[{X, X, T} || {X, T} <- ArgLst]],
             create_closure( DefLst, EBody ) ) ),
-  R = cuneiform_lang:r_var( L, FName, TFn ),
-  {R, Lam}.
+  R = cuneiform_lang:r_var( FName, TFn ),
+  {L, R, Lam}.
 
 
 -spec visit_t_arg( {id, _, S :: string()}, T :: t() ) -> t_arg().
@@ -307,10 +308,10 @@ visit_r_bind( {id, _, S}, R ) ->
   cuneiform_lang:r_bind( list_to_atom( S ), R ).
 
 
--spec visit_r_rcd( {ltag, L :: _, _}, RBindLst :: [r_bind()] ) -> r().
+-spec visit_r_rcd( RBindLst :: [r_bind()] ) -> r().
 
-visit_r_rcd( {ltag, L, _}, RBindLst ) ->
-  cuneiform_lang:r_rcd( L, RBindLst ).
+visit_r_rcd( RBindLst ) ->
+  cuneiform_lang:r_rcd( RBindLst ).
 
 
 -spec visit_rcd( {ltag, L :: _, _}, EBindLst :: [e_bind()] ) -> e().
@@ -358,3 +359,8 @@ visit_from( {id, _, S}, E ) ->
 
 visit_fold( {fold, L, _}, AccBind, LstBind, DefLst, EBody ) ->
   cuneiform_lang:fold( L, AccBind, LstBind, create_closure( DefLst, EBody ) ).
+
+-spec visit_assign( {assign, L :: _, _}, R :: r(), E :: e() ) -> {_, r(), e()}.
+
+visit_assign( {assign, L, _}, R, E ) ->
+  {L, R, E}.

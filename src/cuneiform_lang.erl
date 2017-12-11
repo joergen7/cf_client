@@ -19,7 +19,7 @@
           for/3, fold/4, rcd/2, proj/3, fix/2, assign/4] ).
 
 %% Pattern constructors
--export( [r_var/3, r_rcd/2] ).
+-export( [r_var/2, r_rcd/1] ).
 
 %% Language constructors
 -export( [l_bash/0, l_octave/0, l_perl/0, l_python/0, l_r/0, l_racket/0] ).
@@ -39,11 +39,11 @@
 %% Pattern constructors
 %%====================================================================
 
--spec r_var( Info :: info(), X :: x(), T :: t() ) -> r().
-      r_var( Info, X, T ) when is_atom( X )       -> {r_var, Info, X, T}.
+-spec r_var( X :: x(), T :: t() )     -> r().
+      r_var( X, T ) when is_atom( X ) -> {r_var, X, T}.
 
--spec r_rcd( Info :: info(), RLst :: [r_bind()] ) -> r().
-      r_rcd( Info, RLst ) when is_list( RLst )   -> {r_rcd, Info, RLst}.
+-spec r_rcd( RLst :: [r_bind()] )        -> r().
+      r_rcd( RLst ) when is_list( RLst ) -> {r_rcd, RLst}.
 
 
 %%====================================================================

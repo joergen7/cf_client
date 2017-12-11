@@ -61,8 +61,8 @@
                      | {fix, info(), e()}
                      | {assign, info(), r(), e(), e()}.
 
--type r()           :: {r_var, info(), x(), t()}
-                     | {r_rcd, info(), [r_bind()]}.
+-type r()           :: {r_var, x(), t()}
+                     | {r_rcd, [r_bind()]}.
 
 -type ctx()         :: hole
                      | {cnd, info(), ctx(), e(), e()}
