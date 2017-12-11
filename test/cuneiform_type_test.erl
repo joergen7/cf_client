@@ -7,7 +7,8 @@
 -import( cuneiform_lang, [str/1, t_str/0, file/1, t_file/0, true/0, false/0,
                           t_bool/0, cmp/2, var/1, lam_ntv/2, lam_ntv_arg/2,
                           t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2,
-                          t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1] ).
+                          t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1, app/2
+                         ] ).
 
 type_test_() ->
   {foreach,
@@ -96,7 +97,19 @@ type_test_() ->
     {"record with ambigious field name untypable",
      fun record_with_ambigious_field_name_untypable/0},
     {"foreign lambda typable",
-     fun foreign_lambda_typable/0}
+     fun foreign_lambda_typable/0},
+    {"foreign lambda with ambigious argument name untypable",
+     fun foreign_lambda_with_ambigious_argument_name_untypable/0},
+    {"foreign lambda with ambigious return field name untypable",
+     fun foreign_lambda_with_ambigious_return_field_name_untypable/0},
+    {"foreign lambda with ambigious argument and return field untypable",
+     fun foreign_lambda_with_ambigious_argument_and_return_field_untypable/0},
+    {"application typable",
+     fun application_typable/0},
+    {"application with invalid function expression untypable",
+     fun application_with_invalid_function_expression_untypable/0},
+    {"application with variable function expression typable",
+     fun application_with_variable_function_expression_typable/0}
    ]
   }.
 
@@ -307,3 +320,34 @@ foreign_lambda_typable() ->
   E = lam_frn( f, [], TRet, l_bash(), <<"blub">> ),
   T = t_fn( frn, [], TRet ),
   ?assertEqual( {ok, T}, type( E ) ).
+
+foreign_lambda_with_ambigious_argument_name_untypable() ->
+  TRet = t_rcd( [t_arg( out, t_str() )] ),
+  E = lam_frn( f, [t_arg( x, t_str() ),
+                   t_arg( x, t_file() )], TRet, l_bash(), <<"blub">> ),
+  ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
+
+foreign_lambda_with_ambigious_return_field_name_untypable() ->
+  TRet = t_rcd( [t_arg( out, t_str() ), t_arg( out, t_file() )] ),
+  E = lam_frn( f, [], TRet, l_bash(), <<"blub">> ),
+  ?assertEqual( {error, {ambigious_name, na, out}}, type( E ) ).
+
+foreign_lambda_with_ambigious_argument_and_return_field_untypable() ->
+  TRet = t_rcd( [t_arg( x, t_str() )] ),
+  E = lam_frn( f, [t_arg( x, t_str() )], TRet, l_bash(), <<"blub">> ),
+  ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
+
+application_typable() ->
+  EF = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
+  EA = app( EF, [e_bind( x, str( <<"bla">> ) )] ),
+  ?assertEqual( {ok, t_str()}, type( EA ) ).
+
+application_with_invalid_function_expression_untypable() ->
+  E = app( var( f ), [e_bind( x, str( <<"bla">> ) )] ),
+  ?assertEqual( {error, {unbound_var, na, f}}, type( E ) ).
+
+application_with_variable_function_expression_typable() ->
+  EA = app( var( f ), [] ),
+  ELam = lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )], EA ),
+  TLam = t_fn( ntv, [t_arg( f, t_fn( ntv, [], t_str() ) )], t_str() ),
+  ?assertEqual( {ok, TLam}, type( ELam ) ).

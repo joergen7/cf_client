@@ -219,9 +219,21 @@ type( Gamma, {rcd, Info, [{X, E}|EBindLst]} ) ->
 
   end;
 
-type( _Gamma, {lam_frn, _Info, _FName, TArgLst, TRet, _Lang, _SBody} ) ->
-  {ok, t_fn( frn, TArgLst, TRet )};
+type( _Gamma, {lam_frn, Info, _FName, TArgLst, TRet, _Lang, _SBody} ) ->
 
+  {'Rcd', RetFieldLst} = TRet,
+  NameLst = [X || {X, _} <- TArgLst]++[X || {X, _} <- RetFieldLst],
+
+  case find_ambigious( NameLst ) of
+    {ambigious, Y} -> {error, {ambigious_name, Info, Y}};
+    unambigious    -> {ok, t_fn( frn, TArgLst, TRet )}
+  end;
+
+type( Gamma, {app, _Info, E, _EBindLst} ) ->
+  case type( Gamma, E ) of
+    {error, Reason}                    -> {error, Reason};
+    {ok, {'Fn', _Tau, _TArgLst, TRet}} -> {ok, TRet}
+  end;
 
 type( _Gamma, E ) -> error( {bad_expr, E} ).
 
