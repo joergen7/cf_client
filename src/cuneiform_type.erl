@@ -2,7 +2,7 @@
 
 -include( "cuneiform.hrl" ).
 
--import( cuneiform_lang, [lam_ntv/3, rcd/2, lst/3] ).
+-import( cuneiform_lang, [lam_ntv/3, rcd/2, lst/3, for/3] ).
 -import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2,
                           t_rcd/1, t_lst/1] ).
 
@@ -362,6 +362,26 @@ type( Gamma, {isnil, Info, E} ) ->
 
     {error, Reason} ->
       {error, Reason}
+
+  end;
+
+type( Gamma, {for, _Info, [], EBody} ) ->
+  case type( Gamma, EBody ) of
+    {ok, T}         -> {ok, t_lst( T )};
+    {error, Reason} -> {error, Reason}
+  end;
+
+type( Gamma, {for, Info, [{X1, E1}|EBindLst], EBody} ) ->
+  case type( Gamma, E1 ) of
+
+    {error, Reason} ->
+      {error, Reason};
+
+    {ok, {'Lst', T1}} ->
+      type( Gamma#{ X1 => T1 }, for( Info, EBindLst, EBody ) );
+
+    {ok, T1} ->
+      {error, {no_list_type, Info, T1}}
 
   end;
 
