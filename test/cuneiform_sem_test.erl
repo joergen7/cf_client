@@ -12,7 +12,8 @@
 -import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3] ).
 -import( cuneiform_lang, [lam_ntv_arg/2, e_bind/2] ).
 -import( cuneiform_lang, [str/1, file/1, true/0, false/0, cnd/3, var/1,
-                             lam_ntv/2, app/2] ).
+                          lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2
+                         ] ).
  
 %%====================================================================
 %% Expression definitions
@@ -46,11 +47,47 @@ reduce_test_() ->
    fun( _ ) -> ok end,
 
    [
+    {"comparison of equal strings reduces to true",
+     fun comparison_of_equal_strings_reduces_to_true/0},
+
+    {"comparison of unequal strings reduces to false",
+     fun comparison_of_unequal_strings_reduces_to_false/0},
+
     {"condition with true if expression reduces to then expression",
      fun cnd_with_true_if_expr_reduces_to_then_expr/0},
 
     {"condition with false if expression reduces to then expression",
      fun cnd_with_false_if_expr_reduces_to_then_expr/0},
+
+    {"negation with true operand reduces to false",
+     fun negation_with_true_operand_reduces_to_false/0},
+
+    {"negation with false operand reduces to true",
+     fun negation_with_false_operand_reduces_to_true/0},
+
+    {"true and true reduces to true",
+     fun true_and_true_reduces_to_true/0},
+
+    {"true and false reduces to false",
+     fun true_and_false_reduces_to_false/0},
+
+    {"false and true reduces to false",
+     fun false_and_true_reduces_to_false/0},
+
+    {"false and false reduces to false",
+     fun false_and_false_reduces_to_false/0},
+
+    {"true or true reduces to true",
+     fun true_or_true_reduces_to_true/0},
+
+    {"true or false reduces to true",
+     fun true_or_false_reduces_to_true/0},
+
+    {"false or true reduces to true",
+     fun false_or_true_reduces_to_true/0},
+
+    {"false or false reduces to false",
+     fun false_or_false_reduces_to_false/0},
 
     {"native application without arguments reduces to lambda body",
      fun nat_app_without_arg_reduces_to_lam_body/0},
@@ -59,6 +96,12 @@ reduce_test_() ->
      fun nat_app_with_single_arg_reduces_to_empty_application/0}
    ]
   }.
+
+comparison_of_equal_strings_reduces_to_true() ->
+  ?assertEqual( true(), reduce( cmp( str( <<"bla">> ), str( <<"bla">> ) ) ) ).
+
+comparison_of_unequal_strings_reduces_to_false() ->
+  ?assertEqual( false(), reduce( cmp( str( <<"bla">> ), str( <<"blub">> ) ) ) ).
 
 cnd_with_true_if_expr_reduces_to_then_expr() ->
   ETrue = str( <<"blub">> ),
@@ -69,6 +112,36 @@ cnd_with_false_if_expr_reduces_to_then_expr() ->
   EFalse = str( <<"bla">> ),
   E1 = cnd( false(), str( <<"blub">> ), EFalse ),
   ?assertEqual( EFalse, reduce( E1 ) ).
+
+negation_with_true_operand_reduces_to_false() ->
+  ?assertEqual( false(), reduce( neg( true() ) ) ).
+
+negation_with_false_operand_reduces_to_true() ->
+  ?assertEqual( true(), reduce( neg( false() ) ) ).
+
+true_and_true_reduces_to_true() ->
+  ?assertEqual( true(), reduce( conj( true(), true() ) ) ).
+
+true_and_false_reduces_to_false() ->
+  ?assertEqual( false(), reduce( conj( true(), false() ) ) ).
+
+false_and_true_reduces_to_false() ->
+  ?assertEqual( false(), reduce( conj( false(), true() ) ) ).
+
+false_and_false_reduces_to_false() ->
+  ?assertEqual( false(), reduce( conj( false(), false() ) ) ).
+
+true_or_true_reduces_to_true() ->
+  ?assertEqual( true(), reduce( disj( true(), true() ) ) ).
+
+true_or_false_reduces_to_true() ->
+  ?assertEqual( true(), reduce( disj( true(), false() ) ) ).
+
+false_or_true_reduces_to_true() ->
+  ?assertEqual( true(), reduce( disj( false(), true() ) ) ).
+
+false_or_false_reduces_to_false() ->
+  ?assertEqual( false(), reduce( disj( false(), false() ) ) ).
 
 nat_app_without_arg_reduces_to_lam_body() ->
   E1 = app( e_lam_const(), [] ),

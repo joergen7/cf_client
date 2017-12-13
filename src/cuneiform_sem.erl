@@ -17,21 +17,46 @@
 
 -spec reduce( E :: e() ) -> e().
 
+reduce( {cmp, Info, {str, _, S1}, {str, _, S2}} ) ->
+  case S1 =:= S2 of
+    true  -> cuneiform_lang:true( Info );                      % E-cmp-equal
+    false -> cuneiform_lang:false( Info )                      % E-cmp-unequal
+  end;
+
 reduce( {cnd, _, {true, _}, EThen, _} ) ->                     % E-cnd-true
   EThen;
 
 reduce( {cnd, _, {false, _}, _, EElse} ) ->                    % E-cnd-false
   EElse;
 
+reduce( {neg, Info, {true, _}} ) ->                            % E-neg-true
+  cuneiform_lang:false( Info );
+
+reduce( {neg, Info, {false, _}} ) ->                           % E-neg-false
+  cuneiform_lang:true( Info );
+
+reduce( {conj, _, {true, _}, E} ) ->                           % E-conj-true
+  E;
+
+reduce( {conj, Info, {false, _}, _} ) ->                       % E-conj-false
+  cuneiform_lang:false( Info );
+
+reduce( {disj, Info, {true, _}, _} ) ->                        % E-disj-true
+  cuneiform_lang:true( Info );
+
+reduce( {disj, _, {false, _}, E} ) ->                          % E-disj-false
+  E;
+
 reduce( {app, _, {lam_ntv, _, [], EBody}, []} ) ->             % E-beta-base
   EBody;
 
 reduce( {app, AppInfo,                                         % E-beta
-              {lam_ntv, LamInfo, [{X, S, _}|LamArgTl], EBody},
-              [{S, E}|AppArgTl]} ) ->
-  EBody1 = subst( EBody, X, E ),
+              {lam_ntv, LamInfo, [{XIn, XOut, _}|LamArgTl], EBody},
+              [{XOut, E}|AppArgTl]} ) ->
+  EBody1 = subst( EBody, XIn, E ),
   EFn1 = {lam_ntv, LamInfo, LamArgTl, EBody1},
-  {app, AppInfo, EFn1, AppArgTl}.
+  cuneiform_lang:app( AppInfo, EFn1, AppArgTl ).
+
   
 
 %%====================================================================

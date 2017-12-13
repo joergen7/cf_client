@@ -8,7 +8,8 @@
     stdlib
    ]},
   {env,[]},
-  {modules, [cf_client, cf_client_process, cf_client_sup]},
+  {modules, [cf_client, cf_client_process, cf_client_sup, cuneiform_lang,
+             cuneiform_sem, cuneiform_type]},
 
   {maintainers, ["Jorgen Brandt"]},
   {licenses, ["Apache 2.0"]},
