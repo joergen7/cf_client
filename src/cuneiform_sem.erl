@@ -81,30 +81,56 @@ is_value( {app, _, _, _} )              -> false;
 is_value( {fut, _, _} )                 -> false;
 is_value( {lst, _, _, ELst} )           -> lists:all( fun is_value/1, ELst );
 is_value( {append, _, _, _} )           -> false;
-is_value( {isnil, _, _} )               -> false.
+is_value( {isnil, _, _} )               -> false;
+is_value( {for, _, _, _} )              -> false;
+is_value( {fold, _, _, _, _} )          -> false;
+is_value( {rcd, _, EBindLst} )          -> lists:all( fun is_value/1, [E || {_, E} <- EBindLst] );
+is_value( {proj, _, _, _} )             -> false;
+is_value( {fix, _, _} )                 -> false;
+is_value( {assign, _, _, _, _} )        -> false.
 
 
 %%====================================================================
 %% Substitution and renaming
 %%====================================================================
 
+
+%% @doc Consistently renames in E every occurrence of the name X1 to X2.
+
 -spec rename( E, X1, X2 ) -> e()
 when E  :: e(),
      X1 :: x(),
      X2 :: x().
 
-rename( E = {str, _, _}, _, _ )     -> E;
-rename( E = {file, _, _, _}, _, _ ) -> E;
-rename( E = {true, _}, _, _ )       -> E;
-rename( E = {false, _}, _, _ )      -> E;
+rename( E = {str, _, _}, _, _ )                 -> E;
+rename( E = {file, _, _, _}, _, _ )             -> E;
+rename( E = {true, _}, _, _ )                   -> E;
+rename( E = {false, _}, _, _ )                  -> E;
+rename( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
+rename( E = {fut, _, _}, _, _ )                 -> E;
+
+rename( {cmp, Info, E1, E2}, X1, X2 ) ->
+  cuneiform_lang:cmp( Info, rename( E1, X1, X2 ),
+                            rename( E2, X1, X2 ) );
 
 rename( {cnd, Info, EIf, EThen, EElse}, X, Y ) ->
-  {cnd, Info, rename( EIf, X, Y ),
-              rename( EThen, X, Y ),
-              rename( EElse, X, Y )};
+  cuneiform_lang:cnd( Info, rename( EIf, X, Y ),
+                            rename( EThen, X, Y ),
+                            rename( EElse, X, Y ) );
+
+rename( {neg, Info, E}, X1, X2 ) ->
+  cuneiform_lang:neg( Info, rename( E, X1, X2 ) );
+
+rename( {conj, Info, E1, E2}, X1, X2 ) ->
+  cuneiform_lang:conj( Info, rename( E1, X1, X2 ),
+                             rename( E2, X1, X2 ) );
+
+rename( {disj, Info, E1, E2}, X1, X2 ) ->
+  cuneiform_lang:disj( Info, rename( E1, X1, X2 ),
+                             rename( E2, X1, X2 ) );
 
 rename( {var, Info, X}, X, Y ) ->
-  {var, Info, Y};
+  cuneiform_lang:var( Info, Y );
 
 rename( E = {var, _, _}, _, _ )  -> E;
 
@@ -125,8 +151,46 @@ rename( {app, Info, EFn, ArgLst}, X, Y ) ->
   EFn1 = rename( EFn, X, Y ),
   ArgLst1 = [{S, rename( E, X, Y )} || {S, E} <- ArgLst],
 
-  {app, Info, EFn1, ArgLst1}.
+  {app, Info, EFn1, ArgLst1};
 
+rename( {lst, Info, T, ELst}, X1, X2 ) ->
+  cuneiform_lang:lst( Info, T, [rename( E, X1, X2 ) || E <- ELst] );
+
+rename( {append, Info, E1, E2}, X1, X2 ) ->
+  cuneiform_lang:append( Info, rename( E1, X1, X2 ),
+                               rename( E2, X1, X2 ) );
+
+rename( {isnil, Info, E}, X1, X2 ) ->
+  cuneiform_lang:isnil( Info, rename( E, X1, X2 ) );
+
+rename( {for, Info, EBindLst, EBody}, X1, X2 ) ->
+  EBindLst1 = [{case X of X1 -> X2; _ -> X end,
+                rename( E, X1, X2 )}
+               || {X, E} <- EBindLst],
+  EBody1 = rename( EBody, X1, X2 ),
+  cuneiform_lang:for( Info, EBindLst1, EBody1 );
+
+rename( {fold, Info, {XAcc, EAcc}, {XLst, ELst}, EBody}, X1, X2 ) ->
+  AccBind1 = {case XAcc of X1 -> X2; _ -> XAcc end,
+              rename( EAcc, X1, X2 )},
+  LstBind1 = {case XLst of X1 -> X2; _ -> XLst end,
+              rename( ELst, X1, X2 )},
+  EBody1 = rename( EBody, X1, X2 ),
+  cuneiform_lang:fold( Info, AccBind1, LstBind1, EBody1 );
+
+rename( {rcd, Info, EBindLst}, X1, X2 ) ->
+  cuneiform_lang:rcd( Info, [{X, rename( E, X1, X2 )} || {X, E} <- EBindLst] );
+
+rename( {proj, Info, X, E}, X1, X2 ) ->
+  cuneiform_lang:proj( Info, X, rename( E, X1, X2 ) );
+
+rename( {fix, Info, E}, X1, X2 ) ->
+  cuneiform_lang:fix( Info, rename( E, X1, X2 ) ).
+
+
+
+
+%% @doc Substitutes in E1 every occurrence of the variable X with E2.
 
 -spec subst( E1, X, E2 ) -> e()
 when E1 :: e(),

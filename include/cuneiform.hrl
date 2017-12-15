@@ -47,19 +47,19 @@
                      | {conj, info(), e(), e()}
                      | {disj, info(), e(), e()}
                      | {var, info(), x()}
-                     | {lam_ntv, info(), [lam_ntv_arg()], e()}
+                     | {lam_ntv, info(), [lam_ntv_arg()], e()} % binding form
                      | {lam_frn, info(), x(), [t_arg()], t(), l(), s()}
                      | {app, info(), e(), [e_bind()]}
                      | {fut, info(), hash()}
                      | {lst, info(), t(), [e()]}
                      | {append, info(), e, e}
                      | {isnil, info(), e}
-                     | {for, info(), [e_bind()], e()}
-                     | {fold, info(), e_bind(), e_bind(), e()}
+                     | {for, info(), [e_bind()], e()}          % binding form
+                     | {fold, info(), e_bind(), e_bind(), e()} % binding form
                      | {rcd, info(), [e_bind()]}
                      | {proj, info(), x(), e()}
                      | {fix, info(), e()}
-                     | {assign, info(), r(), e(), e()}.
+                     | {assign, info(), r(), e(), e()}.        % binding form
 
 -type r()           :: {r_var, x(), t()}
                      | {r_rcd, [r_bind()]}.

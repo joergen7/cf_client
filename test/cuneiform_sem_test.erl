@@ -9,14 +9,17 @@
 -import( cuneiform_sem, [is_value/1, rename/3, subst/3, gensym/1] ).
 -import( cuneiform_sem, [in_hole/2, find_context/1] ).
 
+-import( cuneiform_lang, [r_var/2] ).
 -import( cuneiform_lang, [l_bash/0] ).
 -import( cuneiform_lang, [
                           t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2, t_rcd/1
                          ] ).
 -import( cuneiform_lang, [lam_ntv_arg/2, e_bind/2] ).
--import( cuneiform_lang, [str/1, file/1, true/0, false/0, cnd/3, var/1,
+-import( cuneiform_lang, [
+                          str/1, file/1, true/0, false/0, cnd/3, var/1,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
-                          lam_frn/5, lst/2, append/2, isnil/1
+                          lam_frn/5, lst/2, append/2, isnil/1, for/2, fold/3,
+                          rcd/1, proj/2, fix/1, assign/3
                          ] ).
  
 %%====================================================================
@@ -195,7 +198,7 @@ is_value_test_() ->
     {"fold is no value",        fun fold_is_no_value/0},
 
     {"record of value is value",
-     fun record_of_value_is_value/0}
+     fun record_of_value_is_value/0},
 
     {"record of non-value is no value",
      fun record_of_nonvalue_is_no_value/0},
@@ -270,6 +273,38 @@ append_is_no_value() ->
 isnil_is_no_value() ->
   ?assertNot( is_value( isnil( lst( t_str(), [] ) ) ) ).
 
+for_is_no_value() ->
+  E = for( [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], var( x ) ),
+  ?assertNot( is_value( E ) ).
+
+fold_is_no_value() ->
+  E = fold( e_bind( x_acc, str( <<"0">> ) ),
+            e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+            var( x ) ),
+  ?assertNot( is_value( E ) ).
+
+record_of_value_is_value() ->
+  E = rcd( [e_bind( a, str( <<"bla">> ) )] ),
+  ?assert( is_value( E ) ).
+
+record_of_nonvalue_is_no_value() ->
+  E = rcd( [e_bind( a, neg( true() ) )] ),
+  ?assertNot( is_value( E ) ).
+
+projection_is_no_value() ->
+  E = proj( a, rcd( [e_bind( a, str( <<"bla">> ) )] ) ),
+  ?assertNot( is_value( E ) ).
+
+fixpoint_is_no_value() ->
+  ELam = lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+                  str( <<"bla">> ) ),
+  E = fix( ELam ),
+  ?assertNot( is_value( E ) ).
+
+assignment_is_no_value() ->
+  E = assign( r_var( x, t_str() ), str( <<"bla">> ), var( x ) ),
+  ?assertNot( is_value( E ) ).
+
 
 %%====================================================================
 %% Substitution and renaming
@@ -283,6 +318,13 @@ rename_test_() ->
 
    [
     {"rename leaves str alone",   fun rename_leaves_str_alone/0},
+
+    {"rename propagates to comparison lhs",
+     fun rename_propagates_to_comparison_lhs/0},
+
+    {"rename propagates to comparison rhs",
+     fun rename_propagates_to_comparison_rhs/0},
+
     {"rename leaves file alone",  fun rename_leaves_file_alone/0},
     {"rename leaves true alone",  fun rename_leaves_true_alone/0},
     {"rename leaves false alone", fun rename_leaves_false_alone/0},
@@ -295,6 +337,21 @@ rename_test_() ->
 
     {"rename propagates to condition else expression",
      fun rename_propagates_to_cnd_else_expr/0},
+
+    {"rename propagates to negation operand",
+     fun rename_propagates_to_negation_operand/0},
+
+    {"rename propagates to conjunction lhs",
+     fun rename_propagates_to_conjunction_lhs/0},
+
+    {"rename propagates to conjunction rhs",
+     fun rename_propagates_to_conjunction_rhs/0},
+
+    {"rename propagates to disjunction lhs",
+     fun rename_propagates_to_disjunction_lhs/0},
+
+    {"rename propagates to disjunction rhs",
+     fun rename_propagates_to_disjunction_rhs/0},
 
     {"rename leaves non-matching variable alone",
      fun rename_leaves_nonmatching_var_alone/0},
@@ -311,11 +368,68 @@ rename_test_() ->
     {"rename propagates to native lambda body",
      fun rename_propagates_to_lam_ntv_body/0},
 
+    {"rename leaves foreign lambda alone",
+     fun rename_leaves_foreign_lambda_alone/0},
+
     {"rename propagates to application function",
      fun rename_propagates_to_app_function/0},
 
     {"rename propagates to application arguments",
-     fun rename_propagates_to_e_bind_lst/0}
+     fun rename_propagates_to_app_e_bind_lst/0},
+
+    {"rename leaves future alone",
+     fun rename_leaves_future_alone/0},
+
+    {"rename propagates to list elements",
+     fun rename_propagates_to_list_elements/0},
+
+    {"rename propagates to append lhs",
+     fun rename_propagates_to_append_lhs/0},
+
+    {"rename propagates to append rhs",
+     fun rename_propagates_to_append_rhs/0},
+
+    {"rename propagates to isnil operand",
+     fun rename_propagates_to_isnil_operand/0},
+
+    {"rename propagates to for bound variable",
+     fun rename_propagates_to_for_bound_variable/0},
+
+    {"rename propagates to for list expression",
+     fun rename_propagates_to_for_list_expression/0},
+
+    {"rename propagates to for body expression",
+     fun rename_propagates_to_for_body_expression/0},
+
+    {"rename propagates to fold accumulator bound variable",
+     fun rename_propagates_to_accumulator_bound_argument/0},
+
+    {"rename propagates to fold accumulator init expression",
+     fun rename_propagates_to_fold_accumulator_init_expression/0},
+
+    {"rename propagates to fold iterator bound variable",
+     fun rename_propagates_to_fold_iterator_bound_variable/0},
+
+    {"rename propagates to fold iterator list expression",
+     fun rename_propagates_to_fols_iterator_list_expression/0},
+
+    {"rename propagates to fold body expression",
+     fun rename_propagates_to_fold_body_expression/0},
+
+    {"rename propagates to rcd field",
+     fun rename_propagates_to_rcd_field/0},
+
+    {"rename propagates to projection operand",
+     fun rename_propagates_to_projection_operand/0},
+
+    {"rename propagates to fixpoint operand",
+     fun rename_propagates_to_fixpoint_operand/0},
+
+    {"rename propagates to assignment binding expression",
+     fun rename_propagates_to_assignment_expression/0},
+
+    {"rename propagates to assignment body expression",
+     fun rename_propagates_to_assignment_body_expression/0}
    ]
   }.
 
@@ -323,6 +437,14 @@ rename_test_() ->
 rename_leaves_str_alone() ->
   E = str( <<"blub">> ),
   ?assertEqual( E, rename( E, x, y ) ).
+
+rename_propagates_to_comparison_lhs() ->
+  E = cmp( var( x ), var( y ) ),
+  ?assertEqual( cmp( var( z ), var( y ) ), rename( E, x, z ) ).
+
+rename_propagates_to_comparison_rhs() ->
+  E = cmp( var( x ), var( y ) ),
+  ?assertEqual( cmp( var( x ), var( z ) ), rename( E, y, z ) ).
 
 rename_leaves_file_alone() ->
   E = file( <<"blub">> ),
@@ -350,6 +472,31 @@ rename_propagates_to_cnd_else_expr() ->
   E1 = cnd( true(), true(), var( x ) ),
   E2 = cnd( true(), true(), var( y ) ),
   ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_propagates_to_negation_operand() ->
+  E1 = neg( var( x ) ),
+  E2 = neg( var( y ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_propagates_to_conjunction_lhs() ->
+  E1 = conj( var( x ), var( y ) ),
+  E2 = conj( var( z ), var( y ) ),
+  ?assertEqual( E2, rename( E1, x, z ) ).
+
+rename_propagates_to_conjunction_rhs() ->
+  E1 = conj( var( x ), var( y ) ),
+  E2 = conj( var( x ), var( z ) ),
+  ?assertEqual( E2, rename( E1, y, z ) ).
+
+rename_propagates_to_disjunction_lhs() ->
+  E1 = disj( var( x ), var( y ) ),
+  E2 = disj( var( z ), var( y ) ),
+  ?assertEqual( E2, rename( E1, x, z ) ).
+
+rename_propagates_to_disjunction_rhs() ->
+  E1 = disj( var( x ), var( y ) ),
+  E2 = disj( var( x ), var( z ) ),
+  ?assertEqual( E2, rename( E1, y, z ) ).
 
 rename_leaves_nonmatching_var_alone() ->
   E = var( x ),
@@ -379,11 +526,101 @@ rename_propagates_to_app_function() ->
   E2 = app( var( y ), [] ),
   ?assertEqual( E2, rename( E1, x, y ) ).
 
-rename_propagates_to_e_bind_lst() ->
+rename_leaves_foreign_lambda_alone() ->
+  E = lam_frn( f, [t_arg( x, t_str() )], t_rcd( [t_arg( a, t_str() )] ),
+               l_bash(), <<"blub">> ),
+  ?assertEqual( E, rename( E, x, y ) ).
+
+rename_propagates_to_app_e_bind_lst() ->
   E1 = app( var( f ), [e_bind( x, var( x ) )] ),
   E2 = app( var( f ), [e_bind( x, var( y ) )] ),
   ?assertEqual( E2, rename( E1, x, y ) ).
 
+rename_leaves_future_alone() ->
+  E = {fut, na, na},
+  ?assertEqual( E, rename( E, x, y ) ).
+
+rename_propagates_to_list_elements() ->
+  E1 = lst( t_str(), [var( x )] ),
+  E2 = lst( t_str(), [var( y )] ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_propagates_to_append_lhs() ->
+  E1 = append( var( x ), var( y ) ),
+  E2 = append( var( z ), var( y ) ),
+  ?assertEqual( E2, rename( E1, x, z ) ).
+
+rename_propagates_to_append_rhs() ->
+  E1 = append( var( x ), var( y ) ),
+  E2 = append( var( x ), var( z ) ),
+  ?assertEqual( E2, rename( E1, y, z ) ).
+
+rename_propagates_to_isnil_operand() ->
+  E1 = isnil( var( x ) ),
+  E2 = isnil( var( y ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_propagates_to_for_bound_variable() ->
+  E1 = for( [e_bind( x, var( l ) )], var( y ) ),
+  E2 = for( [e_bind( z, var( l ) )], var( y ) ),
+  ?assertEqual( E2, rename( E1, x, z ) ).
+
+rename_propagates_to_for_list_expression() ->
+  E1 = for( [e_bind( x, var( l ) )], var( y ) ),
+  E2 = for( [e_bind( x, var( z ) )], var( y ) ),
+  ?assertEqual( E2, rename( E1, l, z ) ).
+
+rename_propagates_to_for_body_expression() ->
+  E1 = for( [e_bind( x, var( l ) )], var( y ) ),
+  E2 = for( [e_bind( x, var( l ) )], var( z ) ),
+  ?assertEqual( E2, rename( E1, y, z ) ).
+
+rename_propagates_to_accumulator_bound_argument() ->
+  E1 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, var( x_lst ) ), var( y ) ),
+  E2 = fold( e_bind( z, var( x0 ) ), e_bind( x, var( x_lst ) ), var( y ) ),
+  ?assertEqual( E2, rename( E1, x_acc, z ) ).
+
+rename_propagates_to_fold_accumulator_init_expression() ->
+  E1 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, var( x_lst ) ), var( y ) ),
+  E2 = fold( e_bind( x_acc, var( z ) ), e_bind( x, var( x_lst ) ), var( y ) ),
+  ?assertEqual( E2, rename( E1, x0, z ) ).
+
+rename_propagates_to_fold_iterator_bound_variable() ->
+  E1 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, var( x_lst ) ), var( y ) ),
+  E2 = fold( e_bind( x_acc, var( x0 ) ), e_bind( z, var( x_lst ) ), var( y ) ),
+  ?assertEqual( E2, rename( E1, x, z ) ).
+
+rename_propagates_to_fols_iterator_list_expression() ->
+  E1 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, var( x_lst ) ), var( y ) ),
+  E2 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, var( z ) ), var( y ) ),
+  ?assertEqual( E2, rename( E1, x_lst, z ) ).
+
+rename_propagates_to_fold_body_expression() ->
+  E1 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, var( x_lst ) ), var( y ) ),
+  E2 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, var( x_lst ) ), var( z ) ),
+  ?assertEqual( E2, rename( E1, y, z ) ).
+
+rename_propagates_to_rcd_field() ->
+  E1 = rcd( [e_bind( x, var( x ) )] ),
+  E2 = rcd( [e_bind( x, var( y ) )] ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_propagates_to_projection_operand() ->
+  E1 = proj( x, var( x ) ),
+  E2 = proj( x, var( y ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_propagates_to_fixpoint_operand() ->
+  E1 = fix( var( x ) ),
+  E2 = fix( var( y ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_propagates_to_assignment_expression() ->
+TODO
+rename_propagates_to_assignment_body_expression() ->
+TODO
+
+TODO: mak sure, rename is propagated to pattern 
 
 subst_test_() ->
   {foreach,
