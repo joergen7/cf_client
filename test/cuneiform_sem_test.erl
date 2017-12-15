@@ -9,10 +9,14 @@
 -import( cuneiform_sem, [is_value/1, rename/3, subst/3, gensym/1] ).
 -import( cuneiform_sem, [in_hole/2, find_context/1] ).
 
--import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3] ).
+-import( cuneiform_lang, [l_bash/0] ).
+-import( cuneiform_lang, [
+                          t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2, t_rcd/1
+                         ] ).
 -import( cuneiform_lang, [lam_ntv_arg/2, e_bind/2] ).
 -import( cuneiform_lang, [str/1, file/1, true/0, false/0, cnd/3, var/1,
-                          lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2
+                          lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
+                          lam_frn/5, lst/2, append/2, isnil/1
                          ] ).
  
 %%====================================================================
@@ -166,18 +170,47 @@ is_value_test_() ->
 
    [
     {"str is value",            fun str_is_value/0},
+    {"comparison is no value",  fun comparison_is_no_value/0},
     {"file is value",           fun file_is_value/0},
     {"true is value",           fun true_is_value/0},
     {"false is value",          fun false_is_value/0},
     {"condition is no value",   fun cnd_is_no_value/0},
+    {"negation is no value",    fun negation_is_no_value/0},
+    {"conjunction is no value", fun conjunction_is_no_value/0},
+    {"disjunction is no value", fun disjunction_is_no_value/0},
     {"variable is no value",    fun variable_is_no_value/0},
     {"native lambda is value",  fun lam_ntv_is_value/0},
-    {"application is no value", fun app_is_no_value/0}
+    {"foreign lambda is value", fun foreign_lambda_is_value/0},
+    {"application is no value", fun app_is_no_value/0},
+    {"future is no value",      fun future_is_no_value/0},
+    {"empty list is value",     fun empty_list_is_value/0},
+    {"list of value is value",  fun list_of_value_is_value/0},
+
+    {"list of non-value is no value",
+     fun list_of_nonvalue_is_no_value/0},
+
+    {"append is no value",      fun append_is_no_value/0},
+    {"isnil is no value",       fun isnil_is_no_value/0},
+    {"for is no value",         fun for_is_no_value/0},
+    {"fold is no value",        fun fold_is_no_value/0},
+
+    {"record of value is value",
+     fun record_of_value_is_value/0}
+
+    {"record of non-value is no value",
+     fun record_of_nonvalue_is_no_value/0},
+
+    {"projection is no value",  fun projection_is_no_value/0},
+    {"fixpoint is no value",    fun fixpoint_is_no_value/0},
+    {"assignment is no value",  fun assignment_is_no_value/0}
    ]
   }.
 
 str_is_value() ->
   ?assert( is_value( str( <<"blub">> ) ) ).
+
+comparison_is_no_value() ->
+  ?assertNot( is_value( cmp( str( <<"bla">> ), str( <<"blub">> ) ) ) ).
 
 file_is_value() ->
   ?assert( is_value( file( <<"blub">> ) ) ).
@@ -191,6 +224,15 @@ false_is_value() ->
 cnd_is_no_value() ->
   ?assertNot( is_value( cnd( true(), true(), false() ) ) ).
 
+negation_is_no_value() ->
+  ?assertNot( is_value( neg( true() ) ) ).
+
+conjunction_is_no_value() ->
+  ?assertNot( is_value( conj( true(), false() ) ) ).
+
+disjunction_is_no_value() ->
+  ?assertNot( is_value( disj( true(), false() ) ) ).
+
 variable_is_no_value() ->
   ?assertNot( is_value( var( x ) ) ).
 
@@ -200,9 +242,33 @@ lam_ntv_is_value() ->
   ?assert( is_value( e_lam_const() ) ),
   ?assert( is_value( e_lam_id() ) ).
 
+foreign_lambda_is_value() ->
+  LamFrn = lam_frn( f, [], t_rcd( [t_arg( a, t_str() )] ), l_bash(),
+                    <<"blub">> ),
+  ?assert( is_value( LamFrn ) ).
+
 app_is_no_value() ->
   ?assertNot( is_value( e_app_id() ) ),
   ?assertNot( is_value( app( e_lam_const(), [] ) ) ).
+
+future_is_no_value() ->
+  ?assertNot( is_value( {fut, na, na} ) ).
+
+empty_list_is_value() ->
+  ?assert( is_value( lst( t_str(), [] ) ) ).
+
+list_of_value_is_value() ->
+  ?assert( is_value( lst( t_str(), [str( <<"bla">> )] ) ) ).
+
+list_of_nonvalue_is_no_value() ->
+  ?assertNot( is_value( lst( t_bool(), [neg( true() )] ) ) ).
+
+append_is_no_value() ->
+  E = append( lst( t_bool(), [true()] ), lst( t_bool(), [false()] ) ),
+  ?assertNot( is_value( E ) ).
+
+isnil_is_no_value() ->
+  ?assertNot( is_value( isnil( lst( t_str(), [] ) ) ) ).
 
 
 %%====================================================================

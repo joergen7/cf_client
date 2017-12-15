@@ -65,14 +65,23 @@ reduce( {app, AppInfo,                                         % E-beta
 
 -spec is_value( E :: e() ) -> boolean().
 
-is_value( {str, _, _} )        -> true;
-is_value( {file, _, _, _} )    -> true;
-is_value( {true, _} )          -> true;
-is_value( {false, _} )         -> true;
-is_value( {cnd, _, _, _, _} )  -> false;
-is_value( {var, _, _} )        -> false;
-is_value( {lam_ntv, _, _, _} ) -> true;
-is_value( {app, _, _, _} )     -> false.
+is_value( {str, _, _} )                 -> true;
+is_value( {cmp, _, _, _} )              -> false;
+is_value( {file, _, _, _} )             -> true;
+is_value( {true, _} )                   -> true;
+is_value( {false, _} )                  -> true;
+is_value( {cnd, _, _, _, _} )           -> false;
+is_value( {neg, _, _} )                 -> false;
+is_value( {conj, _, _, _} )             -> false;
+is_value( {disj, _, _, _} )             -> false;
+is_value( {var, _, _} )                 -> false;
+is_value( {lam_ntv, _, _, _} )          -> true;
+is_value( {lam_frn, _, _, _, _, _, _} ) -> true;
+is_value( {app, _, _, _} )              -> false;
+is_value( {fut, _, _} )                 -> false;
+is_value( {lst, _, _, ELst} )           -> lists:all( fun is_value/1, ELst );
+is_value( {append, _, _, _} )           -> false;
+is_value( {isnil, _, _} )               -> false.
 
 
 %%====================================================================
