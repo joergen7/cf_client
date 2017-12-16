@@ -6,10 +6,11 @@
 %%====================================================================
 
 -import( cuneiform_sem, [reduce/1] ).
--import( cuneiform_sem, [is_value/1, rename/3, subst/3, gensym/1] ).
+-import( cuneiform_sem, [is_value/1] ).
+-import( cuneiform_sem, [rename_pattern/3, rename/3, subst/3, gensym/1] ).
 -import( cuneiform_sem, [in_hole/2, find_context/1] ).
 
--import( cuneiform_lang, [r_var/2] ).
+-import( cuneiform_lang, [r_var/2, r_rcd/1, r_bind/2] ).
 -import( cuneiform_lang, [l_bash/0] ).
 -import( cuneiform_lang, [
                           t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2, t_rcd/1
@@ -310,6 +311,39 @@ assignment_is_no_value() ->
 %% Substitution and renaming
 %%====================================================================
 
+rename_pattern_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"rename pattern leaves non-matching variable pattern alone",
+     fun rename_pattern_leaves_nonmatching_variable_pattern_alone/0},
+
+    {"rename pattern updates matching variable pattern",
+     fun rename_pattern_updates_matching_variable_pattern/0},
+
+    {"rename pattern propagates record pattern",
+     fun rename_pattern_propagates_record_pattern/0}
+   ]
+  }.
+
+rename_pattern_leaves_nonmatching_variable_pattern_alone() ->
+  R = r_var( x, t_str() ),
+  ?assertEqual( R, rename_pattern( R, y, z ) ).
+
+rename_pattern_updates_matching_variable_pattern() ->
+  R1 = r_var( x, t_str() ),
+  R2 = r_var( y, t_str() ),
+  ?assertEqual( R2, rename_pattern( R1, x, y ) ).
+
+rename_pattern_propagates_record_pattern() ->
+  R1 = r_rcd( [r_bind( x, r_var( x, t_str() ) )] ),
+  R2 = r_rcd( [r_bind( x, r_var( y, t_str() ) )] ),
+  ?assertEqual( R2, rename_pattern( R1, x, y ) ).
+
+
 rename_test_() ->
   {foreach,
 
@@ -429,7 +463,10 @@ rename_test_() ->
      fun rename_propagates_to_assignment_expression/0},
 
     {"rename propagates to assignment body expression",
-     fun rename_propagates_to_assignment_body_expression/0}
+     fun rename_propagates_to_assignment_body_expression/0},
+
+    {"rename propagates to assignment pattern",
+     fun rename_propagates_to_assignment_pattern/0}
    ]
   }.
 
@@ -616,11 +653,19 @@ rename_propagates_to_fixpoint_operand() ->
   ?assertEqual( E2, rename( E1, x, y ) ).
 
 rename_propagates_to_assignment_expression() ->
-TODO
-rename_propagates_to_assignment_body_expression() ->
-TODO
+  E1 = assign( r_var( a, t_str() ), var( x ), var( y ) ),
+  E2 = assign( r_var( a, t_str() ), var( z ), var( y ) ),
+  ?assertEqual( E2, rename( E1, x, z ) ).
 
-TODO: mak sure, rename is propagated to pattern 
+rename_propagates_to_assignment_body_expression() ->
+  E1 = assign( r_var( a, t_str() ), var( x ), var( y ) ),
+  E2 = assign( r_var( a, t_str() ), var( x ), var( z ) ),
+  ?assertEqual( E2, rename( E1, y, z ) ).
+
+rename_propagates_to_assignment_pattern() ->
+  E1 = assign( r_var( a, t_str() ), var( x ), var( y ) ),
+  E2 = assign( r_var( z, t_str() ), var( x ), var( y ) ),
+  ?assertEqual( E2, rename( E1, a, z ) ).
 
 subst_test_() ->
   {foreach,
