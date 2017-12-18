@@ -205,8 +205,7 @@ is_value_test_() ->
      fun record_of_nonvalue_is_no_value/0},
 
     {"projection is no value",  fun projection_is_no_value/0},
-    {"fixpoint is no value",    fun fixpoint_is_no_value/0},
-    {"assignment is no value",  fun assignment_is_no_value/0}
+    {"fixpoint is no value",    fun fixpoint_is_no_value/0}
    ]
   }.
 
@@ -302,47 +301,11 @@ fixpoint_is_no_value() ->
   E = fix( ELam ),
   ?assertNot( is_value( E ) ).
 
-assignment_is_no_value() ->
-  E = assign( r_var( x, t_str() ), str( <<"bla">> ), var( x ) ),
-  ?assertNot( is_value( E ) ).
 
 
 %%====================================================================
 %% Substitution and renaming
 %%====================================================================
-
-rename_pattern_test_() ->
-  {foreach,
-
-   fun() -> ok end,
-   fun( _ ) -> ok end,
-
-   [
-    {"rename pattern leaves non-matching variable pattern alone",
-     fun rename_pattern_leaves_nonmatching_variable_pattern_alone/0},
-
-    {"rename pattern updates matching variable pattern",
-     fun rename_pattern_updates_matching_variable_pattern/0},
-
-    {"rename pattern propagates record pattern",
-     fun rename_pattern_propagates_record_pattern/0}
-   ]
-  }.
-
-rename_pattern_leaves_nonmatching_variable_pattern_alone() ->
-  R = r_var( x, t_str() ),
-  ?assertEqual( R, rename_pattern( R, y, z ) ).
-
-rename_pattern_updates_matching_variable_pattern() ->
-  R1 = r_var( x, t_str() ),
-  R2 = r_var( y, t_str() ),
-  ?assertEqual( R2, rename_pattern( R1, x, y ) ).
-
-rename_pattern_propagates_record_pattern() ->
-  R1 = r_rcd( [r_bind( x, r_var( x, t_str() ) )] ),
-  R2 = r_rcd( [r_bind( x, r_var( y, t_str() ) )] ),
-  ?assertEqual( R2, rename_pattern( R1, x, y ) ).
-
 
 rename_test_() ->
   {foreach,
@@ -457,16 +420,7 @@ rename_test_() ->
      fun rename_propagates_to_projection_operand/0},
 
     {"rename propagates to fixpoint operand",
-     fun rename_propagates_to_fixpoint_operand/0},
-
-    {"rename propagates to assignment binding expression",
-     fun rename_propagates_to_assignment_expression/0},
-
-    {"rename propagates to assignment body expression",
-     fun rename_propagates_to_assignment_body_expression/0},
-
-    {"rename propagates to assignment pattern",
-     fun rename_propagates_to_assignment_pattern/0}
+     fun rename_propagates_to_fixpoint_operand/0}
    ]
   }.
 
@@ -652,20 +606,6 @@ rename_propagates_to_fixpoint_operand() ->
   E2 = fix( var( y ) ),
   ?assertEqual( E2, rename( E1, x, y ) ).
 
-rename_propagates_to_assignment_expression() ->
-  E1 = assign( r_var( a, t_str() ), var( x ), var( y ) ),
-  E2 = assign( r_var( a, t_str() ), var( z ), var( y ) ),
-  ?assertEqual( E2, rename( E1, x, z ) ).
-
-rename_propagates_to_assignment_body_expression() ->
-  E1 = assign( r_var( a, t_str() ), var( x ), var( y ) ),
-  E2 = assign( r_var( a, t_str() ), var( x ), var( z ) ),
-  ?assertEqual( E2, rename( E1, y, z ) ).
-
-rename_propagates_to_assignment_pattern() ->
-  E1 = assign( r_var( a, t_str() ), var( x ), var( y ) ),
-  E2 = assign( r_var( z, t_str() ), var( x ), var( y ) ),
-  ?assertEqual( E2, rename( E1, a, z ) ).
 
 subst_test_() ->
   {foreach,

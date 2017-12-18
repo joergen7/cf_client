@@ -13,16 +13,21 @@
 -export( [lam_ntv_arg/2, e_bind/2, r_bind/2] ).
 -export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, lam_frn/5,
           app/2, cmp/2, conj/2, disj/2, neg/1, lst/2, append/2, isnil/1,
-          for/2, fold/3, rcd/1, proj/2, fix/1, assign/2] ).
+          for/2, fold/3, rcd/1, proj/2, fix/1] ).
 -export( [str/2, file/2, true/1, false/1, cnd/4, var/2, lam_ntv/3, lam_frn/6,
           app/3, cmp/3, conj/3, disj/3, neg/2, lst/3, append/3, isnil/2,
-          for/3, fold/4, rcd/2, proj/3, fix/2, assign/3] ).
+          for/3, fold/4, rcd/2, proj/3, fix/2] ).
+
+%% Assignment
+-export( [assign/2, assign/3, create_closure/2] ).
 
 %% Pattern constructors
 -export( [r_var/2, r_rcd/1] ).
 
 %% Language constructors
 -export( [l_bash/0, l_octave/0, l_perl/0, l_python/0, l_r/0, l_racket/0] ).
+
+-export( [find_ambigious/1] ).
 
 %%====================================================================
 %% Language constructors
@@ -265,3 +270,45 @@ when is_tuple( InitBind ),
 -spec create_closure( AssignLst, EBody ) -> e()
 when AssignLst :: [assign()],
      EBody     :: e().
+
+create_closure( AssignLst, EBody ) ->
+
+  F =
+    fun
+
+      F( {assign, Info, {r_var, X, T}, E}, EAcc ) ->
+        app( Info,
+             lam_ntv( Info, [lam_ntv_arg( X, T )], EAcc ),
+             [e_bind( X, E )] );
+
+      F( {assign, _Info, {r_rcd, []}, _E}, EAcc ) ->
+        EAcc;
+
+      F( {assign, Info, {r_rcd, [{X, R}|Tl]}, E}, EAcc ) ->
+        EAcc1 = F( assign( Info, R, proj( Info, X, E ) ), EAcc ),
+        F( assign( Info, r_rcd( Tl ), E ), EAcc1 )
+
+    end,
+
+  lists:foldr( F, EBody, AssignLst ).
+
+
+-spec find_ambigious( NameLst :: [x()] ) -> unambigious | {ambigious, x()}.
+
+find_ambigious( NameLst ) ->
+
+  F =
+    fun
+
+      F( [], _SeenLst ) ->
+        unambigious;
+      
+      F( [H|T], SeenLst ) when is_atom( H ) ->
+        case lists:member( H, SeenLst ) of
+          true  -> {ambigious, H};
+          false -> F( T, [H|SeenLst] )
+        end
+
+    end,
+
+  F( NameLst, [] ).

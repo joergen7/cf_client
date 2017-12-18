@@ -7,8 +7,21 @@
 
 -export( [reduce/1] ).
 -export( [is_value/1] ).
--export( [rename_pattern/3, rename/3, subst/3, subst_fut/3, gensym/1] ).
+-export( [rename/3, subst/3, subst_fut/3, gensym/1] ).
 -export( [in_hole/2, find_context/1] ).
+
+
+%%====================================================================
+%% Imports
+%%====================================================================
+
+-import( cuneiform_lang, [e_bind/2] ).
+
+-import( cuneiform_lang, [
+                          true/1, false/1, app/3, cmp/3, cnd/4, neg/2, conj/3,
+                          disj/3, var/2, lam_ntv/3, lst/3, append/3, isnil/2,
+                          for/3, fold/4, rcd/2, proj/3, fix/2
+                         ] ).
 
 
 %%====================================================================
@@ -19,8 +32,8 @@
 
 reduce( {cmp, Info, {str, _, S1}, {str, _, S2}} ) ->
   case S1 =:= S2 of
-    true  -> cuneiform_lang:true( Info );                      % E-cmp-equal
-    false -> cuneiform_lang:false( Info )                      % E-cmp-unequal
+    true  -> true( Info );                                     % E-cmp-equal
+    false -> false( Info )                                     % E-cmp-unequal
   end;
 
 reduce( {cnd, _, {true, _}, EThen, _} ) ->                     % E-cnd-true
@@ -30,19 +43,19 @@ reduce( {cnd, _, {false, _}, _, EElse} ) ->                    % E-cnd-false
   EElse;
 
 reduce( {neg, Info, {true, _}} ) ->                            % E-neg-true
-  cuneiform_lang:false( Info );
+  false( Info );
 
 reduce( {neg, Info, {false, _}} ) ->                           % E-neg-false
-  cuneiform_lang:true( Info );
+  true( Info );
 
 reduce( {conj, _, {true, _}, E} ) ->                           % E-conj-true
   E;
 
 reduce( {conj, Info, {false, _}, _} ) ->                       % E-conj-false
-  cuneiform_lang:false( Info );
+  false( Info );
 
 reduce( {disj, Info, {true, _}, _} ) ->                        % E-disj-true
-  cuneiform_lang:true( Info );
+  true( Info );
 
 reduce( {disj, _, {false, _}, E} ) ->                          % E-disj-false
   E;
@@ -55,7 +68,7 @@ reduce( {app, AppInfo,                                         % E-beta
               [{XOut, E}|AppArgTl]} ) ->
   EBody1 = subst( EBody, XIn, E ),
   EFn1 = {lam_ntv, LamInfo, LamArgTl, EBody1},
-  cuneiform_lang:app( AppInfo, EFn1, AppArgTl ).
+  app( AppInfo, EFn1, AppArgTl ).
 
   
 
@@ -86,23 +99,12 @@ is_value( {for, _, _, _} )              -> false;
 is_value( {fold, _, _, _, _} )          -> false;
 is_value( {rcd, _, EBindLst} )          -> lists:all( fun is_value/1, [E || {_, E} <- EBindLst] );
 is_value( {proj, _, _, _} )             -> false;
-is_value( {fix, _, _} )                 -> false;
-is_value( {assign, _, _, _, _} )        -> false.
+is_value( {fix, _, _} )                 -> false.
 
 
 %%====================================================================
 %% Substitution and renaming
 %%====================================================================
-
--spec rename_pattern( R :: r(), X1 :: x(), X2 :: x() ) -> r().
-
-rename_pattern( {r_var, X1, T}, X1, X2 )  -> cuneiform_lang:r_var( X2, T );
-rename_pattern( R = {r_var, _, _}, _, _ ) -> R;
-
-rename_pattern( {r_rcd, RBindLst}, X1, X2 ) ->
-  cuneiform_lang:r_rcd( [cuneiform_lang:r_bind( X, rename_pattern( R, X1, X2 ) )
-                         || {X, R} <- RBindLst] ).
-
 
 %% @doc Consistently renames in E every occurrence of the name X1 to X2.
 
@@ -119,27 +121,27 @@ rename( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
 rename( E = {fut, _, _}, _, _ )                 -> E;
 
 rename( {cmp, Info, E1, E2}, X1, X2 ) ->
-  cuneiform_lang:cmp( Info, rename( E1, X1, X2 ),
+  cmp( Info, rename( E1, X1, X2 ),
                             rename( E2, X1, X2 ) );
 
 rename( {cnd, Info, EIf, EThen, EElse}, X, Y ) ->
-  cuneiform_lang:cnd( Info, rename( EIf, X, Y ),
+  cnd( Info, rename( EIf, X, Y ),
                             rename( EThen, X, Y ),
                             rename( EElse, X, Y ) );
 
 rename( {neg, Info, E}, X1, X2 ) ->
-  cuneiform_lang:neg( Info, rename( E, X1, X2 ) );
+  neg( Info, rename( E, X1, X2 ) );
 
 rename( {conj, Info, E1, E2}, X1, X2 ) ->
-  cuneiform_lang:conj( Info, rename( E1, X1, X2 ),
+  conj( Info, rename( E1, X1, X2 ),
                              rename( E2, X1, X2 ) );
 
 rename( {disj, Info, E1, E2}, X1, X2 ) ->
-  cuneiform_lang:disj( Info, rename( E1, X1, X2 ),
+  disj( Info, rename( E1, X1, X2 ),
                              rename( E2, X1, X2 ) );
 
 rename( {var, Info, X}, X, Y ) ->
-  cuneiform_lang:var( Info, Y );
+  var( Info, Y );
 
 rename( E = {var, _, _}, _, _ )  -> E;
 
@@ -153,54 +155,49 @@ rename( {lam_ntv, Info, ArgLst, EBody}, X, Y ) ->
   ArgLst1 = [F( Arg ) || Arg <- ArgLst],
   EBody1 = rename( EBody, X, Y ),
 
-  cuneiform_lang:lam_ntv( Info, ArgLst1, EBody1 );
+  lam_ntv( Info, ArgLst1, EBody1 );
 
 rename( {app, Info, EFn, ArgLst}, X, Y ) ->
 
   EFn1 = rename( EFn, X, Y ),
-  ArgLst1 = [cuneiform_lang:e_bind( S, rename( E, X, Y ) ) || {S, E} <- ArgLst],
+  ArgLst1 = [e_bind( S, rename( E, X, Y ) ) || {S, E} <- ArgLst],
 
-  cuneiform_lang:app( Info, EFn1, ArgLst1 );
+  app( Info, EFn1, ArgLst1 );
 
 rename( {lst, Info, T, ELst}, X1, X2 ) ->
-  cuneiform_lang:lst( Info, T, [rename( E, X1, X2 ) || E <- ELst] );
+  lst( Info, T, [rename( E, X1, X2 ) || E <- ELst] );
 
 rename( {append, Info, E1, E2}, X1, X2 ) ->
-  cuneiform_lang:append( Info, rename( E1, X1, X2 ),
+  append( Info, rename( E1, X1, X2 ),
                                rename( E2, X1, X2 ) );
 
 rename( {isnil, Info, E}, X1, X2 ) ->
-  cuneiform_lang:isnil( Info, rename( E, X1, X2 ) );
+  isnil( Info, rename( E, X1, X2 ) );
 
 rename( {for, Info, EBindLst, EBody}, X1, X2 ) ->
-  EBindLst1 = [cuneiform_lang:e_bind( case X of X1 -> X2; _ -> X end,
+  EBindLst1 = [e_bind( case X of X1 -> X2; _ -> X end,
                                       rename( E, X1, X2 ) )
                || {X, E} <- EBindLst],
   EBody1 = rename( EBody, X1, X2 ),
-  cuneiform_lang:for( Info, EBindLst1, EBody1 );
+  for( Info, EBindLst1, EBody1 );
 
 rename( {fold, Info, {XAcc, EAcc}, {XLst, ELst}, EBody}, X1, X2 ) ->
-  AccBind1 = cuneiform_lang:e_bind( case XAcc of X1 -> X2; _ -> XAcc end,
+  AccBind1 = e_bind( case XAcc of X1 -> X2; _ -> XAcc end,
                                     rename( EAcc, X1, X2 ) ),
-  LstBind1 = cuneiform_lang:e_bind( case XLst of X1 -> X2; _ -> XLst end,
+  LstBind1 = e_bind( case XLst of X1 -> X2; _ -> XLst end,
                                     rename( ELst, X1, X2 ) ),
   EBody1 = rename( EBody, X1, X2 ),
-  cuneiform_lang:fold( Info, AccBind1, LstBind1, EBody1 );
+  fold( Info, AccBind1, LstBind1, EBody1 );
 
 rename( {rcd, Info, EBindLst}, X1, X2 ) ->
-  cuneiform_lang:rcd( Info, [cuneiform_lang:e_bind( X, rename( E, X1, X2 ) )
+  rcd( Info, [e_bind( X, rename( E, X1, X2 ) )
                              || {X, E} <- EBindLst] );
 
 rename( {proj, Info, X, E}, X1, X2 ) ->
-  cuneiform_lang:proj( Info, X, rename( E, X1, X2 ) );
+  proj( Info, X, rename( E, X1, X2 ) );
 
 rename( {fix, Info, E}, X1, X2 ) ->
-  cuneiform_lang:fix( Info, rename( E, X1, X2 ) );
-
-rename( {assign, Info, R, E, EBody}, X1, X2 ) ->
-  cuneiform_lang:assign( Info, rename_pattern( R, X1, X2 ),
-                               rename( E, X1, X2 ),
-                               rename( EBody, X1, X2 ) ).
+  fix( Info, rename( E, X1, X2 ) ).
 
 
 
@@ -218,23 +215,23 @@ subst( E1 = {true, _}, _, _ )       -> E1;
 subst( E1 = {false, _}, _, _ )      -> E1;
 
 subst( {cmp, Info, E1, E2}, X, ES ) ->
-  cuneiform_lang:cmp( Info, subst( E1, X, ES ),
+  cmp( Info, subst( E1, X, ES ),
                             subst( E2, X, ES ) );
 
 subst( {cnd, Info, EIf, EThen, EElse}, X, E2 ) ->
-  cuneiform_lang:cnd( Info, subst( EIf, X, E2 ),
+  cnd( Info, subst( EIf, X, E2 ),
                             subst( EThen, X, E2 ),
                             subst( EElse, X, E2 ) );
 
 subst( {neg, Info, E}, X, ES ) ->
-  cuneiform_lang:neg( Info, subst( E, X, ES ) );
+  neg( Info, subst( E, X, ES ) );
 
 subst( {conj, Info, E1, E2}, X, ES ) ->
-  cuneiform_lang:conj( Info, subst( E1, X, ES ),
+  conj( Info, subst( E1, X, ES ),
                              subst( E2, X, ES ) );
 
 subst( {disj, Info, E1, E2}, X, ES ) ->
-  cuneiform_lang:disj( Info, subst( E1, X, ES ),
+  disj( Info, subst( E1, X, ES ),
                              subst( E2, X, ES ) );
 
 
@@ -247,13 +244,13 @@ subst( {lam_ntv, Info, ArgLst, EBody}, X, E2 ) ->
   F = fun( {X1, S, T}, {lam_ntv, Info1, ArgLst1, EBody1} ) ->
         X2 = gensym( X1 ),
         EBody2 = rename( EBody1, X1, X2 ),
-        cuneiform_lang:lam_ntv( Info1, [{X2, S, T}|ArgLst1], EBody2 )
+        lam_ntv( Info1, [{X2, S, T}|ArgLst1], EBody2 )
       end,
 
   Lam0 = {lam_ntv, Info, [], EBody},
   {lam_ntv, Info, NewArgLst, NewEBody} = lists:foldr( F, Lam0, ArgLst ),
 
-  cuneiform_lang:lam_ntv( Info, NewArgLst, subst( NewEBody, X, E2 ) );
+  lam_ntv( Info, NewArgLst, subst( NewEBody, X, E2 ) );
 
 subst( {app, Info, EFn, ArgLst}, X, E2 ) ->
 
