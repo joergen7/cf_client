@@ -209,10 +209,13 @@ when E1 :: e(),
      X  :: x(),
      E2 :: e().
 
+subst( {var, _, X}, X, E2 )         -> E2;
+subst( E1 = {var, _, _}, _, _ )     -> E1;
 subst( E1 = {str, _, _}, _, _ )     -> E1;
 subst( E1 = {file, _, _, _}, _, _ ) -> E1;
 subst( E1 = {true, _}, _, _ )       -> E1;
 subst( E1 = {false, _}, _, _ )      -> E1;
+subst( E1 = {fut, _, _}, _, _ )     -> E1;
 
 subst( {cmp, Info, E1, E2}, X, ES ) ->
   cmp( Info, subst( E1, X, ES ),
@@ -228,16 +231,11 @@ subst( {neg, Info, E}, X, ES ) ->
 
 subst( {conj, Info, E1, E2}, X, ES ) ->
   conj( Info, subst( E1, X, ES ),
-                             subst( E2, X, ES ) );
+              subst( E2, X, ES ) );
 
 subst( {disj, Info, E1, E2}, X, ES ) ->
   disj( Info, subst( E1, X, ES ),
-                             subst( E2, X, ES ) );
-
-
-
-subst( {var, _, X}, X, E2 )      -> E2;
-subst( E1 = {var, _, _}, _, _ )  -> E1;
+              subst( E2, X, ES ) );
 
 subst( {lam_ntv, Info, ArgLst, EBody}, X, E2 ) ->
 
@@ -247,7 +245,7 @@ subst( {lam_ntv, Info, ArgLst, EBody}, X, E2 ) ->
         lam_ntv( Info1, [{X2, S, T}|ArgLst1], EBody2 )
       end,
 
-  Lam0 = {lam_ntv, Info, [], EBody},
+  Lam0 = lam_ntv( Info, [], EBody ),
   {lam_ntv, Info, NewArgLst, NewEBody} = lists:foldr( F, Lam0, ArgLst ),
 
   lam_ntv( Info, NewArgLst, subst( NewEBody, X, E2 ) );
@@ -255,9 +253,59 @@ subst( {lam_ntv, Info, ArgLst, EBody}, X, E2 ) ->
 subst( {app, Info, EFn, ArgLst}, X, E2 ) ->
 
   EFn1 = subst( EFn, X, E2 ),
-  ArgLst1 = [{S, subst( E, X, E2 )} || {S, E} <- ArgLst],
+  ArgLst1 = [e_bind( S, subst( E, X, E2 ) ) || {S, E} <- ArgLst],
 
-  {app, Info, EFn1, ArgLst1}.
+  app( Info, EFn1, ArgLst1 );
+
+subst( {lst, Info, T, ELst}, X, ES ) ->
+  lst( Info, T, [subst( E, X, ES ) || E <- ELst] );
+
+subst( {append, Info, E1, E2}, X, ES ) ->
+  append( Info, subst( E1, X, ES ),
+                subst( E2, X, ES ) );
+
+subst( {isnil, Info, E1}, X, ES ) ->
+  isnil( Info, subst( E1, X, ES ) );
+
+subst( {rcd, Info, EBindLst}, X, ES ) ->
+  rcd( Info, [{XField, subst( EField, X, ES )}
+              || {XField, EField} <- EBindLst] );
+
+subst( {proj, Info, XField, E1}, X, ES ) ->
+  proj( Info, XField, subst( E1, X, ES ) );
+
+subst( {fix, Info, E1}, X, ES ) ->
+  fix( Info, subst( E1, X, ES ) );
+
+subst( {for, Info, EBindLst, EBody}, XS, ES ) ->
+
+  F = fun( {X1, E1}, {for, Info1, EBindLst1, EBody1} ) ->
+        X2 = gensym( X1 ),
+        EBody2 = rename( EBody1, X1, X2 ),
+        E2 = subst( E1, XS, ES ),
+        for( Info1, [e_bind( X2, E2 )|EBindLst1], EBody2 )
+      end,
+
+  For0 = for( Info, [], EBody ),
+  {for, Info, NewEBindLst, NewEBody} = lists:foldr( F, For0, EBindLst ),
+
+  for( Info, NewEBindLst, subst( NewEBody, XS, ES ) );
+
+subst( {fold, Info, {XInit, EInit}, {XLst, ELst}, EBody}, XS, ES ) ->
+
+  XInit1 = gensym( XInit ),
+  EInit1 = subst( EInit, XS, ES ),
+
+  XLst1 = gensym( XLst ),
+  ELst1 = subst( ELst, XS, ES ),
+
+  EBody1 = rename( EBody, XInit, XInit1 ),
+  EBody2 = rename( EBody1, XLst, XLst1 ),
+  EBody3 = subst( EBody2, XS, ES ),
+
+  fold( Info, e_bind( XInit1, EInit1 ), e_bind( XLst1, ELst1 ), EBody3 ).
+
+
 
 -spec subst_fut( E, A, Delta ) -> e()
 when E     :: e(),

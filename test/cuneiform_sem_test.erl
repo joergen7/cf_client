@@ -671,7 +671,70 @@ subst_test_() ->
      fun subst_propagates_to_app_function/0},
 
     {"substitution propagates to application arguments",
-     fun subst_propagates_to_e_bind_lst/0}
+     fun subst_propagates_to_e_bind_lst/0},
+
+    {"substitution leaves futures alone",
+     fun substitution_leaves_futures_alone/0},
+
+    {"substitution leaves empty list alone",
+     fun substitution_leaves_empty_list_alone/0},
+
+    {"substitution propagates to list elements",
+     fun substitution_propagates_to_list_elements/0},
+
+    {"substitution propagates to append lhs",
+     fun substitution_propagates_to_append_lhs/0},
+
+    {"substitution propagates to append rhs",
+     fun substitution_propagates_to_append_rhs/0},
+
+    {"substitution propagates to isnil operand",
+     fun substitution_propagates_to_isnil_operand/0},
+
+    {"substitution propagates to record fields",
+     fun substitution_propagates_to_record_fields/0},
+
+    {"substitution propagates to propjection operand",
+     fun substitution_propagates_to_projection_operand/0},
+
+    {"substitution propagates to fixpoint operand",
+     fun substitution_propagates_to_fixpoint_operand/0},
+
+    {"substitution propagates to for body",
+     fun substitution_propagates_to_for_body/0},
+
+    {"substitution propagates to for list expression",
+     fun substitution_propagates_to_for_list_expression/0},
+
+    {"for iterator shadows substitution",
+     fun for_iterator_shadows_substitution/0},
+
+    {"for iterator is capture avoiding",
+     fun for_iterator_is_capture_avoiding/0},
+
+    {"for iterator retains order of list bindings",
+     fun for_iterator_retains_order_of_list_bindings/0},
+
+    {"substitution propagates to fold body",
+     fun substitution_propagates_to_fold_body/0},
+
+    {"substitution propagates to accumulator init expression",
+     fun substitution_propagates_to_accumulator_init_expression/0},
+
+    {"substitution propagates to list expression",
+     fun substitution_propagates_to_list_expression/0},
+
+    {"fold accumulator shadows substitution",
+     fun fold_accumulator_shadows_substitution/0},
+
+    {"fold accumulator is capture avoiding",
+     fun fold_accumulator_is_capture_avoiding/0},
+
+    {"fold list expression shadows substitution",
+     fun fold_list_expression_shadows_substitution/0},
+
+    {"fold list expression is capture avoiding",
+     fun fold_list_expression_is_capture_avoiding/0}
    ]
   }.
 
@@ -780,6 +843,133 @@ subst_propagates_to_e_bind_lst() ->
   E1 = app( var( f ), [e_bind( x, var( x ) )] ),
   E2 = app( var( f ), [e_bind( x, var( y ) )] ),
   ?assertEqual( E2, subst( E1, x, var( y ) ) ).
+
+substitution_leaves_futures_alone() ->
+  E = {fut, na, na},
+  ?assertEqual( E, subst( E, x, var( y ) ) ).
+
+substitution_leaves_empty_list_alone() ->
+  E = lst( t_str(), [] ),
+  ?assertEqual( E, subst( E, x, var( y ) ) ).
+
+substitution_propagates_to_list_elements() ->
+  E1 = lst( t_str(), [var( x )] ),
+  E2 = lst( t_str(), [var( y )] ),
+  ?assertEqual( E2, subst( E1, x, var( y ) ) ).
+
+substitution_propagates_to_append_lhs() ->
+  E1 = append( var( x ), var( y ) ),
+  E2 = append( var( z ), var( y ) ),
+  ?assertEqual( E2, subst( E1, x, var( z ) ) ).
+
+substitution_propagates_to_append_rhs() ->
+  E1 = append( var( x ), var( y ) ),
+  E2 = append( var( x ), var( z ) ),
+  ?assertEqual( E2, subst( E1, y, var( z ) ) ).
+
+substitution_propagates_to_isnil_operand() ->
+  E1 = isnil( var( x ) ),
+  E2 = isnil( var( y ) ),
+  ?assertEqual( E2, subst( E1, x, var( y ) ) ).
+
+substitution_propagates_to_record_fields() ->
+  E1 = rcd( [e_bind( x, var( x ) )] ),
+  E2 = rcd( [e_bind( x, var( y ) )] ),
+  ?assertEqual( E2, subst( E1, x, var( y ) ) ).
+
+substitution_propagates_to_projection_operand() ->
+  E1 = proj( x, var( x ) ),
+  E2 = proj( x, var( y ) ),
+  ?assertEqual( E2, subst( E1, x, var( y ) ) ).
+
+substitution_propagates_to_fixpoint_operand() ->
+  E1 = fix( var( x ) ),
+  E2 = fix( var( y ) ),
+  ?assertEqual( E2, subst( E1, x, var( y ) ) ).
+
+substitution_propagates_to_for_body() ->
+  E = for( [e_bind( x, var( x_lst ) )], var( y ) ),
+  ?assertMatch( {for, na, [{_, {var, na, x_lst}}], {var, na, z}},
+                subst( E, y, var( z ) ) ).
+
+substitution_propagates_to_for_list_expression() ->
+  E = for( [e_bind( x, var( x_lst ) )], var( y ) ),
+  ?assertMatch( {for, na, [{_, {var, na, z}}], {var, na, y}},
+                subst( E, x_lst, var( z ) ) ).
+
+for_iterator_shadows_substitution() ->
+  E = for( [e_bind( x, var( x_lst ) )], var( x ) ),
+  ?assertMatch( {for, na, [{X, {var, na, x_lst}}], {var, na, X}},
+                subst( E, x, var( z ) ) ).
+
+for_iterator_is_capture_avoiding() ->
+  E = for( [e_bind( x, var( x_lst ) )], var( y ) ),
+  ?assertNotMatch( {for, na, [{X, {var, na, x_lst}}], {var, na, X}},
+                   subst( E, y, var( x ) ) ).
+
+for_iterator_retains_order_of_list_bindings() ->
+  E = for( [e_bind( x, var( x_lst ) ),
+            e_bind( y, var( y_lst ) )], var( z ) ),
+
+  ?assertMatch( {for, na, [{_, {var, na, x_lst}},
+                           {_, {var, na, y_lst}}], {str, na, <<"bla">>}},
+                subst( E, z, str( <<"bla">> ) ) ).
+
+substitution_propagates_to_fold_body() ->
+  E = fold( e_bind( x_acc, var( x0 ) ),
+            e_bind( x, var( x_lst ) ), var( y ) ),
+  ?assertMatch( {fold, na, {_, {var, na, x0}},
+                           {_, {var, na, x_lst}}, {var, na, z}},
+                subst( E, y, var( z ) ) ).
+
+substitution_propagates_to_accumulator_init_expression() ->
+  E = fold( e_bind( x_acc, var( x0 ) ),
+            e_bind( x, var( x_lst ) ), var( y ) ),
+  ?assertMatch( {fold, na, {_, {var, na, z}},
+                           {_, {var, na, x_lst}}, {var, na, y}},
+                subst( E, x0, var( z ) ) ).
+
+substitution_propagates_to_list_expression() ->
+  E = fold( e_bind( x_acc, var( x0 ) ),
+            e_bind( x, var( x_lst ) ), var( y ) ),
+  ?assertMatch( {fold, na, {_, {var, na, x0}}, {_, {var, na, z}}, {var, na, y}},
+                subst( E, x_lst, var( z ) ) ).
+
+fold_accumulator_shadows_substitution() ->
+  E = fold( e_bind( x_acc, var( x0 ) ),
+            e_bind( x, var( x_lst ) ), var( x_acc ) ),
+  ?assertMatch( {fold, na,
+                       {X0, {var, na, x0}},
+                       {_, {var, na, x_lst}},
+                       {var, na, X0}},
+                subst( E, x_acc, var( z ) ) ).
+
+fold_accumulator_is_capture_avoiding() ->
+  E = fold( e_bind( x_acc, var( x0 ) ),
+            e_bind( x, var( x_lst ) ), var( x ) ),
+  ?assertMatch( {fold, na,
+                       {_, {var, na, x0}},
+                       {X, {var, na, x_lst}},
+                       {var, na, X}},
+                subst( E, x, var( z ) ) ).
+
+fold_list_expression_shadows_substitution() ->
+  E = fold( e_bind( x_acc, var( x0 ) ),
+            e_bind( x, var( x_lst ) ), var( y ) ),
+  ?assertNotMatch( {fold, na,
+                          {X0, {var, na, x0}},
+                          {_, {var, na, x_lst}},
+                          {var, na, X0}},
+                subst( E, y, var( x0 ) ) ).
+
+fold_list_expression_is_capture_avoiding() ->
+  E = fold( e_bind( x_acc, var( x0 ) ),
+            e_bind( x, var( x_lst ) ), var( y ) ),
+  ?assertNotMatch( {fold, na,
+                          {_, {var, na, x0}},
+                          {X, {var, na, x_lst}},
+                          {var, na, X}},
+                subst( E, y, var( x ) ) ).
 
 
 gensym_test_() ->
