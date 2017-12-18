@@ -367,6 +367,14 @@ try_context( {file, _, _, _}, _ )    -> no_ctx;
 try_context( {true, _}, _ )          -> no_ctx;
 try_context( {false, _}, _ )         -> no_ctx;
 
+try_context( E = {cmp, Info, E1, E2}, Ctx ) ->
+  case is_value( E1 ) andalso is_value( E2 ) of
+    true  -> throw( {E, Ctx} );
+    false ->
+      try_context( E1, in_hole( {cmp, Info, hole, E2}, Ctx ) ),
+      try_context( E2, in_hole( {cmp, Info, E1, hole}, Ctx ) )
+  end;
+
 try_context( E = {cnd, Info, EIf, EThen, EElse}, Ctx ) ->
   case is_value( EIf ) of
     true  -> throw( {E, Ctx} );

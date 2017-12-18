@@ -327,6 +327,19 @@ find_ambiguous( NameLst ) ->
   F( NameLst, [] ).
 
 
--spec pattern_names( PatternLst :: [r()] ) -> [x()].
 
-pattern_names( _PatternLst ) -> [].
+-spec pattern_names( Pattern :: r() ) -> [x()].
+
+pattern_names( {r_var, X, _T} )    ->
+  [X];
+
+pattern_names( {r_rcd, RBindLst} ) ->
+
+  F =
+    fun( {_X, R} ) ->
+      pattern_names( R )
+    end,
+
+  lists:flatmap( F, RBindLst ).
+
+

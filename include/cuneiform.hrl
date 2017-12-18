@@ -66,6 +66,8 @@
                      | {r_rcd, [r_bind()]}.
 
 -type ctx()         :: hole
+                     | {cmp, info(), ctx(), e()}
+                     | {cmp, info(), e(), ctx()}
                      | {cnd, info(), ctx(), e(), e()}
                      | {app, info(), ctx(), [e_bind()]}.
 

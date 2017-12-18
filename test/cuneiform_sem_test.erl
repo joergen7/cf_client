@@ -1046,6 +1046,15 @@ find_context_test_() ->
     {"string string is no redex",
      fun string_is_no_redex/0},
 
+    {"comparison with two value operands is redex",
+     fun comparison_with_two_value_operands_is_redex/0},
+
+    {"find_context traverses comparison lhs",
+     fun find_context_traverses_comparison_lhs/0},
+
+    {"find_context traverses comparison rhs",
+     fun find_context_traverses_comparison_rhs/0},
+
     {"file is no redex",
      fun file_is_no_redex/0},
       
@@ -1081,6 +1090,22 @@ find_context_test_() ->
 
 string_is_no_redex() ->
   ?assertEqual( no_ctx, find_context( str( <<"blub">> ) ) ).
+
+comparison_with_two_value_operands_is_redex() ->
+  E = cmp( str( <<"bla">> ), str( <<"blub">> ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+find_context_traverses_comparison_lhs() ->
+  ECnd = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  E = cmp( ECnd, str( <<"z">> ) ),
+  Ctx = {cmp, na, hole, str( <<"z">> )},
+  ?assertEqual( {ok, ECnd, Ctx}, find_context( E ) ).
+
+find_context_traverses_comparison_rhs() ->
+  ECnd = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  E = cmp( str( <<"z">> ), ECnd ),
+  Ctx = {cmp, na, str( <<"z">> ), hole},
+  ?assertEqual( {ok, ECnd, Ctx}, find_context( E ) ).
 
 file_is_no_redex() ->
   ?assertEqual( no_ctx, find_context( file( <<"blub">> ) ) ).
