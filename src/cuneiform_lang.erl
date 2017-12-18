@@ -27,7 +27,7 @@
 %% Language constructors
 -export( [l_bash/0, l_octave/0, l_perl/0, l_python/0, l_r/0, l_racket/0] ).
 
--export( [find_ambigious/1] ).
+-export( [find_ambiguous/1] ).
 
 %%====================================================================
 %% Language constructors
@@ -284,31 +284,49 @@ create_closure( AssignLst, EBody ) ->
       F( {assign, _Info, {r_rcd, []}, _E}, EAcc ) ->
         EAcc;
 
-      F( {assign, Info, {r_rcd, [{X, R}|Tl]}, E}, EAcc ) ->
-        EAcc1 = F( assign( Info, R, proj( Info, X, E ) ), EAcc ),
-        F( assign( Info, r_rcd( Tl ), E ), EAcc1 )
+      F( {assign, Info, Z = {r_rcd, [{X, R}|Tl]}, E}, EAcc ) ->
+
+        case find_ambiguous( pattern_names( Z ) ) of
+
+          unambiguous ->
+            EAcc1 = F( assign( Info, R, proj( Info, X, E ) ), EAcc ),
+            F( assign( Info, r_rcd( Tl ), E ), EAcc1 );
+
+          {ambiguous, Name} ->
+            throw( {ambiguous_name, Info, Name} )
+
+        end
 
     end,
 
-  lists:foldr( F, EBody, AssignLst ).
+  try lists:foldr( F, EBody, AssignLst ) of
+    E1 -> {ok, E1}
+  catch
+    throw:E2 -> {error, E2}
+  end.
 
 
--spec find_ambigious( NameLst :: [x()] ) -> unambigious | {ambigious, x()}.
+-spec find_ambiguous( NameLst :: [x()] ) -> unambiguous | {ambiguous, x()}.
 
-find_ambigious( NameLst ) ->
+find_ambiguous( NameLst ) ->
 
   F =
     fun
 
       F( [], _SeenLst ) ->
-        unambigious;
+        unambiguous;
       
       F( [H|T], SeenLst ) when is_atom( H ) ->
         case lists:member( H, SeenLst ) of
-          true  -> {ambigious, H};
+          true  -> {ambiguous, H};
           false -> F( T, [H|SeenLst] )
         end
 
     end,
 
   F( NameLst, [] ).
+
+
+-spec pattern_names( PatternLst :: [r()] ) -> [x()].
+
+pattern_names( _PatternLst ) -> [].

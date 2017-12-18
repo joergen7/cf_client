@@ -29,8 +29,8 @@ type_test_() ->
     {"native lambda typable",      fun native_lambda_typable/0},
     {"native lambda with invalid body expression untypable",
      fun native_lambda_with_invalid_body_expression_untypable/0},
-    {"native lambda with ambigious argument name untypable",
-     fun native_lambda_with_ambigious_argument_name_untypable/0},
+    {"native lambda with ambiguous argument name untypable",
+     fun native_lambda_with_ambiguous_argument_name_untypable/0},
     {"native lambda body expression can access closure",
      fun native_lambda_body_expression_can_access_closure/0},
     {"bound variable typable",     fun bound_variable_typable/0},
@@ -102,16 +102,16 @@ type_test_() ->
      fun record_with_invalid_field_untypable/0},
     {"record with variable field typable",
      fun record_with_variable_field_typable/0},
-    {"record with ambigious field name untypable",
-     fun record_with_ambigious_field_name_untypable/0},
+    {"record with ambiguous field name untypable",
+     fun record_with_ambiguous_field_name_untypable/0},
     {"foreign lambda typable",
      fun foreign_lambda_typable/0},
-    {"foreign lambda with ambigious argument name untypable",
-     fun foreign_lambda_with_ambigious_argument_name_untypable/0},
-    {"foreign lambda with ambigious return field name untypable",
-     fun foreign_lambda_with_ambigious_return_field_name_untypable/0},
-    {"foreign lambda with ambigious argument and return field untypable",
-     fun foreign_lambda_with_ambigious_argument_and_return_field_untypable/0},
+    {"foreign lambda with ambiguous argument name untypable",
+     fun foreign_lambda_with_ambiguous_argument_name_untypable/0},
+    {"foreign lambda with ambiguous return field name untypable",
+     fun foreign_lambda_with_ambiguous_return_field_name_untypable/0},
+    {"foreign lambda with ambiguous argument and return field untypable",
+     fun foreign_lambda_with_ambiguous_argument_and_return_field_untypable/0},
     {"application typable",
      fun application_typable/0},
     {"application with invalid function expression untypable",
@@ -211,8 +211,8 @@ type_test_() ->
      fun fold_with_variable_body_expression_typable/0},
     {"fold with non-matching accumulator and body expression untypable",
      fun fold_with_nonmatching_accumulator_and_body_expression_untypable/0},
-    {"fold with ambigious accumulator and list expression name untypable",
-     fun fold_with_ambigious_accumulator_and_list_expression_name_untypable/0}
+    {"fold with ambiguous accumulator and list expression name untypable",
+     fun fold_with_ambiguous_accumulator_and_list_expression_name_untypable/0}
    ]
   }.
 
@@ -247,10 +247,10 @@ native_lambda_with_invalid_body_expression_untypable() ->
   ?assertEqual( {error, {unbound_var, na, x}}, type( E1 ) ),
   ?assertEqual( {error, {unbound_var, na, y}}, type( E2 ) ).
 
-native_lambda_with_ambigious_argument_name_untypable() ->
+native_lambda_with_ambiguous_argument_name_untypable() ->
   E = lam_ntv( [lam_ntv_arg( x, t_str() ),
                 lam_ntv_arg( x, t_file() )], var( x ) ),
-  ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
+  ?assertEqual( {error, {ambiguous_name, na, x}}, type( E ) ).
 
 native_lambda_body_expression_can_access_closure() ->
   E = lam_ntv( [lam_ntv_arg( x, t_str() )], lam_ntv( [], var( x ) ) ),
@@ -427,10 +427,10 @@ record_with_variable_field_typable() ->
   ?assertEqual( {ok, T1}, type( E1 ) ),
   ?assertEqual( {ok, T2}, type( E2 ) ).
 
-record_with_ambigious_field_name_untypable() ->
+record_with_ambiguous_field_name_untypable() ->
   E = rcd( [e_bind( x, str( <<"bla">> ) ),
             e_bind( x, file( <<"blub.txt">> ) )] ),
-  ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
+  ?assertEqual( {error, {ambiguous_name, na, x}}, type( E ) ).
 
 foreign_lambda_typable() ->
   TRet = t_rcd( [t_arg( out, t_str() )] ),
@@ -438,21 +438,21 @@ foreign_lambda_typable() ->
   T = t_fn( frn, [], TRet ),
   ?assertEqual( {ok, T}, type( E ) ).
 
-foreign_lambda_with_ambigious_argument_name_untypable() ->
+foreign_lambda_with_ambiguous_argument_name_untypable() ->
   TRet = t_rcd( [t_arg( out, t_str() )] ),
   E = lam_frn( f, [t_arg( x, t_str() ),
                    t_arg( x, t_file() )], TRet, l_bash(), <<"blub">> ),
-  ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
+  ?assertEqual( {error, {ambiguous_name, na, x}}, type( E ) ).
 
-foreign_lambda_with_ambigious_return_field_name_untypable() ->
+foreign_lambda_with_ambiguous_return_field_name_untypable() ->
   TRet = t_rcd( [t_arg( out, t_str() ), t_arg( out, t_file() )] ),
   E = lam_frn( f, [], TRet, l_bash(), <<"blub">> ),
-  ?assertEqual( {error, {ambigious_name, na, out}}, type( E ) ).
+  ?assertEqual( {error, {ambiguous_name, na, out}}, type( E ) ).
 
-foreign_lambda_with_ambigious_argument_and_return_field_untypable() ->
+foreign_lambda_with_ambiguous_argument_and_return_field_untypable() ->
   TRet = t_rcd( [t_arg( x, t_str() )] ),
   E = lam_frn( f, [t_arg( x, t_str() )], TRet, l_bash(), <<"blub">> ),
-  ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
+  ?assertEqual( {error, {ambiguous_name, na, x}}, type( E ) ).
 
 application_typable() ->
   EF = lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ),
@@ -765,9 +765,9 @@ fold_with_nonmatching_accumulator_and_body_expression_untypable() ->
   ?assertEqual( {error, {type_mismatch, na, {t_lst( t_file() ),
                                              t_lst( t_str() )}}}, type( E ) ).
 
-fold_with_ambigious_accumulator_and_list_expression_name_untypable() ->
+fold_with_ambiguous_accumulator_and_list_expression_name_untypable() ->
   E = fold( e_bind( x, str( <<"0">> ) ),
             e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
             var( x ) ),
-  ?assertEqual( {error, {ambigious_name, na, x}}, type( E ) ).
+  ?assertEqual( {error, {ambiguous_name, na, x}}, type( E ) ).
 

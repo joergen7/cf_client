@@ -59,7 +59,6 @@
                      | {rcd, info(), [e_bind()]}
                      | {proj, info(), x(), e()}
                      | {fix, info(), e()}.
-                     %| {assign, info(), r(), e(), e()}.        % binding form
 
 -type assign()      :: {assign, info(), r(), e()}.
 
@@ -72,7 +71,7 @@
 
 -type type_error()  :: {unbound_var, info(), x()}
                      | {type_mismatch, info(), {t(), t()}}
-                     | {ambigious_name, info(), x()}
+                     | {ambiguous_name, info(), x()}
                      | {key_missing, info(), x()}
                      | {superfluous_key, info(), x()}
                      | {key_mismatch, info(), {x(), x()}}

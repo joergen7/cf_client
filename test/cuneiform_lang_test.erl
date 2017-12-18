@@ -29,7 +29,7 @@ assign_variable_pattern() ->
   Closure = app( lam_ntv( [lam_ntv_arg( x, t_str() )],
                           var( z ) ),
                  [e_bind( x, var( y ) )] ),
-  ?assertEqual( Closure, create_closure( AssignLst, EBody ) ).
+  ?assertEqual( {ok, Closure}, create_closure( AssignLst, EBody ) ).
 
 last_assignment_binds_innermost() ->
   AssignLst = [assign( r_var( x1, t_str() ), var( y1 ) ),
@@ -40,12 +40,12 @@ last_assignment_binds_innermost() ->
                                         var( z ) ),
                                [e_bind( x2, var( y2 ) )] ) ),
                  [e_bind( x1, var( y1 ) )] ),
-  ?assertEqual( Closure, create_closure( AssignLst, EBody ) ).
+  ?assertEqual( {ok, Closure}, create_closure( AssignLst, EBody ) ).
 
 empty_record_pattern_is_neutral() ->
   AssignLst = [assign( r_rcd( [] ), var( x ) )],
   EBody = var( y ),
-  ?assertEqual( EBody, create_closure( AssignLst, EBody ) ).
+  ?assertEqual( {ok, EBody}, create_closure( AssignLst, EBody ) ).
 
 assignment_resolution_propagates_to_record_fields() ->
   AssignLst = [assign( r_rcd( [r_bind( a, r_var( x, t_str() ) )] ),
@@ -54,4 +54,4 @@ assignment_resolution_propagates_to_record_fields() ->
   Closure = app( lam_ntv( [lam_ntv_arg( x, t_str() )],
                           var( z ) ),
                  [e_bind( x, proj( a, var( y ) ) )] ),
-  ?assertEqual( Closure, create_closure( AssignLst, EBody ) ).
+  ?assertEqual( {ok, Closure}, create_closure( AssignLst, EBody ) ).

@@ -6,7 +6,7 @@
 -import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2,
                           t_rcd/1, t_lst/1] ).
 -import( cuneiform_lang, [r_rcd/1] ).
--import( cuneiform_lang, [find_ambigious/1] ).
+-import( cuneiform_lang, [find_ambiguous/1] ).
 
 -export( [type/1] ).
 
@@ -73,12 +73,12 @@ type( Gamma, {lam_ntv, _Info, [], EBody} ) ->
 
 type( Gamma, {lam_ntv, Info, [{XIn, XOut, TX}|LamNtvArgLst], EBody} ) ->
 
-  case find_ambigious( [XOut|[X || {_, X, _} <- LamNtvArgLst]] ) of
+  case find_ambiguous( [XOut|[X || {_, X, _} <- LamNtvArgLst]] ) of
 
-    {ambigious, X} ->
-      {error, {ambigious_name, Info, X}};
+    {ambiguous, X} ->
+      {error, {ambiguous_name, Info, X}};
 
-    unambigious ->
+    unambiguous ->
       case type( Gamma#{ XIn => TX }, lam_ntv( Info, LamNtvArgLst, EBody ) ) of
 
         {ok, {'Fn', ntv, TArgLst, TRet}} ->
@@ -182,12 +182,12 @@ type( _Gamma, {rcd, _Info, []} ) ->
 
 type( Gamma, {rcd, Info, [{X, E}|EBindLst]} ) ->
 
-  case find_ambigious( [X|[Y || {Y, _} <- EBindLst]] ) of
+  case find_ambiguous( [X|[Y || {Y, _} <- EBindLst]] ) of
 
-    {ambigious, Z} ->
-      {error, {ambigious_name, Info, Z}};
+    {ambiguous, Z} ->
+      {error, {ambiguous_name, Info, Z}};
 
-    unambigious ->
+    unambiguous ->
       case type( Gamma, E ) of
 
         {error, Reason1} ->
@@ -208,9 +208,9 @@ type( _Gamma, {lam_frn, Info, _FName, TArgLst, TRet, _Lang, _SBody} ) ->
   {'Rcd', RetFieldLst} = TRet,
   NameLst = [X || {X, _} <- TArgLst]++[X || {X, _} <- RetFieldLst],
 
-  case find_ambigious( NameLst ) of
-    {ambigious, Y} -> {error, {ambigious_name, Info, Y}};
-    unambigious    -> {ok, t_fn( frn, TArgLst, TRet )}
+  case find_ambiguous( NameLst ) of
+    {ambiguous, Y} -> {error, {ambiguous_name, Info, Y}};
+    unambiguous    -> {ok, t_fn( frn, TArgLst, TRet )}
   end;
 
 type( Gamma, {app, Info, F, EBindLst} ) ->
@@ -336,7 +336,7 @@ type( Gamma, {for, Info, [{X1, E1}|EBindLst], EBody} ) ->
   end;
 
 type( _Gamma, {fold, Info, {X, _EAcc}, {X, _ELst}, _EBody} ) ->
-  {error, {ambigious_name, Info, X}};
+  {error, {ambiguous_name, Info, X}};
 
 type( Gamma, {fold, Info, {XAcc, EAcc}, {X, ELst}, EBody} ) ->
   case type( Gamma, EAcc ) of
