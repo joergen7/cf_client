@@ -58,8 +58,10 @@
                      | {fold, info(), e_bind(), e_bind(), e()} % binding form
                      | {rcd, info(), [e_bind()]}
                      | {proj, info(), x(), e()}
-                     | {fix, info(), e()}
-                     | {assign, info(), r(), e(), e()}.        % binding form
+                     | {fix, info(), e()}.
+                     %| {assign, info(), r(), e(), e()}.        % binding form
+
+-type assign()      :: {assign, info(), r(), e()}.
 
 -type r()           :: {r_var, x(), t()}
                      | {r_rcd, [r_bind()]}.

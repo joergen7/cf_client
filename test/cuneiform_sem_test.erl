@@ -679,6 +679,12 @@ subst_test_() ->
     {"substitution leaves true alone",  fun subst_leaves_true_alone/0},
     {"substitution leaves false alone", fun subst_leaves_false_alone/0},
 
+    {"substitution propagates to comparison lhs",
+     fun substitution_propagates_to_comparison_lhs/0},
+
+    {"substitution propagates to comparison rhs",
+     fun substitution_propagates_to_comparison_rhs/0},
+
     {"substitution propagates to condition if expression",
      fun subst_propagates_to_cnd_if_expr/0},
 
@@ -687,6 +693,21 @@ subst_test_() ->
 
     {"substitution propagates to condition else expression",
      fun subst_propagates_to_cnd_else_expr/0},
+
+    {"substitution propagates to negation operand",
+     fun substitution_propagates_to_negation_operand/0},
+
+    {"substitution propagates to conjunction lhs",
+     fun substitution_propagates_to_conjunction_lhs/0},
+
+    {"substitution propagates to conjunction rhs",
+     fun substitution_propagates_to_conjunction_rhs/0},
+
+    {"substitution propagates to disjunction lhs",
+     fun substitution_propagates_to_disjunction_lhs/0},
+
+    {"substitution propagates to disjunction rhs",
+     fun substitution_propagates_to_disjunction_rhs/0},
 
     {"substitution leaves non-matching variable alone",
      fun subst_leaves_nonmatching_var_alone/0},
@@ -731,6 +752,16 @@ subst_leaves_false_alone() ->
   E = false(),
   ?assertEqual( E, subst( E, x, var( y ) ) ).
 
+substitution_propagates_to_comparison_lhs() ->
+  E1 = cmp( var( x ), var( y ) ),
+  E2 = cmp( str( <<"blub">> ), var( y ) ),
+  ?assertEqual( E2, subst( E1, x, str( <<"blub">> ) ) ).
+
+substitution_propagates_to_comparison_rhs() ->
+  E1 = cmp( var( x ), var( y ) ),
+  E2 = cmp( var( x ), str( <<"blub">> ) ),
+  ?assertEqual( E2, subst( E1, y, str( <<"blub">> ) ) ).
+
 subst_propagates_to_cnd_if_expr() ->
   E1 = cnd( var( x ), true(), false() ),
   E2 = cnd( var( y ), true(), false() ),
@@ -745,6 +776,31 @@ subst_propagates_to_cnd_else_expr() ->
   E1 = cnd( true(), true(), var( x ) ),
   E2 = cnd( true(), true(), var( y ) ),
   ?assertEqual( E2, subst( E1, x, var( y ) ) ).
+
+substitution_propagates_to_negation_operand() ->
+  E1 = neg( var( x ) ),
+  E2 = neg( false() ),
+  ?assertEqual( E2, subst( E1, x, false() ) ).
+
+substitution_propagates_to_conjunction_lhs() ->
+  E1 = conj( var( x ), var( y ) ),
+  E2 = conj( false(), var( y ) ),
+  ?assertEqual( E2, subst( E1, x, false() ) ).
+
+substitution_propagates_to_conjunction_rhs() ->
+  E1 = conj( var( x ), var( y ) ),
+  E2 = conj( var( x ), false() ),
+  ?assertEqual( E2, subst( E1, y, false() ) ).
+
+substitution_propagates_to_disjunction_lhs() ->
+  E1 = disj( var( x ), var( y ) ),
+  E2 = disj( false(), var( y ) ),
+  ?assertEqual( E2, subst( E1, x, false() ) ).
+
+substitution_propagates_to_disjunction_rhs() ->
+  E1 = disj( var( x ), var( y ) ),
+  E2 = disj( var( x ), false() ),
+  ?assertEqual( E2, subst( E1, y, false() ) ).
 
 subst_leaves_nonmatching_var_alone() ->
   E = var( x ),

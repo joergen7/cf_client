@@ -217,10 +217,27 @@ subst( E1 = {file, _, _, _}, _, _ ) -> E1;
 subst( E1 = {true, _}, _, _ )       -> E1;
 subst( E1 = {false, _}, _, _ )      -> E1;
 
+subst( {cmp, Info, E1, E2}, X, ES ) ->
+  cuneiform_lang:cmp( Info, subst( E1, X, ES ),
+                            subst( E2, X, ES ) );
+
 subst( {cnd, Info, EIf, EThen, EElse}, X, E2 ) ->
-  {cnd, Info, subst( EIf, X, E2 ),
-              subst( EThen, X, E2 ),
-              subst( EElse, X, E2 )};
+  cuneiform_lang:cnd( Info, subst( EIf, X, E2 ),
+                            subst( EThen, X, E2 ),
+                            subst( EElse, X, E2 ) );
+
+subst( {neg, Info, E}, X, ES ) ->
+  cuneiform_lang:neg( Info, subst( E, X, ES ) );
+
+subst( {conj, Info, E1, E2}, X, ES ) ->
+  cuneiform_lang:conj( Info, subst( E1, X, ES ),
+                             subst( E2, X, ES ) );
+
+subst( {disj, Info, E1, E2}, X, ES ) ->
+  cuneiform_lang:disj( Info, subst( E1, X, ES ),
+                             subst( E2, X, ES ) );
+
+
 
 subst( {var, _, X}, X, E2 )      -> E2;
 subst( E1 = {var, _, _}, _, _ )  -> E1;
@@ -230,13 +247,13 @@ subst( {lam_ntv, Info, ArgLst, EBody}, X, E2 ) ->
   F = fun( {X1, S, T}, {lam_ntv, Info1, ArgLst1, EBody1} ) ->
         X2 = gensym( X1 ),
         EBody2 = rename( EBody1, X1, X2 ),
-        {lam_ntv, Info1, [{X2, S, T}|ArgLst1], EBody2}
+        cuneiform_lang:lam_ntv( Info1, [{X2, S, T}|ArgLst1], EBody2 )
       end,
 
   Lam0 = {lam_ntv, Info, [], EBody},
   {lam_ntv, Info, NewArgLst, NewEBody} = lists:foldr( F, Lam0, ArgLst ),
 
-  {lam_ntv, Info, NewArgLst, subst( NewEBody, X, E2 )};
+  cuneiform_lang:lam_ntv( Info, NewArgLst, subst( NewEBody, X, E2 ) );
 
 subst( {app, Info, EFn, ArgLst}, X, E2 ) ->
 
