@@ -1012,6 +1012,9 @@ in_hole_test_() ->
     {"inserting in the empty context returns the original expression",
      fun insert_in_empty_ctx_returns_original_expr/0},
 
+    {"inserting leaves string literal unchanged",
+     fun inserting_leaves_string_literal_unchanged/0},
+
     {"inserting leaves true unchanged",
      fun inserting_leaves_true_unchanged/0},
 
@@ -1030,14 +1033,50 @@ in_hole_test_() ->
     {"inserting traverses conjunction rhs",
      fun inserting_traverses_conjunction_rhs/0},
 
-    {"inserting traverses non-foreign application's function position",
-     fun insert_traverses_non_frn_app_fun_pos/0}
+    {"inserting traverses disjunction lhs",
+     fun inserting_traverses_disjunction_lhs/0},
+
+    {"inserting traverses disjunction rhs",
+     fun inserting_traverses_disjunction_rhs/0},
+
+    {"inserting leaves variable unchanged",
+     fun inserting_leaves_variable_unchanged/0},
+
+    {"inserting leaves foreign function unchanged",
+     fun inserting_leaves_foreign_function_unchanged/0},
+
+    {"inserting traverses application function position",
+     fun inserting_traverses_application_function_position/0},
+
+    {"inserting traverses application argument bindings",
+     fun inserting_traverses_application_argument_bindings/0},
+
+    {"inserting traverses list elements",
+     fun inserting_traverses_list_elements/0},
+
+    {"inserting traverses list append lhs",
+     fun inserting_traverses_list_append_lhs/0},
+
+    {"inserting traverses list append rhs",
+     fun inserting_traverses_list_append_rhs/0},
+
+    {"inserting traverses isnil operand",
+     fun inserting_traverses_isnil_operand/0},
+
+    {"inserting traverses record fields",
+     fun inserting_traverses_record_fields/0},
+
+    {"inserting traverses projection operand",
+     fun inserting_traverses_projection_operand/0}
    ]
   }.
 
 insert_in_empty_ctx_returns_original_expr() ->
   E = str( <<"blub">> ),
   ?assertEqual( E, in_hole( E, hole ) ).
+
+inserting_leaves_string_literal_unchanged() ->
+  ?assertEqual( str( <<"blub">> ), in_hole( true(), str( <<"blub">> ) ) ).
 
 inserting_leaves_true_unchanged() ->
   ?assertEqual( true(), in_hole( str( <<"blub">> ), true() ) ).
@@ -1069,11 +1108,70 @@ inserting_traverses_conjunction_rhs() ->
   E2 = conj( true(), E1 ),
   ?assertEqual( E2, in_hole( E1, Ctx ) ).
 
-insert_traverses_non_frn_app_fun_pos() ->
+inserting_traverses_disjunction_lhs() ->
+  E1 = true(),
+  Ctx = {disj, na, hole, false()},
+  E2 = disj( E1, false() ),
+  ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_traverses_disjunction_rhs() ->
+  E1 = false(),
+  Ctx = {disj, na, true(), hole},
+  E2 = disj( true(), E1 ),
+  ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_leaves_variable_unchanged() ->
+  ?assertEqual( var( x ), in_hole( str( <<"blub">> ), var( x ) ) ).
+
+inserting_leaves_foreign_function_unchanged() ->
+  Ctx = lam_frn( f, [], t_rcd( [t_arg( a, t_str() )] ), l_bash(), <<"blub">> ),
+  ?assertEqual( Ctx, in_hole( str( <<"blub">> ), Ctx ) ).
+
+inserting_traverses_application_function_position() ->
   E1 = var( f ),
   Ctx = app( hole, [] ),
   E2 = app( var( f ), [] ),
   ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_traverses_application_argument_bindings() ->
+  E1 = var( x ),
+  Ctx = {app, na, var( f ), [{x, hole}]},
+  E2 = app( var( f ), [e_bind( x, E1 )] ),
+  ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_traverses_list_elements() ->
+  E1 = var( x ),
+  Ctx = {lst, na, t_str(), [hole]},
+  E2 = lst( t_str(), [E1] ),
+  ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_traverses_list_append_lhs() ->
+  E1 = var( x ),
+  Ctx = {append, na, hole, var( y )},
+  E2 = append( E1, var( y ) ),
+  ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_traverses_list_append_rhs() ->
+  E1 = var( x ),
+  Ctx = {append, na, var( y ), hole},
+  E2 = append( var( y ), E1 ),
+  ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_traverses_isnil_operand() ->
+  E1 = var( x ),
+  Ctx = {isnil, na, hole},
+  ?assertEqual( isnil( E1 ), in_hole( E1, Ctx ) ).
+
+inserting_traverses_record_fields() ->
+  E1 = var( x ),
+  Ctx = {rcd, na, [{a, hole}]},
+  ?assertEqual( rcd( [e_bind( a, E1 )] ), in_hole( E1, Ctx ) ).
+
+inserting_traverses_projection_operand() ->
+  E1 = var( x ),
+  Ctx = {proj, na, a, hole},
+  ?assertEqual( proj( a, E1 ), in_hole( E1, Ctx ) ).
+
 
 find_context_test_() ->
   {foreach,
@@ -1127,17 +1225,77 @@ find_context_test_() ->
     {"find_context traverses conjunction rhs",
      fun find_context_traverses_conjunction_rhs/0},
 
+    {"disjunction with value operands is redex",
+     fun disjunction_with_value_operands_is_redex/0},
+
+    {"find_context traverses disjunction lhs",
+     fun find_context_traverses_disjunction_lhs/0},
+
+    {"find_context traverses disjunction rhs",
+     fun find_context_traverses_disjunction_rhs/0},
+
     {"var is no redex",
      fun var_is_no_redex/0},
 
     {"native function is no redex",
      fun lam_ntv_is_no_redex/0},
 
+    {"foreign function is no redex",
+     fun foreign_function_is_no_redex/0},
+
     {"application with native function is redex",
      fun app_with_lam_ntv_is_redex/0},
 
+    {"application with foreign function and no arguments is redex",
+     fun application_with_foreign_function_and_no_arguments_is_redex/0},
+
+    {"application with foreign function and value argument is redex",
+     fun application_with_foreign_function_and_value_argument_is_redex/0},
+
+    {"application with foreign function traverses arguments",
+     fun application_with_foreign_function_traverses_arguments/0},
+
     {"find_context traverses application's function position",
-     fun find_context_traverses_app_fn_pos/0}
+     fun find_context_traverses_app_fn_pos/0},
+
+    {"future is no redex",
+     fun future_is_no_redex/0},
+
+    {"empty list is no redex",
+     fun empty_list_is_no_redex/0},
+
+    {"find_context traverses list elements",
+     fun find_context_traverses_list_elements/0},
+
+    {"list append with value operands is redex",
+     fun list_append_with_value_operands_is_redex/0},
+
+    {"find_context traverses list append lhs",
+     fun find_context_traverses_list_append_lhs/0},
+
+    {"find_context traverses list append rhs",
+     fun find_context_traverses_list_append_rhs/0},
+
+    {"isnil with value operand is redex",
+     fun isnil_with_value_operand_is_redex/0},
+
+    {"find_context traverses isnil operand",
+     fun find_context_traverses_isnil_operand/0},
+
+    {"find_context traverses record fields",
+     fun find_context_traverses_record_fields/0},
+
+    {"projection with value operand is redex",
+     fun projection_with_value_operand_is_redex/0},
+
+    {"find_context traverses projection operand",
+     fun find_context_traverses_projection_operand/0},
+
+    {"fixpoint operator with value operand is redex",
+     fun fixpoint_operator_with_value_operand_is_redex/0},
+
+    {"find_context traverses fixpoint operand",
+     fun find_context_traverses_fixpoint_operand/0}
 
    ]}.
     
@@ -1206,17 +1364,106 @@ find_context_traverses_conjunction_rhs() ->
   Ctx = {conj, na, true(), hole},
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
 
+disjunction_with_value_operands_is_redex() ->
+  E = disj( true(), false() ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+find_context_traverses_disjunction_lhs() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {disj, na, hole, false()},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+find_context_traverses_disjunction_rhs() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {disj, na, true(), hole},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
 var_is_no_redex() ->
   ?assertEqual( no_ctx, find_context( var( x ) ) ).
 
 lam_ntv_is_no_redex() ->
   ?assertEqual( no_ctx, find_context( e_lam1() ) ).
 
+foreign_function_is_no_redex() ->
+  E = lam_frn( f, [], t_rcd( [t_arg( a, t_str() )] ), l_bash(), <<"blub">> ),
+  ?assertEqual( no_ctx, find_context( E ) ).
+
 app_with_lam_ntv_is_redex() ->
   E = e_app_id(),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+application_with_foreign_function_and_no_arguments_is_redex() ->
+  E = app(
+        lam_frn( f, [], t_rcd( [t_arg( a, t_str() )] ), l_bash(), <<"blub">> ),
+        [] ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+application_with_foreign_function_and_value_argument_is_redex() ->
+  E = app(
+        lam_frn( f, [t_arg( x, t_bool() )], t_rcd( [t_arg( a, t_str() )] ),
+                 l_bash(), <<"blub">> ),
+        [e_bind( x, true() )] ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+application_with_foreign_function_traverses_arguments() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {app, na,
+          {lam_frn, na, f, [t_arg( x, t_bool() )],
+                    t_rcd( [t_arg( a, t_str() )] ), l_bash(), <<"blub">>},
+          [{x, hole}]},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
 
 find_context_traverses_app_fn_pos() ->
   E = cnd( true(), e_lam_const(), e_lam_const() ),
   Ctx = app( hole, [] ),
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+future_is_no_redex() ->
+  ?assertEqual( no_ctx, find_context( {fut, na, na} ) ).
+
+empty_list_is_no_redex() ->
+  ?assertEqual( no_ctx, find_context( lst( t_str(), [] ) ) ).
+
+find_context_traverses_list_elements() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {lst, na, t_str(), [hole]},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+list_append_with_value_operands_is_redex() ->
+  E = append( lst( t_str(), [] ), lst( t_str(), [] ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+find_context_traverses_list_append_lhs() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {append, na, hole, var( x )},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+find_context_traverses_list_append_rhs() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {append, na, var( x ), hole},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+isnil_with_value_operand_is_redex() ->
+  E = isnil( lst( t_str(), [] ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+find_context_traverses_isnil_operand() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {isnil, na, hole},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+find_context_traverses_record_fields() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {rcd, na, [{a, hole}]},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+projection_with_value_operand_is_redex() ->
+  E = proj( x, rcd( [e_bind( x, str( <<"blub">> ) )] ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+find_context_traverses_projection_operand() ->
+  E = cnd( true(), rcd( [e_bind( x, str( <<"bla">> ) )] ),
+                   rcd( [e_bind( x, str( <<"blub">> ) )] ) ),
+  Ctx = {proj, na, x, hole},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+

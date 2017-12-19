@@ -69,7 +69,16 @@
                      | {cmp, info(), ctx(), e()}
                      | {cmp, info(), e(), ctx()}
                      | {cnd, info(), ctx(), e(), e()}
-                     | {app, info(), ctx(), [e_bind()]}.
+                     | {neg, info(), ctx()}
+                     | {conj, info(), ctx(), e()}
+                     | {conj, info(), e(), ctx()}
+                     | {disj, info(), ctx(), e()}
+                     | {disj, info(), e(), ctx()}
+                     | {app, info(), ctx(), [e_bind()]}
+                     | {app, info(), e(), [{x(), e() | ctx()}]}
+                     | {lst, info(), t(), [e() | ctx()]}
+                     | {rcd, info(), [{x(), e() | ctx()}]}
+                     | {proj, info(), x(), ctx()}.
 
 -type type_error()  :: {unbound_var, info(), x()}
                      | {type_mismatch, info(), {t(), t()}}
