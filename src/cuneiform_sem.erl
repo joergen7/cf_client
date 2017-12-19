@@ -331,13 +331,20 @@ gensym( X ) when is_atom( X ) ->
 when E   :: e(),
      Ctx :: ctx().
 
-in_hole( E, hole ) ->
-  E;
+in_hole( E, hole )              -> E;
+in_hole( _E, Ctx = {true, _} )  -> Ctx;
+in_hole( _E, Ctx = {false, _} ) -> Ctx;
 
 in_hole( E, {cnd, Info, EIf, EThen, EElse} ) ->
   % note that we do not traverse the then- and else expressions because there
   % can never be a hole down these two roads
-  {cnd, Info, in_hole( E, EIf ), EThen, EElse};
+  cnd( Info, in_hole( E, EIf ), EThen, EElse );
+
+in_hole( E, {neg, Info, E1} ) ->
+  neg( Info, in_hole( E, E1 ) );
+
+in_hole( E, {conj, Info, E1, E2} ) ->
+  conj( Info, in_hole( E, E1 ), in_hole( E, E2 ) );
 
 % TODO: first check for foreignness
 % in_hole( E, {app, Info, {lam_frn, ...}, ArgLst} ) -> ...
@@ -345,7 +352,7 @@ in_hole( E, {cnd, Info, EIf, EThen, EElse} ) ->
 in_hole( E, {app, Info, EFn, ArgLst} ) ->
   % note that we do not traverse the argument list because unless the function
   % expression is a foreign function, the hole must be left hand
-  {app, Info, in_hole( E, EFn ), ArgLst}.
+  app( Info, in_hole( E, EFn ), ArgLst ).
 
 
 -spec find_context( E :: e() ) -> {ok, e(), ctx()} | no_ctx.
@@ -366,6 +373,8 @@ try_context( {str, _, _}, _ )        -> no_ctx;
 try_context( {file, _, _, _}, _ )    -> no_ctx;
 try_context( {true, _}, _ )          -> no_ctx;
 try_context( {false, _}, _ )         -> no_ctx;
+try_context( {var, _, _}, _ )        -> no_ctx;
+try_context( {lam_ntv, _, _, _}, _ ) -> no_ctx;
 
 try_context( E = {cmp, Info, E1, E2}, Ctx ) ->
   case is_value( E1 ) andalso is_value( E2 ) of
@@ -383,14 +392,25 @@ try_context( E = {cnd, Info, EIf, EThen, EElse}, Ctx ) ->
       try_context( EIf, Ctx1 )
   end;
 
-try_context( {var, _, _}, _ )        -> no_ctx;
-try_context( {lam_ntv, _, _, _}, _ ) -> no_ctx;
+try_context( E = {neg, Info, E1}, Ctx ) ->
+  case is_value( E1 ) of
+    true  -> throw( {E, Ctx} );
+    false -> try_context( E1, in_hole( {neg, Info, hole}, Ctx ) )
+  end;
+
+try_context( E = {conj, Info, E1, E2}, Ctx ) ->
+  case is_value( E1 ) andalso is_value( E2 ) of
+    true  -> throw( {E, Ctx} );
+    false ->
+      try_context( E1, in_hole( {conj, Info, hole, E2}, Ctx ) ),
+      try_context( E2, in_hole( {conj, Info, E1, hole}, Ctx ) )
+  end;
 
 try_context( E = {app, _, {lam_ntv, _, _, _}, _}, Ctx ) ->
   throw( {E, Ctx} );
 
-try_context( {app, Info, EFn, ArgLst}, Ctx ) ->
-  Ctx1 = in_hole( {app, Info, hole, ArgLst}, Ctx ),
-  try_context( EFn, Ctx1 ).
+% TODO: differentiate with foreign function
 
+try_context( {app, Info, EFn, ArgLst}, Ctx ) ->
+  try_context( EFn, in_hole( {app, Info, hole, ArgLst}, Ctx ) ).
 

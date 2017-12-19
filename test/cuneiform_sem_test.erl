@@ -1012,8 +1012,23 @@ in_hole_test_() ->
     {"inserting in the empty context returns the original expression",
      fun insert_in_empty_ctx_returns_original_expr/0},
 
+    {"inserting leaves true unchanged",
+     fun inserting_leaves_true_unchanged/0},
+
+    {"inserting leaves false unchanged",
+     fun inserting_leaves_false_unchanged/0},
+
     {"inserting traverses conditional's if expression",
      fun insert_traverses_cnd_if_expr/0},
+
+    {"inserting traverses negation operand",
+     fun inserting_traverses_negation_operand/0},
+
+    {"inserting traverses conjunction lhs",
+     fun inserting_traverses_conjunction_lhs/0},
+
+    {"inserting traverses conjunction rhs",
+     fun inserting_traverses_conjunction_rhs/0},
 
     {"inserting traverses non-foreign application's function position",
      fun insert_traverses_non_frn_app_fun_pos/0}
@@ -1024,10 +1039,34 @@ insert_in_empty_ctx_returns_original_expr() ->
   E = str( <<"blub">> ),
   ?assertEqual( E, in_hole( E, hole ) ).
 
+inserting_leaves_true_unchanged() ->
+  ?assertEqual( true(), in_hole( str( <<"blub">> ), true() ) ).
+
+inserting_leaves_false_unchanged() ->
+  ?assertEqual( false(), in_hole( str( <<"blub">> ), false() ) ).
+
 insert_traverses_cnd_if_expr() ->
   E1 = true(),
-  Ctx = cnd( hole, str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {cnd, na, hole, str( <<"bla">> ), str( <<"blub">> )},
   E2 = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_traverses_negation_operand() ->
+  E1 = true(),
+  Ctx = {neg, na, hole},
+  E2 = neg( E1 ),
+  ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_traverses_conjunction_lhs() ->
+  E1 = true(),
+  Ctx = {conj, na, hole, false()},
+  E2 = conj( E1, false() ),
+  ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_traverses_conjunction_rhs() ->
+  E1 = false(),
+  Ctx = {conj, na, true(), hole},
+  E2 = conj( true(), E1 ),
   ?assertEqual( E2, in_hole( E1, Ctx ) ).
 
 insert_traverses_non_frn_app_fun_pos() ->
@@ -1072,6 +1111,21 @@ find_context_test_() ->
 
     {"find_context traverses conditional's if expression",
      fun find_context_traverses_cnd_if_expr/0},
+
+    {"negation with value operand is redex",
+     fun negation_with_value_operand_is_redex/0},
+
+    {"find_context traverses negation operand",
+     fun find_context_traverses_negation_operand/0},
+
+    {"conjunction with value operands is redex",
+     fun conjunction_with_value_operands_is_redex/0},
+
+    {"find_context traverses conjunction lhs",
+     fun find_context_traverses_conjunction_lhs/0},
+
+    {"find_context traverses conjunction rhs",
+     fun find_context_traverses_conjunction_rhs/0},
 
     {"var is no redex",
      fun var_is_no_redex/0},
@@ -1127,6 +1181,29 @@ cnd_with_false_if_expr_is_redex() ->
 find_context_traverses_cnd_if_expr() ->
   E = cnd( true(), true(), false() ),
   Ctx = cnd( hole, str( <<"bla">> ), str( <<"blub">> ) ),
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+negation_with_value_operand_is_redex() ->
+  E = neg( true() ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+find_context_traverses_negation_operand() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = neg( hole ),
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+conjunction_with_value_operands_is_redex() ->
+  E = conj( true(), false() ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+find_context_traverses_conjunction_lhs() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {conj, na, hole, false()},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+find_context_traverses_conjunction_rhs() ->
+  E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
+  Ctx = {conj, na, true(), hole},
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
 
 var_is_no_redex() ->
