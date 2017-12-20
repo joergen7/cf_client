@@ -1066,6 +1066,9 @@ in_hole_test_() ->
     {"inserting traverses for list expressions",
      fun inserting_traverses_for_list_expressions/0},
 
+    {"inserting traverses fold list expression",
+     fun inserting_traverses_fold_list_expression/0},
+
     {"inserting traverses record fields",
      fun inserting_traverses_record_fields/0},
 
@@ -1074,6 +1077,7 @@ in_hole_test_() ->
 
     {"inserting traverses fixpoint operand",
      fun inserting_traverses_fixpoint_operand/0}
+
    ]
   }.
 
@@ -1172,6 +1176,12 @@ inserting_traverses_for_list_expressions() ->
   E1 = var( l ),
   Ctx = {for, na, [{x, hole}], var( x )},
   ?assertEqual( for( [e_bind( x, E1 )], var( x ) ), in_hole( E1, Ctx ) ).
+
+inserting_traverses_fold_list_expression() ->
+  E1 = var( l ),
+  Ctx = {fold, na, {x_acc, var( x_acc )}, {x, hole}, var( x )},
+  E2 = fold( e_bind( x_acc, var( x_acc ) ), e_bind( x, var( l ) ), var( x ) ),
+  ?assertEqual( E2, in_hole( E1, Ctx ) ).
 
 inserting_traverses_record_fields() ->
   E1 = var( x ),
@@ -1320,9 +1330,16 @@ find_context_test_() ->
      fun for_with_literal_list_expression_is_redex/0},
 
     {"find_context traverses for list expression",
-     fun find_context_traverses_for_list_expression/0}
+     fun find_context_traverses_for_list_expression/0},
 
+    {"fold with value list expression is redex",
+     fun fold_with_value_list_expression_is_redex/0},
 
+    {"fold with literal list expression is redex",
+     fun fold_with_literal_list_expression_is_redex/0},
+
+    {"find_context traverses fold list expression",
+     fun find_context_traverses_fold_list_expression/0}
    ]}.
     
 
@@ -1514,8 +1531,23 @@ for_with_literal_list_expression_is_redex() ->
   E = for( [e_bind( x, lst( t_bool(), [neg( true() )] ) )], var( x ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
-
 find_context_traverses_for_list_expression() ->
   E = append( lst( t_str(), [str( <<"bla">> )] ), lst( t_str(), [str( <<"blub">> )] ) ),
   Ctx = {for, na, [{x, hole}], var( x )},
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+fold_with_value_list_expression_is_redex() ->
+  ELst = lst( t_bool(), [true()] ),
+  EFold = fold( e_bind( x_acc, true() ), e_bind( x, ELst ), var( x ) ),
+  ?assertEqual( {ok, EFold, hole}, find_context( EFold ) ).
+
+
+fold_with_literal_list_expression_is_redex() ->
+  ELst = lst( t_bool(), [neg( true() )] ),
+  EFold = fold( e_bind( x_acc, true() ), e_bind( x, ELst ), var( x ) ),
+  ?assertEqual( {ok, EFold, hole}, find_context( EFold ) ).
+
+find_context_traverses_fold_list_expression() ->
+  ELst = cnd( true(), lst( t_bool(), [true()] ), lst( t_bool(), [false()] ) ),
+  Ctx = {fold, na, {x_acc, true()}, {x, hole}, var( x )},
+  ?assertEqual( {ok, ELst, Ctx}, find_context( in_hole( ELst, Ctx ) ) ).

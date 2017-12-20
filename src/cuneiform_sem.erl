@@ -371,6 +371,11 @@ in_hole( E, {for, Info, EBindLst, EBody} ) ->
   % a hole down that road
   {for, Info, [{X1, in_hole( E, E1 )} || {X1, E1} <- EBindLst], EBody};
 
+in_hole( E, {fold, Info, AccBind, {X, ELst}, EBody} ) ->
+  % note that we traverse neither accumulator initialization expression nor body
+  % expression because there can never be a hole down that road
+  {fold, Info, AccBind, {X, in_hole( E, ELst )}, EBody};
+
 in_hole( E, {rcd, Info, EBindLst} ) ->
   {rcd, Info, [{X, in_hole( E, E1 )} || {X, E1} <- EBindLst]};
 
@@ -558,4 +563,20 @@ try_context( E = {for, Info, EBindLst, EBody}, Ctx ) ->
   case lists:all( IsLst, [E1 || {_, E1} <- EBindLst] ) of
     true  -> throw( {E, Ctx} );
     false -> F( [], EBindLst )
+  end;
+
+try_context( E = {fold, Info, AccBind, {X, ELst}, EBody}, Ctx ) ->
+
+  IsLst =
+    fun
+      ( {lst, _, _, _} ) -> true;
+      ( _ )              -> false
+    end,
+
+  case IsLst( ELst ) of
+    true  -> throw( {E, Ctx} );
+    false ->
+      try_context(
+        ELst,
+        in_hole( {fold, Info, AccBind, {X, hole}, EBody}, Ctx ) )
   end.
