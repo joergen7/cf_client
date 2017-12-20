@@ -366,11 +366,19 @@ in_hole( E, {append, Info, E1, E2} ) ->
 in_hole( E, {isnil, Info, E1} ) ->
   {isnil, Info, in_hole( E, E1 )};
 
+in_hole( E, {for, Info, EBindLst, EBody} ) ->
+  % note that we do not traverse the body expression because there can never be
+  % a hole down that road
+  {for, Info, [{X1, in_hole( E, E1 )} || {X1, E1} <- EBindLst], EBody};
+
 in_hole( E, {rcd, Info, EBindLst} ) ->
   {rcd, Info, [{X, in_hole( E, E1 )} || {X, E1} <- EBindLst]};
 
 in_hole( E, {proj, Info, X, E1} ) ->
-  {proj, Info, X, in_hole( E, E1 )}.
+  {proj, Info, X, in_hole( E, E1 )};
+
+in_hole( E, {fix, Info, E1} ) ->
+  {fix, Info, in_hole( E, E1 )}.
 
 
 -spec find_context( E :: e() ) -> {ok, e(), ctx()} | no_ctx.
@@ -516,4 +524,38 @@ try_context( E = {proj, Info, X, E1}, Ctx ) ->
   case is_value( E1 ) of
     true  -> throw( {E, Ctx} );
     false -> try_context( E1, in_hole( {proj, Info, X, hole}, Ctx ) )
+  end;
+
+try_context( E = {fix, Info, E1}, Ctx ) ->
+  case is_value( E1 ) of
+    true  -> throw( {E, Ctx} );
+    false -> try_context( E1, in_hole( {fix, Info, hole}, Ctx ) )
+  end;
+
+try_context( E = {for, Info, EBindLst, EBody}, Ctx ) ->
+
+  IsLst =
+    fun
+      ( {lst, _, _, _} ) -> true;
+      ( _ )              -> false
+    end,
+
+  F =
+    fun
+
+      F( _Prefix, [] ) ->
+        no_ctx;
+
+      F( Prefix, [Pivot|Suffix] ) ->
+        {X, E1} = Pivot,
+        try_context(
+          E1,
+          in_hole( {for, Info, Prefix++[{X, hole}|Suffix], EBody}, Ctx ) ),
+        F( Prefix++[Pivot], Suffix )
+
+    end,
+
+  case lists:all( IsLst, [E1 || {_, E1} <- EBindLst] ) of
+    true  -> throw( {E, Ctx} );
+    false -> F( [], EBindLst )
   end.

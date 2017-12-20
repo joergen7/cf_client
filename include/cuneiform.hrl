@@ -77,8 +77,17 @@
                      | {app, info(), ctx(), [e_bind()]}
                      | {app, info(), e(), [{x(), e() | ctx()}]}
                      | {lst, info(), t(), [e() | ctx()]}
+                     | {append, info(), ctx(), e()}
+                     | {append, info(), e(), ctx()}
+                     | {isnil, info(), ctx()}
+                     | {for, info(), [{x(), e() | ctx()}], e()}
+                     | {for, info(), [e_bind()], ctx()}
+                     | {fold, info(), {x(), ctx()}, e_bind(), e()}
+                     | {fold, info(), e_bind(), {x(), ctx()}, e()}
+                     | {fold, info(), e_bind(), e_bind(), ctx()}
                      | {rcd, info(), [{x(), e() | ctx()}]}
-                     | {proj, info(), x(), ctx()}.
+                     | {proj, info(), x(), ctx()}
+                     | {fix, info(), ctx()}.
 
 -type type_error()  :: {unbound_var, info(), x()}
                      | {type_mismatch, info(), {t(), t()}}

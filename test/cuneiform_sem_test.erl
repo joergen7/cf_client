@@ -1063,11 +1063,17 @@ in_hole_test_() ->
     {"inserting traverses isnil operand",
      fun inserting_traverses_isnil_operand/0},
 
+    {"inserting traverses for list expressions",
+     fun inserting_traverses_for_list_expressions/0},
+
     {"inserting traverses record fields",
      fun inserting_traverses_record_fields/0},
 
     {"inserting traverses projection operand",
-     fun inserting_traverses_projection_operand/0}
+     fun inserting_traverses_projection_operand/0},
+
+    {"inserting traverses fixpoint operand",
+     fun inserting_traverses_fixpoint_operand/0}
    ]
   }.
 
@@ -1162,6 +1168,11 @@ inserting_traverses_isnil_operand() ->
   Ctx = {isnil, na, hole},
   ?assertEqual( isnil( E1 ), in_hole( E1, Ctx ) ).
 
+inserting_traverses_for_list_expressions() ->
+  E1 = var( l ),
+  Ctx = {for, na, [{x, hole}], var( x )},
+  ?assertEqual( for( [e_bind( x, E1 )], var( x ) ), in_hole( E1, Ctx ) ).
+
 inserting_traverses_record_fields() ->
   E1 = var( x ),
   Ctx = {rcd, na, [{a, hole}]},
@@ -1171,6 +1182,11 @@ inserting_traverses_projection_operand() ->
   E1 = var( x ),
   Ctx = {proj, na, a, hole},
   ?assertEqual( proj( a, E1 ), in_hole( E1, Ctx ) ).
+
+inserting_traverses_fixpoint_operand() ->
+  E1 = var( x ),
+  Ctx = {fix, na, hole},
+  ?assertEqual( fix( E1 ), in_hole( E1, Ctx ) ).
 
 
 find_context_test_() ->
@@ -1295,7 +1311,17 @@ find_context_test_() ->
      fun fixpoint_operator_with_value_operand_is_redex/0},
 
     {"find_context traverses fixpoint operand",
-     fun find_context_traverses_fixpoint_operand/0}
+     fun find_context_traverses_fixpoint_operand/0},
+
+    {"for with value list expression is redex",
+     fun for_with_value_list_expression_is_redex/0},
+
+    {"for with literal list expression is redex",
+     fun for_with_literal_list_expression_is_redex/0},
+
+    {"find_context traverses for list expression",
+     fun find_context_traverses_for_list_expression/0}
+
 
    ]}.
     
@@ -1467,3 +1493,29 @@ find_context_traverses_projection_operand() ->
   Ctx = {proj, na, x, hole},
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
 
+fixpoint_operator_with_value_operand_is_redex() ->
+  E = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )], str( <<"blub">> ) ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+find_context_traverses_fixpoint_operand() ->
+  E = cnd( true(),
+           lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+                    str( <<"bla">> ) ),
+           lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+                    str( <<"blub">> ) ) ),
+  Ctx = {fix, na, hole},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
+
+for_with_value_list_expression_is_redex() ->
+  E = for( [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], var( x ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+for_with_literal_list_expression_is_redex() ->
+  E = for( [e_bind( x, lst( t_bool(), [neg( true() )] ) )], var( x ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+
+find_context_traverses_for_list_expression() ->
+  E = append( lst( t_str(), [str( <<"bla">> )] ), lst( t_str(), [str( <<"blub">> )] ) ),
+  Ctx = {for, na, [{x, hole}], var( x )},
+  ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
