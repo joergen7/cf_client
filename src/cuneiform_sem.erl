@@ -333,10 +333,14 @@ when E   :: e() | ctx(),
 
 in_hole( E, hole )                               -> E;
 in_hole( _E, Ctx = {str, _, _} )                 -> Ctx;
+in_hole( _E, Ctx = {file, _, _, _} )             -> Ctx;
 in_hole( _E, Ctx = {true, _} )                   -> Ctx;
 in_hole( _E, Ctx = {false, _} )                  -> Ctx;
 in_hole( _E, Ctx = {var, _, _} )                 -> Ctx;
 in_hole( _E, Ctx = {lam_frn, _, _, _, _, _, _} ) -> Ctx;
+
+in_hole( E, {cmp, Info, E1, E2} ) ->
+  {cmp, Info, in_hole( E, E1 ), in_hole( E, E2 )};
 
 in_hole( E, {cnd, Info, EIf, EThen, EElse} ) ->
   % note that we do not traverse the then- and else expressions because there

@@ -1015,6 +1015,15 @@ in_hole_test_() ->
     {"inserting leaves string literal unchanged",
      fun inserting_leaves_string_literal_unchanged/0},
 
+    {"inserting traverses comparison lhs",
+     fun inserting_traverses_comparison_lhs/0},
+
+    {"inserting traverses comparison rhs",
+     fun inserting_traverses_comparison_rhs/0},
+
+    {"inserting leaves file unchanged",
+     fun inserting_leaves_file_unchanged/0},
+
     {"inserting leaves true unchanged",
      fun inserting_leaves_true_unchanged/0},
 
@@ -1042,6 +1051,9 @@ in_hole_test_() ->
     {"inserting leaves variable unchanged",
      fun inserting_leaves_variable_unchanged/0},
 
+    {"inserting leaves native function unchanged",
+     fun inserting_leaves_native_function_unchanged/0},
+
     {"inserting leaves foreign function unchanged",
      fun inserting_leaves_foreign_function_unchanged/0},
 
@@ -1050,6 +1062,9 @@ in_hole_test_() ->
 
     {"inserting traverses application argument bindings",
      fun inserting_traverses_application_argument_bindings/0},
+
+    {"inserting leaves future unchanged",
+     fun inserting_leaves_future_unchanged/0},
 
     {"inserting traverses list elements",
      fun inserting_traverses_list_elements/0},
@@ -1087,6 +1102,20 @@ insert_in_empty_ctx_returns_original_expr() ->
 
 inserting_leaves_string_literal_unchanged() ->
   ?assertEqual( str( <<"blub">> ), in_hole( true(), str( <<"blub">> ) ) ).
+
+inserting_traverses_comparison_lhs() ->
+  E1 = str( <<"bla">> ),
+  Ctx = {cmp, na, hole, str( <<"blub">> )},
+  ?assertEqual( cmp( E1, str( <<"blub">> ) ), in_hole( E1, Ctx ) ).
+
+inserting_traverses_comparison_rhs() ->
+  E1 = str( <<"blub">> ),
+  Ctx = {cmp, na, str( <<"bla">> ), hole},
+  ?assertEqual( cmp( str( <<"bla">> ), E1 ), in_hole( E1, Ctx ) ).
+
+inserting_leaves_file_unchanged() ->
+  E = file( <<"bla.txt">> ),
+  ?assertEqual( E, in_hole( true(), E ) ).
 
 inserting_leaves_true_unchanged() ->
   ?assertEqual( true(), in_hole( str( <<"blub">> ), true() ) ).
@@ -1133,6 +1162,9 @@ inserting_traverses_disjunction_rhs() ->
 inserting_leaves_variable_unchanged() ->
   ?assertEqual( var( x ), in_hole( str( <<"blub">> ), var( x ) ) ).
 
+inserting_leaves_native_function_unchanged() ->
+  ?assertEqual( e_lam1(), in_hole( true(), e_lam1() ) ).
+
 inserting_leaves_foreign_function_unchanged() ->
   Ctx = lam_frn( f, [], t_rcd( [t_arg( a, t_str() )] ), l_bash(), <<"blub">> ),
   ?assertEqual( Ctx, in_hole( str( <<"blub">> ), Ctx ) ).
@@ -1148,6 +1180,10 @@ inserting_traverses_application_argument_bindings() ->
   Ctx = {app, na, var( f ), [{x, hole}]},
   E2 = app( var( f ), [e_bind( x, E1 )] ),
   ?assertEqual( E2, in_hole( E1, Ctx ) ).
+
+inserting_leaves_future_unchanged() ->
+  E = {fut, na, na},
+  ?assertEqual( E, in_hole( true(), E ) ).
 
 inserting_traverses_list_elements() ->
   E1 = var( x ),
