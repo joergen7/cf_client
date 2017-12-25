@@ -205,7 +205,8 @@ is_value_test_() ->
      fun record_of_nonvalue_is_no_value/0},
 
     {"projection is no value",  fun projection_is_no_value/0},
-    {"fixpoint is no value",    fun fixpoint_is_no_value/0}
+    {"fixpoint is no value",    fun fixpoint_is_no_value/0},
+    {"error is value",          fun error_is_value/0}
    ]
   }.
 
@@ -301,7 +302,8 @@ fixpoint_is_no_value() ->
   E = fix( ELam ),
   ?assertNot( is_value( E ) ).
 
-
+error_is_value() ->
+  ?assertEqual( true, is_value( {err, na, <<"bla">>, <<"blub">>} ) ).
 
 %%====================================================================
 %% Substitution and renaming
@@ -420,7 +422,10 @@ rename_test_() ->
      fun rename_propagates_to_projection_operand/0},
 
     {"rename propagates to fixpoint operand",
-     fun rename_propagates_to_fixpoint_operand/0}
+     fun rename_propagates_to_fixpoint_operand/0},
+
+    {"rename leaves error alone",
+     fun rename_leaves_error_alone/0}
    ]
   }.
 
@@ -606,6 +611,10 @@ rename_propagates_to_fixpoint_operand() ->
   E2 = fix( var( y ) ),
   ?assertEqual( E2, rename( E1, x, y ) ).
 
+rename_leaves_error_alone() ->
+  E = {err, na, <<"bla">>, <<"blub">>},
+  ?assertEqual( E, rename( E, x, y ) ).
+
 
 subst_test_() ->
   {foreach,
@@ -734,7 +743,10 @@ subst_test_() ->
      fun fold_list_expression_shadows_substitution/0},
 
     {"fold list expression is capture avoiding",
-     fun fold_list_expression_is_capture_avoiding/0}
+     fun fold_list_expression_is_capture_avoiding/0},
+
+    {"substitution leaves error alone",
+     fun substitution_leaves_error_alone/0}
    ]
   }.
 
@@ -970,6 +982,10 @@ fold_list_expression_is_capture_avoiding() ->
                           {X, {var, na, x_lst}},
                           {var, na, X}},
                 subst( E, y, var( x ) ) ).
+
+substitution_leaves_error_alone() ->
+  E = {err, na, <<"bla">>, <<"blub">>},
+  ?assertEqual( E, subst( E, x, var( y ) ) ).
 
 
 gensym_test_() ->
@@ -1375,7 +1391,10 @@ find_context_test_() ->
      fun fold_with_literal_list_expression_is_redex/0},
 
     {"find_context traverses fold list expression",
-     fun find_context_traverses_fold_list_expression/0}
+     fun find_context_traverses_fold_list_expression/0},
+
+    {"error is redex",
+     fun error_is_redex/0}
    ]}.
     
 
@@ -1587,3 +1606,7 @@ find_context_traverses_fold_list_expression() ->
   ELst = cnd( true(), lst( t_bool(), [true()] ), lst( t_bool(), [false()] ) ),
   Ctx = {fold, na, {x_acc, true()}, {x, hole}, var( x )},
   ?assertEqual( {ok, ELst, Ctx}, find_context( in_hole( ELst, Ctx ) ) ).
+
+error_is_redex() ->
+  E = {err, na, <<"bla">>, <<"blub">>},
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).

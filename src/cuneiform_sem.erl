@@ -99,7 +99,8 @@ is_value( {for, _, _, _} )              -> false;
 is_value( {fold, _, _, _, _} )          -> false;
 is_value( {rcd, _, EBindLst} )          -> lists:all( fun is_value/1, [E || {_, E} <- EBindLst] );
 is_value( {proj, _, _, _} )             -> false;
-is_value( {fix, _, _} )                 -> false.
+is_value( {fix, _, _} )                 -> false;
+is_value( {err, _, _, _} )              -> true.
 
 
 %%====================================================================
@@ -119,6 +120,7 @@ rename( E = {true, _}, _, _ )                   -> E;
 rename( E = {false, _}, _, _ )                  -> E;
 rename( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
 rename( E = {fut, _, _}, _, _ )                 -> E;
+rename( E = {err, _, _, _}, _, _ )              -> E;
 
 rename( {cmp, Info, E1, E2}, X1, X2 ) ->
   cmp( Info, rename( E1, X1, X2 ),
@@ -216,6 +218,7 @@ subst( E1 = {file, _, _, _}, _, _ ) -> E1;
 subst( E1 = {true, _}, _, _ )       -> E1;
 subst( E1 = {false, _}, _, _ )      -> E1;
 subst( E1 = {fut, _, _}, _, _ )     -> E1;
+subst( E1 = {err, _, _, _}, _, _ )  -> E1;
 
 subst( {cmp, Info, E1, E2}, X, ES ) ->
   cmp( Info, subst( E1, X, ES ),
@@ -304,7 +307,6 @@ subst( {fold, Info, {XInit, EInit}, {XLst, ELst}, EBody}, XS, ES ) ->
   EBody3 = subst( EBody2, XS, ES ),
 
   fold( Info, e_bind( XInit1, EInit1 ), e_bind( XLst1, ELst1 ), EBody3 ).
-
 
 
 -spec subst_fut( E, A, Delta ) -> e()
@@ -585,4 +587,7 @@ try_context( E = {fold, Info, AccBind, {X, ELst}, EBody}, Ctx ) ->
       try_context(
         ELst,
         in_hole( {fold, Info, AccBind, {X, hole}, EBody}, Ctx ) )
-  end.
+  end;
+
+try_context( E = {err, _Info, _Script, _Output}, Ctx ) ->
+  throw( {E, Ctx} ).

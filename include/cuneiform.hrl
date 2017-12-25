@@ -58,7 +58,8 @@
                      | {fold, info(), e_bind(), e_bind(), e()} % binding form
                      | {rcd, info(), [e_bind()]}
                      | {proj, info(), x(), e()}
-                     | {fix, info(), e()}.
+                     | {fix, info(), e()}
+                     | {err, info(), s(), s()}.
 
 -type assign()      :: {assign, info(), r(), e()}.
 
