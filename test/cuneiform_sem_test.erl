@@ -116,7 +116,10 @@ reduce_test_() ->
      fun isnil_empty_list_reduces_to_true/0},
 
     {"isnil non-empty list reduces to false",
-     fun isnil_nonempty_list_reduces_to_false/0}
+     fun isnil_nonempty_list_reduces_to_false/0},
+
+    {"projection reduces to record field",
+     fun projection_reduces_to_record_field/0}
    ]
   }.
 
@@ -201,7 +204,10 @@ isnil_nonempty_list_reduces_to_false() ->
   E2 = false(),
   ?assertEqual( E2, reduce( E1 ) ).
 
-
+projection_reduces_to_record_field() ->
+  E2 = str( <<"bla">> ),
+  E1 = proj( a, rcd( [e_bind( a, E2 )] ) ),
+  ?assertEqual( E2, reduce( E1 ) ).
 
 
 %%====================================================================
@@ -1414,6 +1420,9 @@ find_context_test_() ->
     {"projection with value operand is redex",
      fun projection_with_value_operand_is_redex/0},
 
+    {"projection with literal record operand is redex",
+     fun projection_with_literal_record_operand_is_redex/0},
+
     {"find_context traverses projection operand",
      fun find_context_traverses_projection_operand/0},
 
@@ -1614,6 +1623,10 @@ find_context_traverses_record_fields() ->
 
 projection_with_value_operand_is_redex() ->
   E = proj( x, rcd( [e_bind( x, str( <<"blub">> ) )] ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+projection_with_literal_record_operand_is_redex() ->
+  E = proj( x, rcd( [e_bind( x, cmp( true(), false() ) )] ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
 find_context_traverses_projection_operand() ->

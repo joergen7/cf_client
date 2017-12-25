@@ -79,9 +79,15 @@ reduce( {app, AppInfo,                                         % E-beta
 reduce( {append, Info, {lst, _, T, L1}, {lst, _, _, L2}} ) ->  % E-append
   lst( Info, T, L1++L2 );
 
-reduce( {isnil, Info, {lst, _, _, []}} ) -> true( Info );      % E-isnil-empty
+reduce( {isnil, Info, {lst, _, _, []}} ) ->                    % E-isnil-empty
+  true( Info );
 
-reduce( {isnil, Info, {lst, _, _, [_|_]}} ) -> false( Info ).  % E-isnil-nonempty
+reduce( {isnil, Info, {lst, _, _, [_|_]}} ) ->                 % E-isnil-nonempty
+  false( Info );
+
+reduce( {proj, _, X, {rcd, _, EBindLst}} ) ->                  % E-proj
+  {X, E} = lists:keyfind( X, 1, EBindLst ),
+  E.
 
   
 
@@ -545,11 +551,11 @@ try_context( {rcd, Info, EBindLst}, Ctx ) ->
 
   F( [], EBindLst );
 
-try_context( E = {proj, Info, X, E1}, Ctx ) ->
-  case is_value( E1 ) of
-    true  -> throw( {E, Ctx} );
-    false -> try_context( E1, in_hole( {proj, Info, X, hole}, Ctx ) )
-  end;
+try_context( E = {proj, _, _, {rcd, _, _}}, Ctx ) ->
+  throw( {E, Ctx} );
+
+try_context( {proj, Info, X, E1}, Ctx ) ->
+  try_context( E1, in_hole( {proj, Info, X, hole}, Ctx ) );
 
 try_context( E = {fix, Info, E1}, Ctx ) ->
   case is_value( E1 ) of
