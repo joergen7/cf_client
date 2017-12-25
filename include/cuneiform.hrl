@@ -99,4 +99,5 @@
                      | {no_record_type, info(), t()}
                      | {no_native_function_type, info(), t()}
                      | {no_argument, info(), t()}
-                     | {no_list_type, info(), t()}.
+                     | {no_list_type, info(), t()}
+                     | {no_comparable_type, info(), t()}.

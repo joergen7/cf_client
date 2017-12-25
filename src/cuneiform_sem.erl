@@ -32,9 +32,15 @@
 
 reduce( {cmp, Info, {str, _, S1}, {str, _, S2}} ) ->
   case S1 =:= S2 of
-    true  -> true( Info );                                     % E-cmp-equal
-    false -> false( Info )                                     % E-cmp-unequal
+    true  -> true( Info );                                     % E-cmp-str-equal
+    false -> false( Info )                                     % E-cmp-str-unequal
   end;
+
+reduce( {cmp, Info, {X, _}, {X, _}} ) ->
+  true( Info );                                                % E-cmp-str-equal
+
+reduce( {cmp, Info, {_, _}, {_, _}} ) ->
+  false( Info );                                               % E-cmp-str-unequal
 
 reduce( {cnd, _, {true, _}, EThen, _} ) ->                     % E-cnd-true
   EThen;

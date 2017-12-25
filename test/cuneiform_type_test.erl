@@ -21,32 +21,45 @@ type_test_() ->
    [
     {"not well formed expression produces error",
      fun not_well_formed_expression_produces_error/0},
+
     {"string literal typable",     fun string_literal_typable/0},
     {"file literal typable",       fun file_literal_typable/0},
     {"true typable",               fun true_typable/0},
     {"false typable",              fun false_typable/0},
     {"string comparison typable",  fun string_comparison_typable/0},
+    {"boolean comparison typable", fun boolean_comparison_typable/0},
     {"native lambda typable",      fun native_lambda_typable/0},
+
     {"native lambda with invalid body expression untypable",
      fun native_lambda_with_invalid_body_expression_untypable/0},
+
     {"native lambda with ambiguous argument name untypable",
      fun native_lambda_with_ambiguous_argument_name_untypable/0},
+
     {"native lambda body expression can access closure",
      fun native_lambda_body_expression_can_access_closure/0},
+
     {"bound variable typable",     fun bound_variable_typable/0},
     {"unbound variable untypable", fun unbound_variable_untypable/0},
+
     {"comparison with invalid lhs untypable",
      fun comparison_with_invalid_lhs_untypable/0},
+
     {"comparison with invalid rhs untypable",
      fun comparison_with_invalid_rhs_untypable/0},
-    {"comparison with file lhs untypable",
-     fun comparison_with_file_lhs_untypable/0},
-    {"comparison with file rhs untypable",
-     fun comparison_with_file_rhs_untypable/0},
+
+    {"comparison with file operands untypable",
+     fun comparison_with_file_operands_untypable/0},
+
+    {"comparison with non-matching operands untypable",
+     fun comparison_with_nonmatching_operands_untypable/0},
+
     {"comparison with lhs variable typable",
      fun comparison_with_lhs_variable_typable/0},
+
     {"comparison with rhs variable typable",
      fun comparison_with_rhs_variable_typable/0},
+
     {"negation typable",           fun negation_typable/0},
     {"negation of non-Boolean untypable",
      fun negation_of_nonbool_untypable/0},
@@ -235,6 +248,11 @@ string_comparison_typable() ->
   E = cmp( str( <<"bla">> ), str( <<"blub">> ) ),
   ?assertEqual( {ok, t_bool()}, type( E ) ).
 
+boolean_comparison_typable() ->
+  E = cmp( true(), false() ),
+  ?assertEqual( {ok, t_bool()}, type( E ) ).
+
+
 native_lambda_typable() ->
   E1 = lam_ntv( [], str( <<"blub">> ) ),
   E2 = lam_ntv( [], file( <<"bla.txt">> ) ),
@@ -272,13 +290,13 @@ comparison_with_invalid_rhs_untypable() ->
   E = cmp( str( <<"bla">> ), var( y ) ),
   ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
-comparison_with_file_lhs_untypable() ->
-  E = cmp( file( <<"bla.txt">> ), str( <<"blub">> ) ),
-  ?assertEqual( {error, {type_mismatch, na, {t_str(), t_file()}}}, type( E ) ).
+comparison_with_file_operands_untypable() ->
+  E = cmp( file( <<"bla.txt">> ), file( <<"blub">> ) ),
+  ?assertEqual( {error, {no_comparable_type, na, t_file()}}, type( E ) ).
 
-comparison_with_file_rhs_untypable() ->
-  E = cmp( str( <<"bla">> ), file( <<"blub.txt">> ) ),
-  ?assertEqual( {error, {type_mismatch, na, {t_str(), t_file()}}}, type( E ) ).
+comparison_with_nonmatching_operands_untypable() ->
+  E = cmp( true(), str( <<"blub">> ) ),
+  ?assertEqual( {error, {type_mismatch, na, {t_bool(), t_str()}}}, type( E ) ).
 
 comparison_with_lhs_variable_typable() ->
   E = lam_ntv( [lam_ntv_arg( x, t_str() )],

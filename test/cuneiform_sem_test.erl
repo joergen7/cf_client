@@ -61,6 +61,12 @@ reduce_test_() ->
     {"comparison of unequal strings reduces to false",
      fun comparison_of_unequal_strings_reduces_to_false/0},
 
+    {"comparison of equal booleans reduces to true",
+     fun comparison_of_equal_booleans_reduces_to_true/0},
+
+    {"comparison of unequal booleans reduces to false",
+     fun comparison_of_unequal_booleans_reduces_to_false/0},
+
     {"condition with true if expression reduces to then expression",
      fun cnd_with_true_if_expr_reduces_to_then_expr/0},
 
@@ -110,6 +116,15 @@ comparison_of_equal_strings_reduces_to_true() ->
 
 comparison_of_unequal_strings_reduces_to_false() ->
   ?assertEqual( false(), reduce( cmp( str( <<"bla">> ), str( <<"blub">> ) ) ) ).
+
+comparison_of_equal_booleans_reduces_to_true() ->
+  ?assertEqual( true(), reduce( cmp( true(), true() ) ) ),
+  ?assertEqual( true(), reduce( cmp( false(), false() ) ) ).
+
+comparison_of_unequal_booleans_reduces_to_false() ->
+  ?assertEqual( false(), reduce( cmp( true(), false() ) ) ),
+  ?assertEqual( false(), reduce( cmp( false(), true() ) ) ).
+
 
 cnd_with_true_if_expr_reduces_to_then_expr() ->
   ETrue = str( <<"blub">> ),

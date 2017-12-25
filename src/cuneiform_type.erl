@@ -39,22 +39,24 @@ type( Gamma, {cmp, Info, E1, E2} ) ->
 
   case type( Gamma, E1 ) of
 
-    {ok, 'Str'} ->
+    {ok, T1} ->
       case type( Gamma, E2 ) of
 
-        {ok, 'Str'} ->
-          {ok, t_bool()};
+        {ok, T1} ->
+
+          case T1 of
+            'Str'  -> {ok, t_bool()};
+            'Bool' -> {ok, t_bool()};
+            _      -> {error, {no_comparable_type, Info, T1}}
+          end;
 
         {ok, T2} ->
-          {error, {type_mismatch, Info, {t_str(), T2}}};
+          {error, {type_mismatch, Info, {T1, T2}}};
 
         {error, Reason2} ->
           {error, Reason2}
 
       end;
-
-    {ok, T1} ->
-      {error, {type_mismatch, Info, {t_str(), T1}}};
 
     {error, Reason1} ->
       {error, Reason1}
