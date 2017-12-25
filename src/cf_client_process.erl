@@ -74,10 +74,10 @@ when E       :: e(),
 step( E, _UsrInfo ) ->
   case cuneiform_sem:find_context( E ) of
 
-    {ok, E, Ctx} ->
-      E1 = cuneiform_sem:reduce( E ),
-      E2 = cuneiform_sem:in_hole( E1, Ctx ),
-      {ok, E2};
+    {ok, E1, Ctx} ->
+      E2 = cuneiform_sem:reduce( E1 ),
+      E3 = cuneiform_sem:in_hole( E2, Ctx ),
+      {ok, E3};
 
     no_ctx ->
       norule
