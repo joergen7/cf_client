@@ -20,7 +20,7 @@
 -import( cuneiform_lang, [
                           true/1, false/1, app/3, cmp/3, cnd/4, neg/2, conj/3,
                           disj/3, var/2, lam_ntv/3, lst/3, append/3, isnil/2,
-                          for/3, fold/4, rcd/2, proj/3, fix/2
+                          for/3, fold/4, rcd/2, proj/3, fix/2, lst/2
                          ] ).
 
 
@@ -74,7 +74,14 @@ reduce( {app, AppInfo,                                         % E-beta
               [{XOut, E}|AppArgTl]} ) ->
   EBody1 = subst( EBody, XIn, E ),
   EFn1 = {lam_ntv, LamInfo, LamArgTl, EBody1},
-  app( AppInfo, EFn1, AppArgTl ).
+  app( AppInfo, EFn1, AppArgTl );
+
+reduce( {append, Info, {lst, _, T, L1}, {lst, _, _, L2}} ) ->  % E-append
+  lst( Info, T, L1++L2 );
+
+reduce( {isnil, Info, {lst, _, _, []}} ) -> true( Info );      % E-isnil-empty
+
+reduce( {isnil, Info, {lst, _, _, [_|_]}} ) -> false( Info ).  % E-isnil-nonempty
 
   
 
@@ -507,19 +514,18 @@ try_context( {lst, Info, T, ELst}, Ctx ) ->
 
   F( [], ELst );
 
-try_context( E = {append, Info, E1, E2}, Ctx ) ->
-  case is_value( E1 ) andalso is_value( E2 ) of
-    true  -> throw( {E, Ctx} );
-    false ->
-      try_context( E1, in_hole( {append, Info, hole, E2}, Ctx ) ),
-      try_context( E2, in_hole( {append, Info, E1, hole}, Ctx ) )
-  end;
+try_context( E = {append, _, {lst, _, _, _}, {lst, _, _, _}}, Ctx ) ->
+  throw( {E, Ctx} );
 
-try_context( E = {isnil, Info, E1}, Ctx ) ->
-  case is_value( E1 ) of
-    true  -> throw( {E, Ctx} );
-    false -> try_context( E1, in_hole( {isnil, Info, hole}, Ctx ) )
-  end;
+try_context( {append, Info, E1, E2}, Ctx ) ->
+  try_context( E1, in_hole( {append, Info, hole, E2}, Ctx ) ),
+  try_context( E2, in_hole( {append, Info, E1, hole}, Ctx ) );
+
+try_context( E = {isnil, _, {lst, _, _, _}}, Ctx ) ->
+  throw( {E, Ctx} );
+
+try_context( {isnil, Info, E1}, Ctx ) ->
+  try_context( E1, in_hole( {isnil, Info, hole}, Ctx ) );
 
 try_context( {rcd, Info, EBindLst}, Ctx ) ->
 

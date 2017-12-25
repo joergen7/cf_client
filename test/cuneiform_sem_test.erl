@@ -107,7 +107,16 @@ reduce_test_() ->
      fun nat_app_without_arg_reduces_to_lam_body/0},
 
     {"native application with single argument reduces to empty application",
-     fun nat_app_with_single_arg_reduces_to_empty_application/0}
+     fun nat_app_with_single_arg_reduces_to_empty_application/0},
+
+    {"list append reduces to list",
+     fun list_append_reduces_to_list/0},
+
+    {"isnil empty list reduces to true",
+     fun isnil_empty_list_reduces_to_true/0},
+
+    {"isnil non-empty list reduces to false",
+     fun isnil_nonempty_list_reduces_to_false/0}
    ]
   }.
 
@@ -175,6 +184,24 @@ nat_app_with_single_arg_reduces_to_empty_application() ->
   E1 = e_app_id(),
   E2 = app( lam_ntv( [], str( <<"blub">> ) ), [] ),
   ?assertEqual( E2, reduce( E1 ) ).
+
+list_append_reduces_to_list() ->
+  E1 = append( lst( t_bool(), [true(), false()] ),
+               lst( t_bool(), [false(), true()] ) ),
+  E2 = lst( t_bool(), [true(), false(), false(), true()] ),
+  ?assertEqual( E2, reduce( E1 ) ).
+
+isnil_empty_list_reduces_to_true() ->
+  E1 = isnil( lst( t_bool(), [] ) ),
+  E2 = true(),
+  ?assertEqual( E2, reduce( E1 ) ).
+
+isnil_nonempty_list_reduces_to_false() ->
+  E1 = isnil( lst( t_bool(), [false()] ) ),
+  E2 = false(),
+  ?assertEqual( E2, reduce( E1 ) ).
+
+
 
 
 %%====================================================================
@@ -1363,6 +1390,9 @@ find_context_test_() ->
     {"list append with value operands is redex",
      fun list_append_with_value_operands_is_redex/0},
 
+    {"list append with literal list operands is redex",
+     fun list_append_with_literal_list_operands_is_redex/0},
+
     {"find_context traverses list append lhs",
      fun find_context_traverses_list_append_lhs/0},
 
@@ -1371,6 +1401,9 @@ find_context_test_() ->
 
     {"isnil with value operand is redex",
      fun isnil_with_value_operand_is_redex/0},
+
+    {"isnil with literal list operand is redex",
+     fun isnil_with_literal_list_operand_is_redex/0},
 
     {"find_context traverses isnil operand",
      fun find_context_traverses_isnil_operand/0},
@@ -1546,6 +1579,11 @@ list_append_with_value_operands_is_redex() ->
   E = append( lst( t_str(), [] ), lst( t_str(), [] ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
+list_append_with_literal_list_operands_is_redex() ->
+  E = append( lst( t_bool(), [cmp( str( <<"bla">> ), str( <<"blub">> ) )] ),
+              lst( t_bool(), [cmp( true(), false() )] ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
 find_context_traverses_list_append_lhs() ->
   E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
   Ctx = {append, na, hole, var( x )},
@@ -1558,6 +1596,10 @@ find_context_traverses_list_append_rhs() ->
 
 isnil_with_value_operand_is_redex() ->
   E = isnil( lst( t_str(), [] ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+isnil_with_literal_list_operand_is_redex() ->
+  E = isnil( lst( t_bool(), [cmp( str( <<"bla">> ), str( <<"blub">> ) )] ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
 find_context_traverses_isnil_operand() ->
