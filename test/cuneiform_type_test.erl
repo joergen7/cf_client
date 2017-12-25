@@ -9,7 +9,7 @@
                           t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2,
                           t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1, app/2,
                           proj/2, fix/1, lst/2, t_lst/1, append/2, isnil/1,
-                          for/2, fold/3
+                          for/3, fold/3
                          ] ).
 
 type_test_() ->
@@ -207,6 +207,10 @@ type_test_() ->
      fun for_with_invalid_body_expression_untypable/0},
     {"for variable body expression typable",
      fun for_variable_body_expression_typable/0},
+
+    {"for with non-matching body expression untypable",
+     fun for_with_nonmatching_body_expression_untypable/0},
+      
     {"fold typable",               fun fold_typable/0},
     {"fold with invalid accumulator expression untypable",
      fun fold_with_invalid_accumulator_expression_untypable/0},
@@ -680,10 +684,12 @@ isnil_with_variable_list_expression_typable() ->
   ?assertEqual( {ok, T}, type( E ) ).
 
 for_typable() ->
-  E1 = for( [e_bind( x, lst( t_str(), [str( <<"bla">> ), str( <<"blub">> )] ) )],
+  E1 = for( t_str(),
+            [e_bind( x, lst( t_str(), [str( <<"bla">> ), str( <<"blub">> )] ) )],
            var( x ) ),
   T1 = t_lst( t_str() ),
-  E2 = for( [e_bind( x, lst( t_str(), [str( <<"bla">> ), str( <<"blub">> )] ) ),
+  E2 = for( t_rcd( [t_arg( a, t_str() ), t_arg( b, t_file() )]),
+            [e_bind( x, lst( t_str(), [str( <<"bla">> ), str( <<"blub">> )] ) ),
              e_bind( y, lst( t_file(), [file( <<"bla.txt">> ),
                                         file( <<"blub.txt">> )] ) )],
            rcd( [e_bind( a, var( x ) ), e_bind( b, var( y ) )] ) ),
@@ -692,25 +698,30 @@ for_typable() ->
   ?assertEqual( {ok, T2}, type( E2 ) ).
 
 for_with_invalid_list_expression_untypable() ->
-  E = for( [e_bind( x, var( y ) )], var( x ) ),
+  E = for( t_str(), [e_bind( x, var( y ) )], var( x ) ),
   ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 for_with_nonlist_list_expression_untypable() ->
-  E = for( [e_bind( x, str( <<"blub">> ) )], var( x ) ),
+  E = for( t_str(), [e_bind( x, str( <<"blub">> ) )], var( x ) ),
   ?assertEqual( {error, {no_list_type, na, t_str()}}, type( E ) ).
 
 for_with_variable_list_expression_typable() ->
-  EFor = for( [e_bind( x, var( l ) )], var( x ) ),
+  EFor = for( t_str(), [e_bind( x, var( l ) )], var( x ) ),
   ELam = lam_ntv( [lam_ntv_arg( l, t_lst( t_str() ) )], EFor ),
   TLam = t_fn( ntv, [t_arg( l, t_lst( t_str() ) )], t_lst( t_str() ) ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 for_with_invalid_body_expression_untypable() ->
-  E = for( [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], var( y ) ),
+  E = for( t_str(), [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], var( y ) ),
   ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
+for_with_nonmatching_body_expression_untypable() ->
+  E = for( t_str(), [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], file( <<"blub">> ) ),
+  ?assertEqual( {error, {type_mismatch, na, {t_str(), t_file()}}}, type( E ) ).
+
 for_variable_body_expression_typable() ->
-  EFor = for( [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )],
+  EFor = for( t_rcd( [t_arg( a, t_str() ), t_arg( b, t_file() )] ),
+              [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )],
               rcd( [e_bind( a, var( x ) ), e_bind( b, var( y ) )] ) ),
   ELam = lam_ntv( [lam_ntv_arg( y, t_file() )], EFor ),
   TLam = t_fn( ntv,

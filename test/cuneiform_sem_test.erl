@@ -19,7 +19,7 @@
 -import( cuneiform_lang, [
                           str/1, file/1, true/0, false/0, cnd/3, var/1,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
-                          lam_frn/5, lst/2, append/2, isnil/1, for/2, fold/3,
+                          lam_frn/5, lst/2, append/2, isnil/1, for/3, fold/3,
                           rcd/1, proj/2, fix/1, assign/3
                          ] ).
  
@@ -119,7 +119,10 @@ reduce_test_() ->
      fun isnil_nonempty_list_reduces_to_false/0},
 
     {"projection reduces to record field",
-     fun projection_reduces_to_record_field/0}
+     fun projection_reduces_to_record_field/0},
+
+    {"map reduces to list",
+     fun map_reduces_to_list/0}
    ]
   }.
 
@@ -207,6 +210,15 @@ isnil_nonempty_list_reduces_to_false() ->
 projection_reduces_to_record_field() ->
   E2 = str( <<"bla">> ),
   E1 = proj( a, rcd( [e_bind( a, E2 )] ) ),
+  ?assertEqual( E2, reduce( E1 ) ).
+
+map_reduces_to_list() ->
+  E1 = for( t_bool(), [e_bind( x, lst( t_bool(), [true(), false()] ) )], neg( var( x ) ) ),
+  E2 = lst( t_bool(),
+            [app( lam_ntv( [lam_ntv_arg( x, t_bool() )], neg( var( x ) ) ),
+                  [e_bind( x, true() )] ),
+             app( lam_ntv( [lam_ntv_arg( x, t_bool() )], neg( var( x ) ) ),
+                  [e_bind( x, false() )] )] ),
   ?assertEqual( E2, reduce( E1 ) ).
 
 
@@ -323,7 +335,7 @@ isnil_is_no_value() ->
   ?assertNot( is_value( isnil( lst( t_str(), [] ) ) ) ).
 
 for_is_no_value() ->
-  E = for( [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], var( x ) ),
+  E = for( t_str(), [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], var( x ) ),
   ?assertNot( is_value( E ) ).
 
 fold_is_no_value() ->
@@ -605,18 +617,18 @@ rename_propagates_to_isnil_operand() ->
   ?assertEqual( E2, rename( E1, x, y ) ).
 
 rename_propagates_to_for_bound_variable() ->
-  E1 = for( [e_bind( x, var( l ) )], var( y ) ),
-  E2 = for( [e_bind( z, var( l ) )], var( y ) ),
+  E1 = for( t_str(), [e_bind( x, var( l ) )], var( y ) ),
+  E2 = for( t_str(), [e_bind( z, var( l ) )], var( y ) ),
   ?assertEqual( E2, rename( E1, x, z ) ).
 
 rename_propagates_to_for_list_expression() ->
-  E1 = for( [e_bind( x, var( l ) )], var( y ) ),
-  E2 = for( [e_bind( x, var( z ) )], var( y ) ),
+  E1 = for( t_str(), [e_bind( x, var( l ) )], var( y ) ),
+  E2 = for( t_str(), [e_bind( x, var( z ) )], var( y ) ),
   ?assertEqual( E2, rename( E1, l, z ) ).
 
 rename_propagates_to_for_body_expression() ->
-  E1 = for( [e_bind( x, var( l ) )], var( y ) ),
-  E2 = for( [e_bind( x, var( l ) )], var( z ) ),
+  E1 = for( t_str(), [e_bind( x, var( l ) )], var( y ) ),
+  E2 = for( t_str(), [e_bind( x, var( l ) )], var( z ) ),
   ?assertEqual( E2, rename( E1, y, z ) ).
 
 rename_propagates_to_accumulator_bound_argument() ->
@@ -948,31 +960,31 @@ substitution_propagates_to_fixpoint_operand() ->
   ?assertEqual( E2, subst( E1, x, var( y ) ) ).
 
 substitution_propagates_to_for_body() ->
-  E = for( [e_bind( x, var( x_lst ) )], var( y ) ),
-  ?assertMatch( {for, na, [{_, {var, na, x_lst}}], {var, na, z}},
+  E = for( t_str(), [e_bind( x, var( x_lst ) )], var( y ) ),
+  ?assertMatch( {for, na, 'Str', [{_, {var, na, x_lst}}], {var, na, z}},
                 subst( E, y, var( z ) ) ).
 
 substitution_propagates_to_for_list_expression() ->
-  E = for( [e_bind( x, var( x_lst ) )], var( y ) ),
-  ?assertMatch( {for, na, [{_, {var, na, z}}], {var, na, y}},
+  E = for( t_str(), [e_bind( x, var( x_lst ) )], var( y ) ),
+  ?assertMatch( {for, na, 'Str', [{_, {var, na, z}}], {var, na, y}},
                 subst( E, x_lst, var( z ) ) ).
 
 for_iterator_shadows_substitution() ->
-  E = for( [e_bind( x, var( x_lst ) )], var( x ) ),
-  ?assertMatch( {for, na, [{X, {var, na, x_lst}}], {var, na, X}},
+  E = for( t_str(), [e_bind( x, var( x_lst ) )], var( x ) ),
+  ?assertMatch( {for, na, 'Str', [{X, {var, na, x_lst}}], {var, na, X}},
                 subst( E, x, var( z ) ) ).
 
 for_iterator_is_capture_avoiding() ->
-  E = for( [e_bind( x, var( x_lst ) )], var( y ) ),
-  ?assertNotMatch( {for, na, [{X, {var, na, x_lst}}], {var, na, X}},
+  E = for( t_str(), [e_bind( x, var( x_lst ) )], var( y ) ),
+  ?assertNotMatch( {for, na, 'Str', [{X, {var, na, x_lst}}], {var, na, X}},
                    subst( E, y, var( x ) ) ).
 
 for_iterator_retains_order_of_list_bindings() ->
-  E = for( [e_bind( x, var( x_lst ) ),
-            e_bind( y, var( y_lst ) )], var( z ) ),
+  E = for( t_str(), [e_bind( x, var( x_lst ) ),
+                     e_bind( y, var( y_lst ) )], var( z ) ),
 
-  ?assertMatch( {for, na, [{_, {var, na, x_lst}},
-                           {_, {var, na, y_lst}}], {str, na, <<"bla">>}},
+  ?assertMatch( {for, na, 'Str', [{_, {var, na, x_lst}},
+                                  {_, {var, na, y_lst}}], {str, na, <<"bla">>}},
                 subst( E, z, str( <<"bla">> ) ) ).
 
 substitution_propagates_to_fold_body() ->
@@ -1274,8 +1286,8 @@ inserting_traverses_isnil_operand() ->
 
 inserting_traverses_for_list_expressions() ->
   E1 = var( l ),
-  Ctx = {for, na, [{x, hole}], var( x )},
-  ?assertEqual( for( [e_bind( x, E1 )], var( x ) ), in_hole( E1, Ctx ) ).
+  Ctx = {for, na, 'Str', [{x, hole}], var( x )},
+  ?assertEqual( for( t_str(), [e_bind( x, E1 )], var( x ) ), in_hole( E1, Ctx ) ).
 
 inserting_traverses_fold_list_expression() ->
   E1 = var( l ),
@@ -1649,16 +1661,16 @@ find_context_traverses_fixpoint_operand() ->
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
 
 for_with_value_list_expression_is_redex() ->
-  E = for( [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], var( x ) ),
+  E = for( t_str(), [e_bind( x, lst( t_str(), [str( <<"bla">> )] ) )], var( x ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
 for_with_literal_list_expression_is_redex() ->
-  E = for( [e_bind( x, lst( t_bool(), [neg( true() )] ) )], var( x ) ),
+  E = for( t_bool(), [e_bind( x, lst( t_bool(), [neg( true() )] ) )], var( x ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
 find_context_traverses_for_list_expression() ->
   E = append( lst( t_str(), [str( <<"bla">> )] ), lst( t_str(), [str( <<"blub">> )] ) ),
-  Ctx = {for, na, [{x, hole}], var( x )},
+  Ctx = {for, na, t_str(), [{x, hole}], var( x )},
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
 
 fold_with_value_list_expression_is_redex() ->

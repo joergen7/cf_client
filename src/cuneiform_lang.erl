@@ -13,10 +13,10 @@
 -export( [lam_ntv_arg/2, e_bind/2, r_bind/2] ).
 -export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, lam_frn/5,
           app/2, cmp/2, conj/2, disj/2, neg/1, lst/2, append/2, isnil/1,
-          for/2, fold/3, rcd/1, proj/2, fix/1] ).
+          for/3, fold/3, rcd/1, proj/2, fix/1] ).
 -export( [str/2, file/2, true/1, false/1, cnd/4, var/2, lam_ntv/3, lam_frn/6,
           app/3, cmp/3, conj/3, disj/3, neg/2, lst/3, append/3, isnil/2,
-          for/3, fold/4, rcd/2, proj/3, fix/2] ).
+          for/4, fold/4, rcd/2, proj/3, fix/2] ).
 
 %% Assignment
 -export( [assign/2, assign/3, create_closure/2] ).
@@ -220,11 +220,11 @@ when is_atom( FName ),
 -spec isnil( Info :: info(), E :: e() ) -> e().
       isnil( Info, E )                  -> {isnil, Info, E}.
 
--spec for( ArgLst :: [e_bind()], E :: e() ) -> e().
-      for( ArgLst, E )                      -> for( na, ArgLst, E ).
+-spec for( TRet :: t(), ArgLst :: [e_bind()], E :: e() ) -> e().
+      for( TRet, ArgLst, E )                             -> for( na, TRet, ArgLst, E ).
 
--spec for( Info :: info(), ArgLst :: [e_bind()], E :: e() ) -> e().
-      for( Info, ArgLst, E ) when is_list( ArgLst ) -> {for, Info, ArgLst, E}.
+-spec for( Info :: info(), TRet :: t(), ArgLst :: [e_bind()], E :: e() ) -> e().
+      for( Info, TRet, ArgLst, E ) when is_list( ArgLst ) -> {for, Info, TRet, ArgLst, E}.
 
 -spec fold( InitBind :: e_bind(), LstBind :: e_bind(), E :: e() ) -> e().
       fold( InitBind, LstBind, E ) -> fold( na, InitBind, LstBind, E ).

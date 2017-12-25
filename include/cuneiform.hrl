@@ -54,7 +54,7 @@
                      | {lst, info(), t(), [e()]}
                      | {append, info(), e, e}
                      | {isnil, info(), e}
-                     | {for, info(), [e_bind()], e()}          % binding form
+                     | {for, info(), t(), [e_bind()], e()}     % binding form
                      | {fold, info(), e_bind(), e_bind(), e()} % binding form
                      | {rcd, info(), [e_bind()]}
                      | {proj, info(), x(), e()}

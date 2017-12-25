@@ -15,12 +15,12 @@
 %% Imports
 %%====================================================================
 
--import( cuneiform_lang, [e_bind/2] ).
+-import( cuneiform_lang, [e_bind/2, lam_ntv_arg/2] ).
 
 -import( cuneiform_lang, [
                           true/1, false/1, app/3, cmp/3, cnd/4, neg/2, conj/3,
                           disj/3, var/2, lam_ntv/3, lst/3, append/3, isnil/2,
-                          for/3, fold/4, rcd/2, proj/3, fix/2, lst/2
+                          for/4, fold/4, rcd/2, proj/3, fix/2, lst/2
                          ] ).
 
 
@@ -87,7 +87,19 @@ reduce( {isnil, Info, {lst, _, _, [_|_]}} ) ->                 % E-isnil-nonempt
 
 reduce( {proj, _, X, {rcd, _, EBindLst}} ) ->                  % E-proj
   {X, E} = lists:keyfind( X, 1, EBindLst ),
-  E.
+  E;
+
+reduce( {for, Info, TRet, [{X, {lst, _, T, ELst}}], EBody} ) ->
+
+  F =
+    fun( E ) ->
+      app( Info,
+           lam_ntv( Info, [lam_ntv_arg( X, T )], EBody ),
+           [e_bind( X, E )] )
+    end,
+
+  ELst1 = [F( E ) || E <- ELst],
+  lst( Info, TRet, ELst1 ).
 
   
 
@@ -114,7 +126,7 @@ is_value( {fut, _, _} )                 -> false;
 is_value( {lst, _, _, ELst} )           -> lists:all( fun is_value/1, ELst );
 is_value( {append, _, _, _} )           -> false;
 is_value( {isnil, _, _} )               -> false;
-is_value( {for, _, _, _} )              -> false;
+is_value( {for, _, _, _, _} )           -> false;
 is_value( {fold, _, _, _, _} )          -> false;
 is_value( {rcd, _, EBindLst} )          -> lists:all( fun is_value/1, [E || {_, E} <- EBindLst] );
 is_value( {proj, _, _, _} )             -> false;
@@ -195,12 +207,12 @@ rename( {append, Info, E1, E2}, X1, X2 ) ->
 rename( {isnil, Info, E}, X1, X2 ) ->
   isnil( Info, rename( E, X1, X2 ) );
 
-rename( {for, Info, EBindLst, EBody}, X1, X2 ) ->
+rename( {for, Info, TRet, EBindLst, EBody}, X1, X2 ) ->
   EBindLst1 = [e_bind( case X of X1 -> X2; _ -> X end,
                                       rename( E, X1, X2 ) )
                || {X, E} <- EBindLst],
   EBody1 = rename( EBody, X1, X2 ),
-  for( Info, EBindLst1, EBody1 );
+  for( Info, TRet, EBindLst1, EBody1 );
 
 rename( {fold, Info, {XAcc, EAcc}, {XLst, ELst}, EBody}, X1, X2 ) ->
   AccBind1 = e_bind( case XAcc of X1 -> X2; _ -> XAcc end,
@@ -299,19 +311,19 @@ subst( {proj, Info, XField, E1}, X, ES ) ->
 subst( {fix, Info, E1}, X, ES ) ->
   fix( Info, subst( E1, X, ES ) );
 
-subst( {for, Info, EBindLst, EBody}, XS, ES ) ->
+subst( {for, Info, TRet, EBindLst, EBody}, XS, ES ) ->
 
-  F = fun( {X1, E1}, {for, Info1, EBindLst1, EBody1} ) ->
+  F = fun( {X1, E1}, {for, Info1, TRet1, EBindLst1, EBody1} ) ->
         X2 = gensym( X1 ),
         EBody2 = rename( EBody1, X1, X2 ),
         E2 = subst( E1, XS, ES ),
-        for( Info1, [e_bind( X2, E2 )|EBindLst1], EBody2 )
+        for( Info1, TRet1, [e_bind( X2, E2 )|EBindLst1], EBody2 )
       end,
 
-  For0 = for( Info, [], EBody ),
-  {for, Info, NewEBindLst, NewEBody} = lists:foldr( F, For0, EBindLst ),
+  For0 = for( Info, TRet, [], EBody ),
+  {for, _Info, _TRet, NewEBindLst, NewEBody} = lists:foldr( F, For0, EBindLst ),
 
-  for( Info, NewEBindLst, subst( NewEBody, XS, ES ) );
+  for( Info, TRet, NewEBindLst, subst( NewEBody, XS, ES ) );
 
 subst( {fold, Info, {XInit, EInit}, {XLst, ELst}, EBody}, XS, ES ) ->
 
@@ -393,10 +405,10 @@ in_hole( E, {append, Info, E1, E2} ) ->
 in_hole( E, {isnil, Info, E1} ) ->
   {isnil, Info, in_hole( E, E1 )};
 
-in_hole( E, {for, Info, EBindLst, EBody} ) ->
+in_hole( E, {for, Info, TRet, EBindLst, EBody} ) ->
   % note that we do not traverse the body expression because there can never be
   % a hole down that road
-  {for, Info, [{X1, in_hole( E, E1 )} || {X1, E1} <- EBindLst], EBody};
+  {for, Info, TRet, [{X1, in_hole( E, E1 )} || {X1, E1} <- EBindLst], EBody};
 
 in_hole( E, {fold, Info, AccBind, {X, ELst}, EBody} ) ->
   % note that we traverse neither accumulator initialization expression nor body
@@ -563,7 +575,7 @@ try_context( E = {fix, Info, E1}, Ctx ) ->
     false -> try_context( E1, in_hole( {fix, Info, hole}, Ctx ) )
   end;
 
-try_context( E = {for, Info, EBindLst, EBody}, Ctx ) ->
+try_context( E = {for, Info, TRet, EBindLst, EBody}, Ctx ) ->
 
   IsLst =
     fun
@@ -581,7 +593,7 @@ try_context( E = {for, Info, EBindLst, EBody}, Ctx ) ->
         {X, E1} = Pivot,
         try_context(
           E1,
-          in_hole( {for, Info, Prefix++[{X, hole}|Suffix], EBody}, Ctx ) ),
+          in_hole( {for, Info, TRet, Prefix++[{X, hole}|Suffix], EBody}, Ctx ) ),
         F( Prefix++[Pivot], Suffix )
 
     end,
