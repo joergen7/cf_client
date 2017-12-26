@@ -2,7 +2,7 @@
 
 -include( "cuneiform.hrl" ).
 
--import( cuneiform_lang, [lam_ntv/3, rcd/2, lst/3, for/4, assign/4, proj/3] ).
+-import( cuneiform_lang, [lam_ntv/3, rcd/2, for/4, assign/4, proj/3] ).
 -import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2,
                           t_rcd/1, t_lst/1] ).
 -import( cuneiform_lang, [r_rcd/1] ).
@@ -265,15 +265,15 @@ type( Gamma, {fix, Info, E} ) ->
 
   end;
 
-type( _Gamma, {lst, _Info, T, []} ) ->
+type( _Gamma, {null, _Info, T} ) ->
   {ok, t_lst( T )};
 
-type( Gamma, {lst, Info, T, [E1|ELst]} ) ->
+type( Gamma, {cons, Info, T, E1, E2} ) ->
 
   case type( Gamma, E1 ) of
 
     {ok, T} ->
-      type( Gamma, lst( Info, T, ELst ) );
+      type( Gamma, E2 ); % TODO: check type against declared type
 
     {ok, TE} ->
       {error, {type_mismatch, Info, {T, TE}}};

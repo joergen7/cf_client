@@ -13,10 +13,10 @@
 -export( [lam_ntv_arg/2, e_bind/2, r_bind/2] ).
 -export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, lam_frn/5,
           app/2, cmp/2, conj/2, disj/2, neg/1, lst/2, append/2, isnil/1,
-          for/3, fold/3, rcd/1, proj/2, fix/1] ).
+          for/3, fold/3, rcd/1, proj/2, fix/1, cons/3, null/1] ).
 -export( [str/2, file/2, true/1, false/1, cnd/4, var/2, lam_ntv/3, lam_frn/6,
           app/3, cmp/3, conj/3, disj/3, neg/2, lst/3, append/3, isnil/2,
-          for/4, fold/4, rcd/2, proj/3, fix/2] ).
+          for/4, fold/4, rcd/2, proj/3, fix/2, cons/4, null/2] ).
 
 %% Assignment
 -export( [assign/2, assign/3, create_closure/2] ).
@@ -28,6 +28,7 @@
 -export( [l_bash/0, l_octave/0, l_perl/0, l_python/0, l_r/0, l_racket/0] ).
 
 -export( [find_ambiguous/1] ).
+-export( [lst_expr_to_list/1, is_lst_literal/1, get_lst_type/1] ).
 
 %%====================================================================
 %% Language constructors
@@ -206,7 +207,20 @@ when is_atom( FName ),
       lst( T, ELst )                 -> lst( na, T, ELst ).
 
 -spec lst( Info :: info(), T :: t(), ELst :: [e()] ) -> e().
-      lst( Info, T, ELst ) when is_list( ELst )      -> {lst, Info, T, ELst}.
+      lst( Info, T, [] )      -> null( Info, T );
+      lst( Info, T, [Hd|Tl] ) -> cons( Info, T, Hd, lst( Info, T, Tl ) ).
+
+-spec null( T :: t() ) -> e().
+      null( T )        -> null( na, T ).
+
+-spec null( Info :: info(), T :: t() ) -> e().
+      null( Info, T )                  -> {null, Info, T}.
+
+-spec cons( T :: t(), E1 :: e(), E2 :: e() ) -> e().
+      cons( T, E1, E2 )                      -> cons( na, T, E1, E2 ).
+
+-spec cons( Info :: info(), T :: t(), E1 :: e(), E2 :: e() ) -> e().
+      cons( Info, T, E1, E2 ) -> {cons, Info, T, E1, E2}.
 
 -spec append( E1 :: e(), E2 :: e() ) -> e().
       append( E1, E2 )               -> append( na, E1, E2 ).
@@ -343,3 +357,24 @@ pattern_names( {r_rcd, RBindLst} ) ->
   lists:flatmap( F, RBindLst ).
 
 
+-spec is_lst_literal( E :: e() ) -> boolean().
+
+is_lst_literal( {cons, _, _, _, _} ) -> true;
+is_lst_literal( {null, _, _} )       -> true;
+is_lst_literal( _ )                  -> false.
+
+
+-spec lst_expr_to_list( E ) -> [e()]
+when E :: {cons, info(), t(), e(), e()}
+        | {null, info(), t()}.
+
+lst_expr_to_list( {cons, _, _, E1, E2} ) -> [E1|lst_expr_to_list( E2 )];
+lst_expr_to_list( {null, _, _} )         -> [].
+
+
+-spec get_lst_type( E ) -> t()
+when E :: {cons, info(), t(), e(), e()}
+        | {null, info(), t()}.
+
+get_lst_type( {cons, _, T, _, _} ) -> T;
+get_lst_type( {null, _, T} )       -> T.

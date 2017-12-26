@@ -51,7 +51,8 @@
                      | {lam_frn, info(), x(), [t_arg()], t(), l(), s()}
                      | {app, info(), e(), [e_bind()]}
                      | {fut, info(), hash()}
-                     | {lst, info(), t(), [e()]}
+                     | {null, info(), t()}
+                     | {cons, info(), t(), e(), e()}
                      | {append, info(), e, e}
                      | {isnil, info(), e}
                      | {for, info(), t(), [e_bind()], e()}     % binding form

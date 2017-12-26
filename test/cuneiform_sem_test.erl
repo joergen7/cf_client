@@ -20,7 +20,7 @@
                           str/1, file/1, true/0, false/0, cnd/3, var/1,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
                           lam_frn/5, lst/2, append/2, isnil/1, for/3, fold/3,
-                          rcd/1, proj/2, fix/1, assign/3
+                          rcd/1, proj/2, fix/1, assign/3, null/1
                          ] ).
  
 %%====================================================================
@@ -1283,7 +1283,7 @@ inserting_leaves_future_unchanged() ->
 
 inserting_traverses_list_elements() ->
   E1 = var( x ),
-  Ctx = {lst, na, t_str(), [hole]},
+  Ctx = {cons, na, t_str(), hole, null( t_str() )},
   E2 = lst( t_str(), [E1] ),
   ?assertEqual( E2, in_hole( E1, Ctx ) ).
 
@@ -1613,7 +1613,7 @@ empty_list_is_no_redex() ->
 
 find_context_traverses_list_elements() ->
   E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
-  Ctx = {lst, na, t_str(), [hole]},
+  Ctx = {cons, na, t_str(), hole, null( t_str() )},
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
 
 list_append_with_value_operands_is_redex() ->

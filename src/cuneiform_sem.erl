@@ -20,8 +20,11 @@
 -import( cuneiform_lang, [
                           true/1, false/1, app/3, cmp/3, cnd/4, neg/2, conj/3,
                           disj/3, var/2, lam_ntv/3, lst/3, append/3, isnil/2,
-                          for/4, fold/4, rcd/2, proj/3, fix/2, lst/2
+                          for/4, fold/4, rcd/2, proj/3, fix/2, cons/4, null/2
                          ] ).
+
+-import( cuneiform_lang, [lst_expr_to_list/1, get_lst_type/1,
+                          is_lst_literal/1] ).
 
 
 %%====================================================================
@@ -76,31 +79,34 @@ reduce( {app, AppInfo,                                         % E-beta
   EFn1 = {lam_ntv, LamInfo, LamArgTl, EBody1},
   app( AppInfo, EFn1, AppArgTl );
 
-reduce( {append, Info, {lst, _, T, L1}, {lst, _, _, L2}} ) ->  % E-append
+reduce( {append, Info, E1, E2} ) ->                            % E-append
+
+  T = get_lst_type( E1 ),
+  L1 = lst_expr_to_list( E1 ),
+  L2 = lst_expr_to_list( E2 ),
+
   lst( Info, T, L1++L2 );
 
-reduce( {isnil, Info, {lst, _, _, []}} ) ->                    % E-isnil-empty
+reduce( {isnil, Info, {null, _, _}} ) ->                       % E-isnil-null
   true( Info );
 
-reduce( {isnil, Info, {lst, _, _, [_|_]}} ) ->                 % E-isnil-nonempty
+reduce( {isnil, Info, {cons, _, _, _, _}} ) ->                 % E-isnil-cons
   false( Info );
 
 reduce( {proj, _, X, {rcd, _, EBindLst}} ) ->                  % E-proj
   {X, E} = lists:keyfind( X, 1, EBindLst ),
   E;
 
-reduce( {for, Info, TRet, [{X, {lst, _, T, ELst}}], EBody} ) ->
+reduce( {for, Info, T, [{_X, {null, _, _}}], _EBody} ) ->
+  null( Info, T );
 
-  F =
-    fun( E ) ->
-      app( Info,
-           lam_ntv( Info, [lam_ntv_arg( X, T )], EBody ),
-           [e_bind( X, E )] )
-    end,
-
-  ELst1 = [F( E ) || E <- ELst],
-  lst( Info, TRet, ELst1 ).
-
+reduce( {for, ForInfo, ForT, [{X, {cons, ConsInfo, ConsT, E1, E2}}], EBody } ) ->
+  cons( ForInfo,
+        ForT,
+        app( ForInfo,
+             lam_ntv( ForInfo, [lam_ntv_arg( X, ConsT )], EBody ),
+             [e_bind( X, E1 )] ),
+        for( ForInfo, ForT, [{X, E2}], EBody) ).
   
 
 %%====================================================================
@@ -123,7 +129,8 @@ is_value( {lam_ntv, _, _, _} )          -> true;
 is_value( {lam_frn, _, _, _, _, _, _} ) -> true;
 is_value( {app, _, _, _} )              -> false;
 is_value( {fut, _, _} )                 -> false;
-is_value( {lst, _, _, ELst} )           -> lists:all( fun is_value/1, ELst );
+is_value( {null, _, _} )                -> true;
+is_value( {cons, _, _, E1, E2} )        -> is_value( E1 ) andalso is_value( E2 );
 is_value( {append, _, _, _} )           -> false;
 is_value( {isnil, _, _} )               -> false;
 is_value( {for, _, _, _, _} )           -> false;
@@ -152,6 +159,7 @@ rename( E = {false, _}, _, _ )                  -> E;
 rename( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
 rename( E = {fut, _, _}, _, _ )                 -> E;
 rename( E = {err, _, _, _}, _, _ )              -> E;
+rename( E = {null, _, _}, _, _ )                -> E;
 
 rename( {cmp, Info, E1, E2}, X1, X2 ) ->
   cmp( Info, rename( E1, X1, X2 ),
@@ -197,8 +205,8 @@ rename( {app, Info, EFn, ArgLst}, X, Y ) ->
 
   app( Info, EFn1, ArgLst1 );
 
-rename( {lst, Info, T, ELst}, X1, X2 ) ->
-  lst( Info, T, [rename( E, X1, X2 ) || E <- ELst] );
+rename( {cons, Info, T, E1, E2}, X1, X2 ) ->
+  cons( Info, T, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
 
 rename( {append, Info, E1, E2}, X1, X2 ) ->
   append( Info, rename( E1, X1, X2 ),
@@ -242,14 +250,15 @@ when E1 :: e(),
      X  :: x(),
      E2 :: e().
 
-subst( {var, _, X}, X, E2 )         -> E2;
-subst( E1 = {var, _, _}, _, _ )     -> E1;
-subst( E1 = {str, _, _}, _, _ )     -> E1;
-subst( E1 = {file, _, _, _}, _, _ ) -> E1;
-subst( E1 = {true, _}, _, _ )       -> E1;
-subst( E1 = {false, _}, _, _ )      -> E1;
-subst( E1 = {fut, _, _}, _, _ )     -> E1;
-subst( E1 = {err, _, _, _}, _, _ )  -> E1;
+subst( {var, _, X}, X, ES )        -> ES;
+subst( E = {var, _, _}, _, _ )     -> E;
+subst( E = {str, _, _}, _, _ )     -> E;
+subst( E = {file, _, _, _}, _, _ ) -> E;
+subst( E = {true, _}, _, _ )       -> E;
+subst( E = {false, _}, _, _ )      -> E;
+subst( E = {fut, _, _}, _, _ )     -> E;
+subst( E = {err, _, _, _}, _, _ )  -> E;
+subst( E = {null, _, _}, _, _ )    -> E;
 
 subst( {cmp, Info, E1, E2}, X, ES ) ->
   cmp( Info, subst( E1, X, ES ),
@@ -291,8 +300,8 @@ subst( {app, Info, EFn, ArgLst}, X, E2 ) ->
 
   app( Info, EFn1, ArgLst1 );
 
-subst( {lst, Info, T, ELst}, X, ES ) ->
-  lst( Info, T, [subst( E, X, ES ) || E <- ELst] );
+subst( {cons, Info, T, E1, E2}, X, ES ) ->
+  cons( Info, T, subst( E1, X, ES ), subst( E2, X, ES ) );
 
 subst( {append, Info, E1, E2}, X, ES ) ->
   append( Info, subst( E1, X, ES ),
@@ -373,6 +382,7 @@ in_hole( _E, Ctx = {var, _, _} )                 -> Ctx;
 in_hole( _E, Ctx = {lam_ntv, _, _, _} )          -> Ctx;
 in_hole( _E, Ctx = {lam_frn, _, _, _, _, _, _} ) -> Ctx;
 in_hole( _E, Ctx = {fut, _, _} )                 -> Ctx;
+in_hole( _E, Ctx = {null, _, _} )                -> Ctx;
 
 in_hole( E, {cmp, Info, E1, E2} ) ->
   {cmp, Info, in_hole( E, E1 ), in_hole( E, E2 )};
@@ -396,8 +406,8 @@ in_hole( E, {app, Info, EFn, EBindLst} ) ->
         in_hole( E, EFn ),
         [{X, in_hole( E, E1 )} || {X, E1} <- EBindLst]};
 
-in_hole( E, {lst, Info, T, ELst} ) ->
-  {lst, Info, T, [in_hole( E, E1 ) || E1 <- ELst]};
+in_hole( E, {cons, Info, T, E1, E2} ) ->
+  {cons, Info, T, in_hole( E, E1 ), in_hole( E, E2 )};
 
 in_hole( E, {append, Info, E1, E2} ) ->
   {append, Info, in_hole( E, E1 ), in_hole( E, E2 )};
@@ -447,6 +457,7 @@ try_context( {var, _, _}, _ )                 -> no_ctx;
 try_context( {lam_ntv, _, _, _}, _ )          -> no_ctx;
 try_context( {lam_frn, _, _, _, _, _, _}, _ ) -> no_ctx;
 try_context( {fut, _, _}, _ )                 -> no_ctx;
+try_context( {null, _, _}, _ )                -> no_ctx;
 
 try_context( E = {cmp, Info, E1, E2}, Ctx ) ->
   case is_value( E1 ) andalso is_value( E2 ) of
@@ -515,31 +526,30 @@ try_context( E = {app, Info, LamFrn = {lam_frn, _, _, _, _, _, _}, EBindLst},
 try_context( {app, Info, EFn, ArgLst}, Ctx ) ->
   try_context( EFn, in_hole( {app, Info, hole, ArgLst}, Ctx ) );
 
-try_context( {lst, Info, T, ELst}, Ctx ) ->
-  
-  F =
-    fun
+try_context( {cons, Info, T, E1, E2}, Ctx ) ->
+  try_context( E1, in_hole( {cons, Info, T, hole, E2}, Ctx ) ),
+  try_context( E2, in_hole( {cons, Info, T, E1, hole}, Ctx ) );
 
-      F( _Prefix, [] ) ->
-        no_ctx;
+try_context( E = {append, _, {cons, _, _, _, _}, {cons, _, _, _, _}}, Ctx ) ->
+  throw( {E, Ctx} );
 
-      F( Prefix, [Pivot|Suffix] ) ->
-        try_context( Pivot,
-                     in_hole( {lst, Info, T, Prefix++[hole|Suffix]}, Ctx ) ),
-        F( Prefix++[Pivot], Suffix )
+try_context( E = {append, _, {null, _, _}, {cons, _, _, _, _}}, Ctx ) ->
+  throw( {E, Ctx} );
 
-    end,
+try_context( E = {append, _, {cons, _, _, _, _}, {null, _, _}}, Ctx ) ->
+  throw( {E, Ctx} );
 
-  F( [], ELst );
-
-try_context( E = {append, _, {lst, _, _, _}, {lst, _, _, _}}, Ctx ) ->
+try_context( E = {append, _, {null, _, _}, {null, _, _}}, Ctx ) ->
   throw( {E, Ctx} );
 
 try_context( {append, Info, E1, E2}, Ctx ) ->
   try_context( E1, in_hole( {append, Info, hole, E2}, Ctx ) ),
   try_context( E2, in_hole( {append, Info, E1, hole}, Ctx ) );
 
-try_context( E = {isnil, _, {lst, _, _, _}}, Ctx ) ->
+try_context( E = {isnil, _, {null, _, _}}, Ctx ) ->
+  throw( {E, Ctx} );
+
+try_context( E = {isnil, _, {cons, _, _, _, _}}, Ctx ) ->
   throw( {E, Ctx} );
 
 try_context( {isnil, Info, E1}, Ctx ) ->
@@ -577,12 +587,6 @@ try_context( E = {fix, Info, E1}, Ctx ) ->
 
 try_context( E = {for, Info, TRet, EBindLst, EBody}, Ctx ) ->
 
-  IsLst =
-    fun
-      ( {lst, _, _, _} ) -> true;
-      ( _ )              -> false
-    end,
-
   F =
     fun
 
@@ -598,20 +602,19 @@ try_context( E = {for, Info, TRet, EBindLst, EBody}, Ctx ) ->
 
     end,
 
-  case lists:all( IsLst, [E1 || {_, E1} <- EBindLst] ) of
+  Pred =
+    fun( {_X, E1} ) ->
+      is_lst_literal( E1 )
+    end,
+
+  case lists:all( Pred, EBindLst ) of
     true  -> throw( {E, Ctx} );
     false -> F( [], EBindLst )
   end;
 
 try_context( E = {fold, Info, AccBind, {X, ELst}, EBody}, Ctx ) ->
 
-  IsLst =
-    fun
-      ( {lst, _, _, _} ) -> true;
-      ( _ )              -> false
-    end,
-
-  case IsLst( ELst ) of
+  case is_lst_literal( ELst ) of
     true  -> throw( {E, Ctx} );
     false ->
       try_context(
@@ -621,3 +624,5 @@ try_context( E = {fold, Info, AccBind, {X, ELst}, EBody}, Ctx ) ->
 
 try_context( E = {err, _Info, _Script, _Output}, Ctx ) ->
   throw( {E, Ctx} ).
+
+
