@@ -35,51 +35,51 @@
 
 reduce( {cmp, Info, {str, _, S1}, {str, _, S2}} ) ->
   case S1 =:= S2 of
-    true  -> true( Info );                                     % E-cmp-str-equal
-    false -> false( Info )                                     % E-cmp-str-unequal
+    true  -> true( Info );                                                % E-cmp-str-equal
+    false -> false( Info )                                                % E-cmp-str-unequal
   end;
 
 reduce( {cmp, Info, {X, _}, {X, _}} ) ->
-  true( Info );                                                % E-cmp-str-equal
+  true( Info );                                                           % E-cmp-str-equal
 
 reduce( {cmp, Info, {_, _}, {_, _}} ) ->
-  false( Info );                                               % E-cmp-str-unequal
+  false( Info );                                                          % E-cmp-str-unequal
 
-reduce( {cnd, _, {true, _}, EThen, _} ) ->                     % E-cnd-true
+reduce( {cnd, _, {true, _}, EThen, _} ) ->                                % E-cnd-true
   EThen;
 
-reduce( {cnd, _, {false, _}, _, EElse} ) ->                    % E-cnd-false
+reduce( {cnd, _, {false, _}, _, EElse} ) ->                               % E-cnd-false
   EElse;
 
-reduce( {neg, Info, {true, _}} ) ->                            % E-neg-true
+reduce( {neg, Info, {true, _}} ) ->                                       % E-neg-true
   false( Info );
 
-reduce( {neg, Info, {false, _}} ) ->                           % E-neg-false
+reduce( {neg, Info, {false, _}} ) ->                                      % E-neg-false
   true( Info );
 
-reduce( {conj, _, {true, _}, E} ) ->                           % E-conj-true
+reduce( {conj, _, {true, _}, E} ) ->                                      % E-conj-true
   E;
 
-reduce( {conj, Info, {false, _}, _} ) ->                       % E-conj-false
+reduce( {conj, Info, {false, _}, _} ) ->                                  % E-conj-false
   false( Info );
 
-reduce( {disj, Info, {true, _}, _} ) ->                        % E-disj-true
+reduce( {disj, Info, {true, _}, _} ) ->                                   % E-disj-true
   true( Info );
 
-reduce( {disj, _, {false, _}, E} ) ->                          % E-disj-false
+reduce( {disj, _, {false, _}, E} ) ->                                     % E-disj-false
   E;
 
-reduce( {app, _, {lam_ntv, _, [], EBody}, []} ) ->             % E-beta-base
+reduce( {app, _, {lam_ntv, _, [], EBody}, []} ) ->                        % E-beta-base
   EBody;
 
-reduce( {app, AppInfo,                                         % E-beta
+reduce( {app, AppInfo,                                                    % E-beta
               {lam_ntv, LamInfo, [{XIn, XOut, _}|LamArgTl], EBody},
               [{XOut, E}|AppArgTl]} ) ->
   EBody1 = subst( EBody, XIn, E ),
   EFn1 = {lam_ntv, LamInfo, LamArgTl, EBody1},
   app( AppInfo, EFn1, AppArgTl );
 
-reduce( {append, Info, E1, E2} ) ->                            % E-append
+reduce( {append, Info, E1, E2} ) ->                                       % E-append
 
   T = lst_literal_type( E1 ),
   L1 = lst_literal_to_list( E1 ),
@@ -87,13 +87,13 @@ reduce( {append, Info, E1, E2} ) ->                            % E-append
 
   lst( Info, T, L1++L2 );
 
-reduce( {isnil, Info, {null, _, _}} ) ->                       % E-isnil-null
+reduce( {isnil, Info, {null, _, _}} ) ->                                  % E-isnil-null
   true( Info );
 
-reduce( {isnil, Info, {cons, _, _, _, _}} ) ->                 % E-isnil-cons
+reduce( {isnil, Info, {cons, _, _, _, _}} ) ->                            % E-isnil-cons
   false( Info );
 
-reduce( {proj, _, X, {rcd, _, EBindLst}} ) ->                  % E-proj
+reduce( {proj, _, X, {rcd, _, EBindLst}} ) ->                             % E-proj
   {X, E} = lists:keyfind( X, 1, EBindLst ),
   E;
 
@@ -106,30 +106,33 @@ reduce( {for, Info, TRet, EBindLst, EBody} ) ->
     end,
 
   Gobble =
-    fun( {X, {cons, _, _, E1, E2}}, {EBindLst1, EBindLst2} ) ->
-      {[e_bind( X, E1 )|EBindLst1], [e_bind( X, E2 )|EBindLst2]}
+    fun( {X, {cons, _, _, E1, E2}}, {EBody1, EBindLst2} ) ->
+      {subst( EBody1, X, E1 ), [e_bind( X, E2 )|EBindLst2]}
     end,
 
   case lists:all( IsCons, EBindLst ) of
 
-    false ->
+    false ->                                                              % E-for-null
       null( Info, TRet );
 
-    true ->
+    true ->                                                               % E-for-cons
 
-      Lam =
-        lam_ntv( Info,
-                 [lam_ntv_arg( X, T ) || {X, {cons, _, T, _, _}} <- EBindLst],
-                 EBody ),
-
-      {EBindLstHd, EBindLstTl} = lists:foldr( Gobble, {[], []}, EBindLst ),
+      {EBody1, EBindLst1} = lists:foldr( Gobble, {EBody, []}, EBindLst ),
 
       cons( Info,
             TRet,
-            app( Info, Lam, EBindLstHd ),
-            for( Info, TRet, EBindLstTl, EBody) )
+            EBody1,
+            for( Info, TRet, EBindLst1, EBody) )
 
-  end.
+  end;
+
+reduce( {fold, _Info, {_XAcc, EAcc}, {_X, {null, _, _}}, _EBody} ) ->     % E-fold-null
+  EAcc;
+
+reduce( {fold, Info, {XAcc, EAcc}, {X, {cons, _, _, E1, E2}}, EBody} ) -> % E-fold-cons
+  EAcc1 = subst( subst( EBody, XAcc, EAcc ), X, E1 ),
+  fold( Info, e_bind( XAcc, EAcc1), e_bind( X, E2 ), EBody ).
+
   
 
 %%====================================================================

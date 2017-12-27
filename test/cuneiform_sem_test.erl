@@ -125,7 +125,10 @@ reduce_test_() ->
      fun map_reduces_to_list/0},
 
     {"zip reduces to list",
-     fun zip_reduces_to_list/0}
+     fun zip_reduces_to_list/0},
+
+    {"fold reduces",
+     fun fold_reduces/0}
    ]
   }.
 
@@ -218,8 +221,7 @@ projection_reduces_to_record_field() ->
 map_reduces_to_list() ->
   E1 = for( t_bool(), [e_bind( x, lst( t_bool(), [true(), false()] ) )], neg( var( x ) ) ),
   E2 = cons( t_bool(),
-             app( lam_ntv( [lam_ntv_arg( x, t_bool() )], neg( var( x ) ) ),
-                  [e_bind( x, true() )] ),
+             neg( true() ),
              for( t_bool(), [e_bind( x, lst( t_bool(), [false()] ) )], neg( var( x ) ) ) ),
   ?assertEqual( E2, reduce( E1 ) ).
 
@@ -229,15 +231,21 @@ zip_reduces_to_list() ->
              e_bind( y, lst( t_bool(), [false(), false()] ) )],
             disj( var( x ), var( y ) ) ),
   E2 = cons( t_bool(),
-             app( lam_ntv( [lam_ntv_arg( x, t_bool() ),
-                            lam_ntv_arg( y, t_bool() )],
-                           disj( var( x ), var( y ) ) ),
-                  [e_bind( x, true() ), e_bind( y, false() )] ),
+             disj( true(), false() ),
              for( t_bool(),
                   [e_bind( x, lst( t_bool(), [false()] ) ),
                    e_bind( y, lst( t_bool(), [false()] ) )],
                   disj( var( x ), var( y ) ) ) ),
 
+  ?assertEqual( E2, reduce( E1 ) ).
+
+fold_reduces() ->
+  E1 = fold( e_bind( x_acc, str( <<"0">> ) ),
+             e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+             var( x ) ),
+  E2 = fold( e_bind( x_acc, str( <<"1">> ) ),
+             e_bind( x, lst( t_str(), [str( <<"2">> )] ) ),
+             var( x ) ),
   ?assertEqual( E2, reduce( E1 ) ).
 
 
