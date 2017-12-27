@@ -28,7 +28,7 @@
 -export( [l_bash/0, l_octave/0, l_perl/0, l_python/0, l_r/0, l_racket/0] ).
 
 -export( [find_ambiguous/1] ).
--export( [lst_expr_to_list/1, is_lst_literal/1, get_lst_type/1] ).
+-export( [lst_literal_to_list/1, is_lst_literal/1, lst_literal_type/1] ).
 
 %%====================================================================
 %% Language constructors
@@ -364,17 +364,17 @@ is_lst_literal( {null, _, _} )       -> true;
 is_lst_literal( _ )                  -> false.
 
 
--spec lst_expr_to_list( E ) -> [e()]
+-spec lst_literal_to_list( E ) -> [e()]
 when E :: {cons, info(), t(), e(), e()}
         | {null, info(), t()}.
 
-lst_expr_to_list( {cons, _, _, E1, E2} ) -> [E1|lst_expr_to_list( E2 )];
-lst_expr_to_list( {null, _, _} )         -> [].
+lst_literal_to_list( {cons, _, _, E1, E2} ) -> [E1|lst_literal_to_list( E2 )];
+lst_literal_to_list( {null, _, _} )         -> [].
 
 
--spec get_lst_type( E ) -> t()
+-spec lst_literal_type( E ) -> t()
 when E :: {cons, info(), t(), e(), e()}
         | {null, info(), t()}.
 
-get_lst_type( {cons, _, T, _, _} ) -> T;
-get_lst_type( {null, _, T} )       -> T.
+lst_literal_type( {cons, _, T, _, _} ) -> T;
+lst_literal_type( {null, _, T} )       -> T.

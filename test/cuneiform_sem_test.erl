@@ -20,7 +20,7 @@
                           str/1, file/1, true/0, false/0, cnd/3, var/1,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
                           lam_frn/5, lst/2, append/2, isnil/1, for/3, fold/3,
-                          rcd/1, proj/2, fix/1, assign/3, null/1
+                          rcd/1, proj/2, fix/1, assign/3, null/1, cons/3
                          ] ).
  
 %%====================================================================
@@ -217,11 +217,10 @@ projection_reduces_to_record_field() ->
 
 map_reduces_to_list() ->
   E1 = for( t_bool(), [e_bind( x, lst( t_bool(), [true(), false()] ) )], neg( var( x ) ) ),
-  E2 = lst( t_bool(),
-            [app( lam_ntv( [lam_ntv_arg( x, t_bool() )], neg( var( x ) ) ),
-                  [e_bind( x, true() )] ),
+  E2 = cons( t_bool(),
              app( lam_ntv( [lam_ntv_arg( x, t_bool() )], neg( var( x ) ) ),
-                  [e_bind( x, false() )] )] ),
+                  [e_bind( x, true() )] ),
+             for( t_bool(), [e_bind( x, lst( t_bool(), [false()] ) )], neg( var( x ) ) ) ),
   ?assertEqual( E2, reduce( E1 ) ).
 
 zip_reduces_to_list() ->
@@ -229,15 +228,16 @@ zip_reduces_to_list() ->
             [e_bind( x, lst( t_bool(), [true(), false()] ) ),
              e_bind( y, lst( t_bool(), [false(), false()] ) )],
             disj( var( x ), var( y ) ) ),
-  E2 = lst( t_bool(),
-            [app( lam_ntv( [lam_ntv_arg( x, t_bool() ),
-                            lam_ntv_arg( y, t_bool() )],
-                           disj( var( x ), var( y ) ) ),
-                  [e_bind( x, true() ), e_bind( y, false() )] ),
+  E2 = cons( t_bool(),
              app( lam_ntv( [lam_ntv_arg( x, t_bool() ),
                             lam_ntv_arg( y, t_bool() )],
                            disj( var( x ), var( y ) ) ),
-                  [e_bind( x, false() ), e_bind( y, false() )] )] ),
+                  [e_bind( x, true() ), e_bind( y, false() )] ),
+             for( t_bool(),
+                  [e_bind( x, lst( t_bool(), [false()] ) ),
+                   e_bind( y, lst( t_bool(), [false()] ) )],
+                  disj( var( x ), var( y ) ) ) ),
+
   ?assertEqual( E2, reduce( E1 ) ).
 
 

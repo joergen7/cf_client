@@ -23,7 +23,7 @@
                           for/4, fold/4, rcd/2, proj/3, fix/2, cons/4, null/2
                          ] ).
 
--import( cuneiform_lang, [lst_expr_to_list/1, get_lst_type/1,
+-import( cuneiform_lang, [lst_literal_to_list/1, lst_literal_type/1,
                           is_lst_literal/1] ).
 
 
@@ -81,9 +81,9 @@ reduce( {app, AppInfo,                                         % E-beta
 
 reduce( {append, Info, E1, E2} ) ->                            % E-append
 
-  T = get_lst_type( E1 ),
-  L1 = lst_expr_to_list( E1 ),
-  L2 = lst_expr_to_list( E2 ),
+  T = lst_literal_type( E1 ),
+  L1 = lst_literal_to_list( E1 ),
+  L2 = lst_literal_to_list( E2 ),
 
   lst( Info, T, L1++L2 );
 
@@ -97,16 +97,39 @@ reduce( {proj, _, X, {rcd, _, EBindLst}} ) ->                  % E-proj
   {X, E} = lists:keyfind( X, 1, EBindLst ),
   E;
 
-reduce( {for, Info, T, [{_X, {null, _, _}}], _EBody} ) ->
-  null( Info, T );
+reduce( {for, Info, TRet, EBindLst, EBody} ) ->
 
-reduce( {for, ForInfo, ForT, [{X, {cons, ConsInfo, ConsT, E1, E2}}], EBody } ) ->
-  cons( ForInfo,
-        ForT,
-        app( ForInfo,
-             lam_ntv( ForInfo, [lam_ntv_arg( X, ConsT )], EBody ),
-             [e_bind( X, E1 )] ),
-        for( ForInfo, ForT, [{X, E2}], EBody) ).
+  IsCons =
+    fun
+      ( {_, {cons, _, _, _, _}} ) -> true;
+      ( {_, {null, _, _}} )       -> false
+    end,
+
+  Gobble =
+    fun( {X, {cons, _, _, E1, E2}}, {EBindLst1, EBindLst2} ) ->
+      {[e_bind( X, E1 )|EBindLst1], [e_bind( X, E2 )|EBindLst2]}
+    end,
+
+  case lists:all( IsCons, EBindLst ) of
+
+    false ->
+      null( Info, TRet );
+
+    true ->
+
+      Lam =
+        lam_ntv( Info,
+                 [lam_ntv_arg( X, T ) || {X, {cons, _, T, _, _}} <- EBindLst],
+                 EBody ),
+
+      {EBindLstHd, EBindLstTl} = lists:foldr( Gobble, {[], []}, EBindLst ),
+
+      cons( Info,
+            TRet,
+            app( Info, Lam, EBindLstHd ),
+            for( Info, TRet, EBindLstTl, EBody) )
+
+  end.
   
 
 %%====================================================================
