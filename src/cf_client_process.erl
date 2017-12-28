@@ -164,7 +164,7 @@ app_to_effi_request(
 
   Hash = crypto:hash( sha512, io_lib:format( "~w~w", [Lambda, ArgBindLst] ) ),
 
-  AppId = BinaryToHexString( Hash ),
+  AppId = list_to_binary( BinaryToHexString( Hash ) ),
 
   #{ app_id       => AppId,
      lambda       => Lambda,
