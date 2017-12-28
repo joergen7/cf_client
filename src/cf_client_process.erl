@@ -14,6 +14,9 @@
 %% API functions
 -export( [start_link/1, start_link/2] ).
 
+-import( cuneiform_lang, [e_bind/2, true/0, false/0, str/1, file/1, lst/2,
+                          t_bool/0, t_str/0, t_file/0, rcd/1] ).
+
 
 %%====================================================================
 %% API functions
@@ -60,8 +63,12 @@ when E       :: e(),
      Delta   :: e(),
      UsrInfo :: _.
 
-recv( E, A, Delta, _UsrInfo ) ->
-  cuneiform_sem:subst_fut( E, A, Delta ).
+recv( E, Request, Reply, _UsrInfo ) ->
+
+  #{ app_id := AppId } = Reply,
+  E1 = effi_reply_to_expr( Request, Reply ),
+
+  cuneiform_sem:subst_fut( E, AppId, E1 ).
 
 
 -spec step( E, UsrInfo ) -> Result
@@ -98,6 +105,7 @@ step( E, _UsrInfo ) ->
       norule
 
   end.
+
 
 -spec app_to_effi_request( A :: e() ) -> #{ atom() => _ }.
 
@@ -171,7 +179,69 @@ app_to_effi_request(
      arg_bind_lst => ArgBindLst }.
 
 
+effi_reply_to_expr( Request, Reply ) ->
 
+  #{ lambda := Lambda } = Request,
+  #{ ret_type_lst := RetTypeLst } = Lambda,
+
+  RTL = [{ArgName, ArgType, IsList}
+         || #{ arg_name := ArgName,
+               arg_type := ArgType,
+               is_list  := IsList } <- RetTypeLst],
+
+  Convert =
+    fun( RetBind ) ->
+
+      #{ arg_name := N,
+         value    := V } = RetBind,
+
+      {N, T, L} = lists:keyfind( N, 1, RTL ),
+
+      X = binary_to_atom( N, utf8 ),
+
+      case L of
+
+        false ->
+          case T of
+            <<"Bool">> ->
+              case V of
+                <<"true">>  -> e_bind( X, true() );
+                <<"false">> -> e_bind( X, false() )
+              end;
+            <<"Str">> ->
+              e_bind( X, str( V ) );
+            <<"File">> ->
+              e_bind( X, file( V ) )
+          end;
+
+        true ->
+          case T of
+            <<"Bool">> ->
+              e_bind( X, lst( t_bool(), [case Y of
+                                           <<"true">>  -> true();
+                                           <<"false">> -> false()
+                                         end || Y <- V] ) );
+            <<"Str">> ->
+              e_bind( X, lst( t_str(), [str( Y ) || Y <- V] ) );
+            <<"File">> ->
+              e_bind( X, lst( t_file(), [file( Y ) || Y <- V] ) )
+          end
+
+      end
+    end,
+
+  #{ extended_script := ExtendedScript,
+     result          := Result } = Reply,
+
+  case Result of
+
+    #{ status := <<"ok">>, ret_bind_lst := RetBindLst } ->
+      rcd( [Convert( RetBind ) || RetBind <- RetBindLst] );
+
+    #{ status := <<"error">>, output := Output } ->
+      {err, na, ExtendedScript, Output}
+
+  end.
 
 
 
