@@ -276,15 +276,16 @@ when E1 :: e(),
      X  :: x(),
      E2 :: e().
 
-subst( {var, _, X}, X, ES )        -> ES;
-subst( E = {var, _, _}, _, _ )     -> E;
-subst( E = {str, _, _}, _, _ )     -> E;
-subst( E = {file, _, _, _}, _, _ ) -> E;
-subst( E = {true, _}, _, _ )       -> E;
-subst( E = {false, _}, _, _ )      -> E;
-subst( E = {fut, _, _}, _, _ )     -> E;
-subst( E = {err, _, _, _}, _, _ )  -> E;
-subst( E = {null, _, _}, _, _ )    -> E;
+subst( {var, _, X}, X, ES )                    -> ES;
+subst( E = {var, _, _}, _, _ )                 -> E;
+subst( E = {str, _, _}, _, _ )                 -> E;
+subst( E = {file, _, _, _}, _, _ )             -> E;
+subst( E = {true, _}, _, _ )                   -> E;
+subst( E = {false, _}, _, _ )                  -> E;
+subst( E = {fut, _, _}, _, _ )                 -> E;
+subst( E = {err, _, _, _}, _, _ )              -> E;
+subst( E = {null, _, _}, _, _ )                -> E;
+subst( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
 
 subst( {cmp, Info, E1, E2}, X, ES ) ->
   cmp( Info, subst( E1, X, ES ),

@@ -764,6 +764,9 @@ subst_test_() ->
     {"substitution retains order of native lambda arguments",
      fun subst_retains_order_of_lam_ntv_arg_lst/0},
 
+    {"substitution leaves foreign lambda alone",
+     fun substitution_leaves_foreign_lambda_alone/0},
+
     {"substitution propagates to application function",
      fun subst_propagates_to_app_function/0},
 
@@ -933,6 +936,10 @@ subst_retains_order_of_lam_ntv_arg_lst() ->
   ?assertMatch( {lam_ntv, na, [{X, x, 'Str'},
                                {_, y, 'File'}], {var, na, X}},
                 subst( e_lam1(), a, var( b ) ) ).
+
+substitution_leaves_foreign_lambda_alone() ->
+  E = lam_frn( f, [], t_rcd( [t_arg( a, t_str() )] ), l_bash(), <<"blub">> ),
+  ?assertMatch( E, subst( E, x, var( y ) ) ).
 
 subst_propagates_to_app_function() ->
   E1 = app( var( x ), [] ),
