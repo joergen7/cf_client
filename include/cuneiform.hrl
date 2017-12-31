@@ -9,6 +9,8 @@
 -type hash()        :: na
                      | binary().
 
+-type reason()      :: _.
+
 -type x()           :: atom().
 
 -type s()           :: binary().
@@ -60,7 +62,7 @@
                      | {rcd, info(), [e_bind()]}
                      | {proj, info(), x(), e()}
                      | {fix, info(), e()}
-                     | {err, info(), s(), s()}.
+                     | {err, info(), reason()}.
 
 -type assign()      :: {assign, info(), r(), e()}.
 

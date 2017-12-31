@@ -165,7 +165,7 @@ is_value( {fold, _, _, _, _} )          -> false;
 is_value( {rcd, _, EBindLst} )          -> lists:all( fun is_value/1, [E || {_, E} <- EBindLst] );
 is_value( {proj, _, _, _} )             -> false;
 is_value( {fix, _, _} )                 -> false;
-is_value( {err, _, _, _} )              -> true.
+is_value( {err, _, _} )                 -> true.
 
 
 %%====================================================================
@@ -185,7 +185,7 @@ rename( E = {true, _}, _, _ )                   -> E;
 rename( E = {false, _}, _, _ )                  -> E;
 rename( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
 rename( E = {fut, _, _}, _, _ )                 -> E;
-rename( E = {err, _, _, _}, _, _ )              -> E;
+rename( E = {err, _, _}, _, _ )                 -> E;
 rename( E = {null, _, _}, _, _ )                -> E;
 
 rename( {cmp, Info, E1, E2}, X1, X2 ) ->
@@ -284,7 +284,7 @@ subst( E = {file, _, _, _}, _, _ )             -> E;
 subst( E = {true, _}, _, _ )                   -> E;
 subst( E = {false, _}, _, _ )                  -> E;
 subst( E = {fut, _, _}, _, _ )                 -> E;
-subst( E = {err, _, _, _}, _, _ )              -> E;
+subst( E = {err, _, _}, _, _ )                 -> E;
 subst( E = {null, _, _}, _, _ )                -> E;
 subst( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
 
@@ -382,13 +382,68 @@ when E     :: e(),
      A     :: e(),
      Delta :: e().
 
-subst_fut( {fut, Info, Hash}, Hash, ES ) ->
-  set_info( ES, Info );
+subst_fut( {fut, Info, H}, H, ES )                 -> set_info( ES, Info );
+subst_fut( E = {fut, _, _}, _, _ )                 -> E;
+subst_fut( E = {str, _, _}, _, _ )                 -> E;
+subst_fut( E = {file, _, _, _}, _, _ )             -> E;
+subst_fut( E = {true, _}, _, _ )                   -> E;
+subst_fut( E = {false, _}, _, _ )                  -> E;
+subst_fut( E = {var, _, _}, _, _ )                 -> E;
+subst_fut( E = {lam_ntv, _, _, _}, _, _ )          -> E;
+subst_fut( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
+subst_fut( E = {null, _, _}, _, _ )                -> E;
+subst_fut( E = {err, _, _}, _, _ )                 -> E;
 
-subst_fut( E = {str, _, _}, _, _ )     -> E;
-subst_fut( E = {file, _, _, _}, _, _ ) -> E;
-subst_fut( E = {true, _}, _, _ )       -> E;
-subst_fut( E = {false, _}, _, _ )      -> E.
+subst_fut( {cmp, Info, E1, E2}, H, ES ) ->
+  cmp( Info, subst_fut( E1, H, ES ),
+             subst_fut( E2, H, ES ) );
+
+subst_fut( {cnd, Info, E1, E2, E3}, H, ES ) ->
+  cnd( Info, subst_fut( E1, H, ES ),
+             subst_fut( E2, H, ES ),
+             subst_fut( E3, H, ES ) );
+
+subst_fut( {neg, Info, E1}, H, ES ) ->
+  neg( Info, subst_fut( E1, H, ES ) );
+
+subst_fut( {conj, Info, E1, E2}, H, ES ) ->
+  conj( Info, subst_fut( E1, H, ES ),
+              subst_fut( E2, H, ES ) );
+
+subst_fut( {disj, Info, E1, E2}, H, ES ) ->
+  disj( Info, subst_fut( E1, H, ES ),
+              subst_fut( E2, H, ES ) );
+
+subst_fut( {app, Info, EF, EBindLst}, H, ES ) ->
+  app( Info, subst_fut( EF, H, ES ),
+             [e_bind( X, subst_fut( E, H, ES ) ) || {X, E} <- EBindLst] );
+
+subst_fut( {cons, Info, T, E1, E2}, H, ES ) ->
+  cons( Info, T, subst_fut( E1, H, ES ),
+                 subst_fut( E2, H, ES ) );
+
+subst_fut( {append, Info, E1, E2}, H, ES ) ->
+  append( Info, subst_fut( E1, H, ES ),
+                subst_fut( E2, H, ES ) );
+
+subst_fut( {isnil, Info, E1}, H, ES ) ->
+  isnil( Info, subst_fut( E1, H, ES ) );
+
+subst_fut( {rcd, Info, EBindLst}, H, ES ) ->
+  rcd( Info, [e_bind( X, subst_fut( E, H, ES ) ) || {X, E} <- EBindLst] );
+
+subst_fut( {proj, Info, X, E1}, H, ES ) ->
+  proj( Info, X, subst_fut( E1, H, ES ) );
+
+subst_fut( {fix, Info, E1}, H, ES ) ->
+  fix( Info, subst_fut( E1, H, ES ) );
+
+subst_fut( {for, Info, TRet, EBindLst, EBody}, H, ES ) ->
+  for( Info, TRet, [e_bind( X, subst_fut( E, H, ES )) || {X, E} <- EBindLst],
+       EBody );
+
+subst_fut( {fold, Info, AccBind, {X, E}, EBody}, H, ES ) ->
+  fold( Info, AccBind, e_bind( X, subst_fut( E, H, ES ) ), EBody ).
 
 
 -spec gensym( X :: atom() ) -> atom().
@@ -656,7 +711,7 @@ try_context( E = {fold, Info, AccBind, {X, ELst}, EBody}, Ctx ) ->
         in_hole( {fold, Info, AccBind, {X, hole}, EBody}, Ctx ) )
   end;
 
-try_context( E = {err, _Info, _Script, _Output}, Ctx ) ->
+try_context( E = {err, _Info, _Reason}, Ctx ) ->
   throw( {E, Ctx} ).
 
 
@@ -666,4 +721,5 @@ set_info( {str, _, S}, Info )          -> str( Info, S );
 set_info( {file, _, S, H}, Info )      -> file( Info, S, H );
 set_info( {null, _, T}, Info )         -> null( Info, T );
 set_info( {cons, _, T, E1, E2}, Info ) -> cons( Info, T, set_info( E1, Info ), set_info( E2, Info ) );
-set_info( {rcd, _, EBindLst}, Info )   -> rcd( Info, [e_bind( X, set_info( E, Info ) ) || {X, E} <- EBindLst] ).
+set_info( {rcd, _, EBindLst}, Info )   -> rcd( Info, [e_bind( X, set_info( E, Info ) ) || {X, E} <- EBindLst] );
+set_info( {err, _, Reason}, Info )     -> {err, Info, Reason}.

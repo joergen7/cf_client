@@ -41,22 +41,12 @@ e_lam_const() ->
 e_lam_id() ->
   lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ).
 
+e_lam_greet() ->
+  lam_frn( greet, [t_arg( person, t_str() )], t_rcd( [t_arg( out, t_str() )] ), l_bash(), <<"out=\"hello $person\"">> ).
+
 e_app_id() ->
   app( e_lam_id(), [e_bind( x, str( <<"blub">> ) )] ).
 
-a_bowtie2_build() ->
-  #{ app_id       => <<"1234">>,
-     lambda       => #{ lambda_name  => <<"bowtie2-build">>,
-                        arg_type_lst => [#{ arg_name => <<"fa">>,
-                                            arg_type => <<"File">>,
-                                            is_list  => false }],
-                        ret_type_lst => [#{ arg_name => <<"idx">>,
-                                            arg_type => <<"File">>,
-                                            is_list  => false }],
-                        lang         => <<"Bash">>,
-                        script       => <<"bowtie2-build $fa bt2idx\nidx=idx.tar\ntar cf $idx --remove-files bt2idx.*\n">> },
-     arg_bind_lst => [#{ arg_name => <<"fa">>,
-                         value    => <<"chr22.fa">> }] }.
 
 %%====================================================================
 %% Notion of reduction
@@ -405,7 +395,7 @@ fixpoint_is_no_value() ->
   ?assertNot( is_value( E ) ).
 
 error_is_value() ->
-  ?assertEqual( true, is_value( {err, na, <<"bla">>, <<"blub">>} ) ).
+  ?assertEqual( true, is_value( {err, na, na} ) ).
 
 %%====================================================================
 %% Substitution and renaming
@@ -714,7 +704,7 @@ rename_propagates_to_fixpoint_operand() ->
   ?assertEqual( E2, rename( E1, x, y ) ).
 
 rename_leaves_error_alone() ->
-  E = {err, na, <<"bla">>, <<"blub">>},
+  E = {err, na, na},
   ?assertEqual( E, rename( E, x, y ) ).
 
 
@@ -1093,7 +1083,7 @@ fold_list_expression_is_capture_avoiding() ->
                 subst( E, y, var( x ) ) ).
 
 substitution_leaves_error_alone() ->
-  E = {err, na, <<"bla">>, <<"blub">>},
+  E = {err, na, na},
   ?assertEqual( E, subst( E, x, var( y ) ) ).
 
 
@@ -1739,7 +1729,7 @@ find_context_traverses_fold_list_expression() ->
   ?assertEqual( {ok, ELst, Ctx}, find_context( in_hole( ELst, Ctx ) ) ).
 
 error_is_redex() ->
-  E = {err, na, <<"bla">>, <<"blub">>},
+  E = {err, na, na},
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
 
@@ -1763,13 +1753,91 @@ subst_fut_test_() ->
      fun subst_fut_leaves_false_alone/0},
 
     {"subst_fut alters matching future",
-     fun subst_fut_alters_matching_future/0}
+     fun subst_fut_alters_matching_future/0},
 
-    % {"subst_fut leaves non-matching future alone",
-    %  fun subst_fut_leaves_nonmatching_future_alone/0},
+    {"subst_fut leaves non-matching future alone",
+     fun subst_fut_leaves_nonmatching_future_alone/0},
 
-    % {"subst_fut traverses string comparison",
-    %  fun subst_fut_traverses_string_comparison/0}
+    {"subst_fut traverses comparison lhs",
+     fun subst_fut_traverses_comparison_lhs/0},
+
+    {"subst_fut traverses comparison rhs",
+     fun subst_fut_traverses_comparison_rhs/0},
+
+    {"subst_fut traverses condition if expression",
+     fun subst_fut_traverses_condition_if_term/0},
+
+    {"subst_fut traverses condition then expression",
+     fun subst_fut_traverses_condition_then_expression/0},
+
+    {"subst_fut traverses condition else expression",
+     fun subst_fut_traverses_condition_else_expression/0},
+
+    {"subst_fut traverses negation",
+     fun subst_fut_traverses_negation/0},
+
+    {"subst_fut traverses conjunction lhs",
+     fun subst_fut_traverses_conjunction_lhs/0},
+
+    {"subst_fut traverses conjunction rhs",
+     fun subst_fut_traverses_conjunction_rhs/0},
+
+    {"subst_fut traverses disjunction lhs",
+     fun subst_fut_traverses_disjunction_lhs/0},
+
+    {"subst_fut traverses disjunction rhs",
+     fun subst_fut_traverses_disjunction_rhs/0},
+
+    {"subst_fut leaves variable alone",
+     fun subst_fut_leaves_variable_alone/0},
+
+    {"subst_fut leaves native lambda alone",
+     fun subst_fut_leaves_native_lambda_alone/0},
+
+    {"subst_fut leaves foreign lambda alone",
+     fun subst_fut_leaves_foreign_lambda_alone/0},
+
+    {"subst_fut traverses application function position",
+     fun subst_fut_traverses_application_function_position/0},
+
+    {"subst_fut traverses application argument bindings",
+     fun subst_fut_traverses_application_argument_bindings/0},
+
+    {"subst_fut leaves null alone",
+     fun subst_fut_leaves_null_alone/0},
+
+    {"subst_fut traverses cons lhs",
+     fun subst_fut_traverses_cons_lhs/0},
+
+    {"subst_fut traverses cons rhs",
+     fun subst_fut_traverses_cons_rhs/0},
+
+    {"subst_fut traverses append lhs",
+     fun subst_fut_traverses_append_lhs/0},
+
+    {"subst_fut traverses append rhs",
+     fun subst_fut_traverses_append_rhs/0},
+
+    {"subst_fut traverses isnil operand",
+     fun subst_fut_traverses_isnil_operand/0},
+
+    {"subst_fut traverses record fields",
+     fun subst_fut_traverses_record_fields/0},
+
+    {"subst_fut traverses projection operand",
+     fun subst_fut_traverses_projection_operand/0},
+
+    {"subst_fut traverses fixpoint operand",
+     fun subst_fut_traverses_fixpoint_operand/0},
+
+    {"subst_fut leaves error alone",
+     fun subst_fut_leaves_error_alone/0},
+
+    {"subst_fut traverses for list expression",
+     fun subst_fut_traverses_for_list_expression/0},
+
+    {"subst_fut traverses fold list expression",
+     fun subst_fut_traverses_fold_list_expression/0}
    ]
   }.
 
@@ -1799,3 +1867,138 @@ subst_fut_alters_matching_future() ->
   E2 = file( Info, <<"idx.tar">> ),
   A = <<"1234">>,
   ?assertEqual( E2, subst_fut( E1, A, file( <<"idx.tar">> ) ) ).
+
+subst_fut_leaves_nonmatching_future_alone() ->
+  E = {fut, na, <<"123">>},
+  A = <<"1234">>,
+  ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
+
+subst_fut_traverses_comparison_lhs() ->
+  E1 = cmp( {fut, na, <<"1234">>}, str( <<"bla">> ) ),
+  E2 = cmp( str( <<"blub">> ), str( <<"bla">> ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"blub">> ) ) ).
+
+subst_fut_traverses_comparison_rhs() ->
+  E1 = cmp( str( <<"bla">> ), {fut, na, <<"1234">>} ),
+  E2 = cmp( str( <<"bla">> ), str( <<"blub">> ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"blub">> ) ) ).
+
+subst_fut_traverses_condition_if_term() ->
+  E1 = cnd( {fut, na, <<"1234">>}, str( <<"bla">>), str( <<"blub">> ) ),
+  E2 = cnd( true(), str( <<"bla">>), str( <<"blub">> ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+
+subst_fut_traverses_condition_then_expression() ->
+  E1 = cnd( true(), {fut, na, <<"1234">>}, str( <<"blub">> ) ),
+  E2 = cnd( true(), str( <<"bla">>), str( <<"blub">> ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"bla">>) ) ).
+
+subst_fut_traverses_condition_else_expression() ->
+  E1 = cnd( true(), str( <<"bla">> ), {fut, na, <<"1234">>} ),
+  E2 = cnd( true(), str( <<"bla">>), str( <<"blub">> ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"blub">>) ) ).
+
+subst_fut_traverses_negation() ->
+  E1 = neg( {fut, na, <<"1234">>} ),
+  E2 = neg( true() ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+
+subst_fut_traverses_conjunction_lhs() ->
+  E1 = conj( {fut, na, <<"1234">>}, false() ),
+  E2 = conj( true(), false() ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+
+subst_fut_traverses_conjunction_rhs() ->
+  E1 = conj( true(), {fut, na, <<"1234">>} ),
+  E2 = conj( true(), false() ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, false() ) ).
+
+subst_fut_traverses_disjunction_lhs() ->
+  E1 = disj( {fut, na, <<"1234">>}, false() ),
+  E2 = disj( true(), false() ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+
+subst_fut_traverses_disjunction_rhs() ->
+  E1 = disj( true(), {fut, na, <<"1234">>} ),
+  E2 = disj( true(), false() ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, false() ) ).
+
+subst_fut_leaves_variable_alone() ->
+  E = var( x ),
+  ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
+
+subst_fut_leaves_native_lambda_alone() ->
+  E = e_lam_const(),
+  ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
+
+subst_fut_leaves_foreign_lambda_alone() ->
+  E = e_lam_greet(),
+  ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
+
+subst_fut_traverses_application_function_position() ->
+  E1 = app( cnd( {fut, na, <<"1234">>}, var( f ), var( g ) ), [] ),
+  E2 = app( cnd( true(), var( f ), var( g ) ), [] ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+
+subst_fut_traverses_application_argument_bindings() ->
+  E1 = app( var( z ), [e_bind( x, {fut, na, <<"1234">>} )] ),
+  E2 = app( var( z ), [e_bind( x, str( <<"bla">> ) )] ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"bla">> ) ) ).
+
+subst_fut_leaves_null_alone() ->
+  E = null( t_str() ),
+  ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
+
+subst_fut_traverses_cons_lhs() ->
+  E1 = cons( t_str(), {fut, na, <<"1234">>}, null( t_str() ) ),
+  E2 = cons( t_str(), str( <<"bla">> ), null( t_str() ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"bla">> ) ) ).
+
+subst_fut_traverses_cons_rhs() ->
+  E1 = cons( t_str(), var( x ), cons( t_str(), {fut, na, <<"1234">>}, null( t_str() ) ) ),
+  E2 = cons( t_str(), var( x ), cons( t_str(), str( <<"bla">> ), null( t_str() ) ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"bla">> ) ) ).
+
+subst_fut_traverses_append_lhs() ->
+  E1 = append( {fut, na, <<"1234">>}, null( t_str() ) ),
+  E2 = append( null( t_str() ), null( t_str() ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+
+subst_fut_traverses_append_rhs() ->
+  E1 = append( null( t_str() ), {fut, na, <<"1234">>} ),
+  E2 = append( null( t_str() ), null( t_str() ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+
+subst_fut_traverses_isnil_operand() ->
+  E1 = isnil( {fut, na, <<"1234">>} ),
+  E2 = isnil( null( t_str() ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+
+subst_fut_traverses_record_fields() ->
+  E1 = rcd( [e_bind( a, {fut, na, <<"1234">>} )] ),
+  E2 = rcd( [e_bind( a, null( t_str() ) )] ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+
+subst_fut_traverses_projection_operand() ->
+  E1 = proj( a, {fut, na, <<"1234">>} ),
+  E2 = proj( a, rcd( [e_bind( a, str( <<"blub">> ) )] ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, rcd( [e_bind( a, str( <<"blub">> ) )] ) ) ).
+
+subst_fut_traverses_fixpoint_operand() ->
+  E1 = fix( cnd( {fut, na, <<"1234">>}, var( f ), var( g ) ) ),
+  E2 = fix( cnd( true(), var( f ), var( g ) ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+
+subst_fut_leaves_error_alone() ->
+  E = {err, na, na},
+  ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
+
+subst_fut_traverses_for_list_expression() ->
+  E1 = for( t_str(), [e_bind( x, {fut, na, <<"1234">>} )], var( x ) ),
+  E2 = for( t_str(), [e_bind( x, null( t_str() ) )], var( x ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+
+subst_fut_traverses_fold_list_expression() ->
+  E1 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, {fut, na, <<"1234">>} ), var( x ) ),
+  E2 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, null( t_str() ) ), var( x ) ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
