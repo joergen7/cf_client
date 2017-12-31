@@ -7,7 +7,7 @@
 
 -import( cuneiform_sem, [reduce/1] ).
 -import( cuneiform_sem, [is_value/1] ).
--import( cuneiform_sem, [rename_pattern/3, rename/3, subst/3, gensym/1] ).
+-import( cuneiform_sem, [rename_pattern/3, rename/3, subst/3, gensym/1, subst_fut/3] ).
 -import( cuneiform_sem, [in_hole/2, find_context/1] ).
 
 -import( cuneiform_lang, [r_var/2, r_rcd/1, r_bind/2] ).
@@ -17,7 +17,7 @@
                          ] ).
 -import( cuneiform_lang, [lam_ntv_arg/2, e_bind/2] ).
 -import( cuneiform_lang, [
-                          str/1, file/1, true/0, false/0, cnd/3, var/1,
+                          str/1, file/1, true/0, false/0, cnd/3, var/1, file/2,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
                           lam_frn/5, lst/2, append/2, isnil/1, for/3, fold/3,
                           rcd/1, proj/2, fix/1, assign/3, null/1, cons/3
@@ -43,6 +43,20 @@ e_lam_id() ->
 
 e_app_id() ->
   app( e_lam_id(), [e_bind( x, str( <<"blub">> ) )] ).
+
+a_bowtie2_build() ->
+  #{ app_id       => <<"1234">>,
+     lambda       => #{ lambda_name  => <<"bowtie2-build">>,
+                        arg_type_lst => [#{ arg_name => <<"fa">>,
+                                            arg_type => <<"File">>,
+                                            is_list  => false }],
+                        ret_type_lst => [#{ arg_name => <<"idx">>,
+                                            arg_type => <<"File">>,
+                                            is_list  => false }],
+                        lang         => <<"Bash">>,
+                        script       => <<"bowtie2-build $fa bt2idx\nidx=idx.tar\ntar cf $idx --remove-files bt2idx.*\n">> },
+     arg_bind_lst => [#{ arg_name => <<"fa">>,
+                         value    => <<"chr22.fa">> }] }.
 
 %%====================================================================
 %% Notion of reduction
@@ -1727,3 +1741,61 @@ find_context_traverses_fold_list_expression() ->
 error_is_redex() ->
   E = {err, na, <<"bla">>, <<"blub">>},
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+
+subst_fut_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"subst_fut leaves string literal alone",
+     fun subst_fut_leaves_string_literal_alone/0},
+
+    {"subst_fut leaves file literal alone",
+     fun subst_fut_leaves_file_literal_alone/0},
+
+    {"subst_fut leaves true alone",
+     fun subst_fut_leaves_true_alone/0},
+
+    {"subst_fut leaves false alone",
+     fun subst_fut_leaves_false_alone/0},
+
+    {"subst_fut alters matching future",
+     fun subst_fut_alters_matching_future/0}
+
+    % {"subst_fut leaves non-matching future alone",
+    %  fun subst_fut_leaves_nonmatching_future_alone/0},
+
+    % {"subst_fut traverses string comparison",
+    %  fun subst_fut_traverses_string_comparison/0}
+   ]
+  }.
+
+subst_fut_leaves_string_literal_alone() ->
+  E = str( <<"blub">> ),
+  A = <<"1234">>,
+  ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
+
+subst_fut_leaves_file_literal_alone() ->
+  E = file( <<"blub.txt">> ),
+  A = <<"1234">>,
+  ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
+
+subst_fut_leaves_true_alone() ->
+  E = true(),
+  A = <<"1234">>,
+  ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
+
+subst_fut_leaves_false_alone() ->
+  E = false(),
+  A = <<"1234">>,
+  ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
+
+subst_fut_alters_matching_future() ->
+  Info = 12,
+  E1 = {fut, Info, <<"1234">>},
+  E2 = file( Info, <<"idx.tar">> ),
+  A = <<"1234">>,
+  ?assertEqual( E2, subst_fut( E1, A, file( <<"idx.tar">> ) ) ).

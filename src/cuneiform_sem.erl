@@ -20,7 +20,8 @@
 -import( cuneiform_lang, [
                           true/1, false/1, app/3, cmp/3, cnd/4, neg/2, conj/3,
                           disj/3, var/2, lam_ntv/3, lst/3, append/3, isnil/2,
-                          for/4, fold/4, rcd/2, proj/3, fix/2, cons/4, null/2
+                          for/4, fold/4, rcd/2, proj/3, fix/2, cons/4, null/2,
+                          str/2, file/3
                          ] ).
 
 -import( cuneiform_lang, [lst_literal_to_list/1, lst_literal_type/1,
@@ -40,10 +41,10 @@ reduce( {cmp, Info, {str, _, S1}, {str, _, S2}} ) ->
   end;
 
 reduce( {cmp, Info, {X, _}, {X, _}} ) ->
-  true( Info );                                                           % E-cmp-str-equal
+  true( Info );                                                           % E-cmp-bool-equal
 
 reduce( {cmp, Info, {_, _}, {_, _}} ) ->
-  false( Info );                                                          % E-cmp-str-unequal
+  false( Info );                                                          % E-cmp-bool-unequal
 
 reduce( {cnd, _, {true, _}, EThen, _} ) ->                                % E-cnd-true
   EThen;
@@ -381,7 +382,13 @@ when E     :: e(),
      A     :: e(),
      Delta :: e().
 
-subst_fut( _, _, _ ) -> error( nyi ).
+subst_fut( {fut, Info, Hash}, Hash, ES ) ->
+  set_info( ES, Info );
+
+subst_fut( E = {str, _, _}, _, _ )     -> E;
+subst_fut( E = {file, _, _, _}, _, _ ) -> E;
+subst_fut( E = {true, _}, _, _ )       -> E;
+subst_fut( E = {false, _}, _, _ )      -> E.
 
 
 -spec gensym( X :: atom() ) -> atom().
@@ -653,3 +660,10 @@ try_context( E = {err, _Info, _Script, _Output}, Ctx ) ->
   throw( {E, Ctx} ).
 
 
+set_info( {true, _}, Info )            -> true( Info );
+set_info( {false, _}, Info )           -> false( Info );
+set_info( {str, _, S}, Info )          -> str( Info, S );
+set_info( {file, _, S, H}, Info )      -> file( Info, S, H );
+set_info( {null, _, T}, Info )         -> null( Info, T );
+set_info( {cons, _, T, E1, E2}, Info ) -> cons( Info, T, set_info( E1, Info ), set_info( E2, Info ) );
+set_info( {rcd, _, EBindLst}, Info )   -> rcd( Info, [e_bind( X, set_info( E, Info ) ) || {X, E} <- EBindLst] ).
