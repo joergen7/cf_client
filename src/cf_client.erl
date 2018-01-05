@@ -6,11 +6,8 @@
 -module( cf_client ).
 -behaviour( application ).
 
-%% Escript export
--export( [main/1] ).
-
 %% API exports
--export( [start/0, setup_env/1] ).
+-export( [start/0] ).
 
 %% Application callbacks
 -export( [start/2, stop/1] ).
@@ -24,26 +21,49 @@ start() ->
   application:start( ?MODULE ).
 
 
-setup_env( CreNode ) when is_atom( CreNode ) ->
-  ok = application:set_env( ?MODULE, cre_node, CreNode ).
-
-
 %%====================================================================
 %% Application callback functions
 %%====================================================================
 
 start( _StartType, _StartArgs ) ->
 
-  CreNode =
-    case application:get_env( ?MODULE, cre_node ) of
+  {ok, DefaultMap} = application:get_env( ?MODULE, default_map ),
+  {ok, GlobalFile} = application:get_env( ?MODULE, global_file ),
+  {ok, UserFile}   = application:get_env( ?MODULE, user_file ),
 
-      undefined ->
+  SupplFile =
+    case application:get_env( ?MODULE, suppl_file ) of
+      {ok, S}   -> S;
+      undefined -> undefined
+    end,
+
+  FlagMap =
+    case application:get_env( ?MODULE, flag_map ) of
+      {ok, M}   -> M;
+      undefined -> #{}
+    end,
+
+  ConfMap = lib_conf:create_conf( DefaultMap, GlobalFile, UserFile, SupplFile,
+                                  FlagMap ),
+
+
+  CreNode =
+    case maps:get( cre_node, ConfMap ) of
+
+      <<"node">> ->
+        ok = cre:start(),
+        ok = cf_worker:start(),
         node();
               
-      {ok, C} ->
-        C
+      B when is_binary( B ) ->
+        binary_to_atom( B, utf8 )
 
     end,
+
+  error_logger:info_report( [{application, cf_worker},
+                             {node,        node()},
+                             {cre_node,    CreNode}] ),
+
 
   cf_client_sup:start_link( CreNode ).
 
@@ -52,29 +72,5 @@ stop(_State) ->
 
 
 
-%%====================================================================
-%% Escript main function
-%%====================================================================
 
-main( [CreNodeStr] ) ->
 
-  CreNode = list_to_atom( CreNodeStr ),
-
-  io:format( "application:     cf_client~nnode name:       ~p~n", [node()] ),
-
-  % start client application
-  ok = setup_env( CreNode ),
-  ok = start(),
-
-  io:format( "connected nodes: ~p~n", [nodes()] ),
-
-  % a workflow expression falls from the sky
-  E = cuneiform_lang:str( <<"blub">> ),
-
-  io:format( "state:           starting workflow~n" ),
-
-  Result = cre_client:eval( cf_client, E ),
-
-  io:format( "state:           workflow finished~n" ),
-
-  io:format( "result:          ~p~n", [Result] ).

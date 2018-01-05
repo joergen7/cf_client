@@ -7,7 +7,11 @@
    [kernel,
     stdlib
    ]},
-  {env,[]},
+  {env,[
+        {default_map, #{ cre_node => <<"node">> }},
+        {global_file, "/usr/local/etc/cuneiform/cf_client.json"},
+        {user_file,   ".config/cuneiform/cf_client.json"}
+       ]},
   {modules, [cf_client, cf_client_process, cf_client_sup, cuneiform_lang,
              cuneiform_sem, cuneiform_type]},
 
