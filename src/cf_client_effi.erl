@@ -81,6 +81,10 @@ app_to_effi_request(
      arg_bind_lst => ArgBindLst }.
 
 
+-spec effi_reply_to_expr( Request, Reply ) -> e()
+when Request :: #{ atom() => _ },
+     Reply   :: #{ atom() => _ }.
+
 effi_reply_to_expr( Request, Reply ) ->
 
   #{ lambda := Lambda } = Request,
@@ -132,16 +136,21 @@ effi_reply_to_expr( Request, Reply ) ->
       end
     end,
 
-  #{ extended_script := ExtendedScript,
-     result          := Result } = Reply,
+  #{ result := Result } = Reply,
 
   case Result of
 
-    #{ status := <<"ok">>, ret_bind_lst := RetBindLst } ->
+    #{ status       := <<"ok">>,
+       ret_bind_lst := RetBindLst } ->
       rcd( [Convert( RetBind ) || RetBind <- RetBindLst] );
 
-    #{ status := <<"error">>, output := Output } ->
+    #{ status          := <<"error">>,
+       stage           := <<"run">>,
+       extended_script := ExtendedScript,
+       output          := Output } ->
       {err, na, ExtendedScript, Output}
+
+    % TODO: precond, postcond
 
   end.
 
