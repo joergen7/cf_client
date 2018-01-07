@@ -9,7 +9,9 @@
 -type hash()        :: na
                      | binary().
 
--type reason()      :: _.
+-type reason()      :: {run, binary(), binary()}
+                     | {precond, [binary()]}
+                     | {postcond, [binary()]}.
 
 -type x()           :: atom().
 

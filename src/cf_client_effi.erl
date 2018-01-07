@@ -148,7 +148,7 @@ effi_reply_to_expr( Request, Reply ) ->
        stage           := <<"run">>,
        extended_script := ExtendedScript,
        output          := Output } ->
-      {err, na, ExtendedScript, Output}
+      {err, na, {run, ExtendedScript, Output}}
 
     % TODO: precond, postcond
 
