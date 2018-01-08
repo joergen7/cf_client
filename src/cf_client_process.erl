@@ -81,6 +81,7 @@ step( E, _UsrInfo ) ->
     {ok, E1, Ctx} ->
       case E1 of
 
+        % when the redex is a foreign application invoke the E-send
         {app, Info, {lam_frn, _, _, _, _, _, _}, _} ->
 
           EffiRequest = cf_client_effi:app_to_effi_request( E1 ),
@@ -91,6 +92,11 @@ step( E, _UsrInfo ) ->
 
           {ok_send, E3, EffiRequest};
 
+        % when the redex is an error drop the context
+        {err, _, _} ->
+          {ok, E1};
+
+        % in all other cases reduce
         _ ->
           E2 = cuneiform_sem:reduce( E1 ),
           E3 = cuneiform_sem:in_hole( E2, Ctx ),
