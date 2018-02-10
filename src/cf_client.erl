@@ -86,7 +86,7 @@ start( _StartType, _StartArgs ) ->
 
     end,
 
-  error_logger:info_report( [{info,        "ready to start supervision tree"}
+  error_logger:info_report( [{info,        "ready to start supervision tree"},
                              {application, cf_client},
                              {node,        node()},
                              {cre_node,    CreNode}] ),
