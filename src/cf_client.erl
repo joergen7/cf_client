@@ -150,7 +150,7 @@ main( Args ) ->
 
         % start client service
         ok = start(),
-        true = link( cf_client_sup ),
+        true = link( whereis( cf_client_sup ) ),
 
         case NonOptLst of
           []    -> throw( shell );
