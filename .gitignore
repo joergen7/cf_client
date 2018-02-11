@@ -10,5 +10,6 @@ rel/example_project
 .rebar
 _build
 rebar.lock
+rebar3.crashdump
 src/cuneiform_scan.erl
 src/cuneiform_parse.erl
