@@ -149,7 +149,8 @@ main( Args ) ->
         ok = application:set_env( cf_client, flag_map, M1 ),
 
         % start client service
-        ok = cf_client:start(),
+        ok = start(),
+        true = link( cf_client_sup ),
 
         case NonOptLst of
           []    -> throw( shell );
@@ -187,7 +188,7 @@ main( Args ) ->
             end,
 
           % print reply list on screen
-          ok = cuneiform_shell:process_reply_lst( ReplyLst, cf_client )
+          ok = cuneiform_shell:process_reply_lst( ReplyLst, cf_client, silent )
 
         end,
 

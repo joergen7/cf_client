@@ -33,7 +33,7 @@
 
 -include_lib( "cf_client/include/cuneiform.hrl" ).
 
--export( [shell/1, shell_eval_oneshot/1, process_reply_lst/2, format_pattern/1,
+-export( [shell/1, shell_eval_oneshot/1, process_reply_lst/3, format_pattern/1,
           format_type/1, format_expr/1, format_error/1] ).
 
 
@@ -109,14 +109,19 @@ shell_repl( ClientName, ShellState = #shell_state{ def_lst = DefLst } ) ->
 
     Input    ->
       {ReplyLst, ShellState1} = shell_eval( Input, ShellState ),
-      process_reply_lst( ReplyLst, ClientName ),
+      process_reply_lst( ReplyLst, ClientName, verbose ),
       shell_repl( ClientName, ShellState1 )
   end.
 
 
--spec process_reply_lst( ReplyLst :: [reply()], ClientName :: _ ) -> ok.
+-spec process_reply_lst( ReplyLst, ClientName, Verbosity ) -> ok
+when ReplyLst   :: [reply()],
+     ClientName :: _,
+     Verbosity  :: verbose | silent.
 
-process_reply_lst( ReplyLst, ClientName ) when is_list( ReplyLst ) ->
+process_reply_lst( ReplyLst, ClientName, Verbosity )
+when is_list( ReplyLst ),
+     Verbosity =:= verbose orelse Verbosity =:= silent ->
 
   F =
     fun
@@ -137,9 +142,13 @@ process_reply_lst( ReplyLst, ClientName ) when is_list( ReplyLst ) ->
         end;
 
       ( {parrot, E, T} ) ->
-        SE = format_expr( E ),
-        ST = format_type( T ),
-        io:format( "~s~n"++?BLU( ": " )++?BBLU( "~s" )++"~n", [SE, ST] );
+        case Verbosity of
+          silent  -> ok;
+          verbose ->
+            SE = format_expr( E ),
+            ST = format_type( T ),
+            io:format( "~s~n"++?BLU( ": " )++?BBLU( "~s" )++"~n", [SE, ST] )
+        end;
 
       ( Reply = {error, _Stage, _Reason} ) ->
         S = format_error( Reply ),

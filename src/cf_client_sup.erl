@@ -43,7 +43,7 @@
 %%====================================================================
 
 start_link( CreNode ) ->
-  supervisor:start_link( ?MODULE, CreNode ).
+  supervisor:start_link( {local, cf_client_sup}, ?MODULE, CreNode ).
 
 %%====================================================================
 %% Supervisor callbacks
