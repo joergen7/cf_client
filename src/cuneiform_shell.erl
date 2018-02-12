@@ -59,10 +59,9 @@
 
 -type stage() :: load
                | scan
-               | input
                | parse
                | type
-               | eval.
+               | runtime.
 
 -type reply() :: {query, e()}
                | {error, stage(), _}
@@ -131,7 +130,7 @@ when is_list( ReplyLst ),
         case V of
 
           {err, _, _} ->
-            SE = format_error( {error, eval, V} ),
+            SE = format_error( {error, runtime, V} ),
             io:format( ?RED( "~s" )++"~n", [SE] );
 
           _ ->
