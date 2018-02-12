@@ -150,6 +150,8 @@ main( Args ) ->
 
         % start client service
         ok = start(),
+
+        % attach escript porcess
         true = link( whereis( cf_client_sup ) ),
 
         case NonOptLst of
