@@ -151,9 +151,6 @@ main( Args ) ->
         % start client service
         ok = start(),
 
-        % attach escript porcess
-        true = link( whereis( cf_client_sup ) ),
-
         case NonOptLst of
           []    -> throw( shell );
           [_|_] -> throw( {load, NonOptLst} )
@@ -169,7 +166,16 @@ main( Args ) ->
       print_help();
 
     throw:shell ->
-      ok = cuneiform_shell:shell( cf_client );
+
+      {Pid, Ref} = spawn_monitor( fun() -> cuneiform_shell:shell( cf_client ) end ),
+
+      receive
+
+        {'DOWN', Ref, process, Pid, _Info} ->
+          ok = timer:sleep( 1000 ),
+          ok
+
+      end;
 
     throw:{load, FileLst} ->
 

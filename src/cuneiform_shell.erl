@@ -75,7 +75,14 @@
 -spec shell( ClientName :: _ ) -> ok.
 
 shell( ClientName ) ->
-  true = link( whereis( ClientName ) ),
+
+  Pid =
+    if
+      is_pid( ClientName ) -> ClientName;
+      true                 -> whereis( ClientName )
+    end,
+
+  true = link( Pid ),
   io:format( "~s~n~n~n", [get_banner()] ),
   shell_repl( ClientName, #shell_state{} ).
 
@@ -89,6 +96,15 @@ shell_repl( ClientName, ShellState = #shell_state{ def_lst = DefLst } ) ->
   case io:get_line( Prompt ) of
 
     "quit\n" ->
+
+      Pid =
+        if
+          is_pid( ClientName ) -> ClientName;
+          true                 -> whereis( ClientName )
+        end,
+
+      true = unlink( Pid ),
+
       ok;
 
     "help\n" ->
