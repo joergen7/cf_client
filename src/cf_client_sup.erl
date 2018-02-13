@@ -58,7 +58,7 @@ init( CreNode ) when is_atom( CreNode ) ->
 
   SupFlags = #{
                strategy  => one_for_one,
-               intensity => 1,
+               intensity => 0,
                period    => 5
               },
 
