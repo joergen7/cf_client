@@ -112,7 +112,7 @@ main( Args ) ->
     case getopt:parse( get_optspec_lst(), Args ) of
   
       {error, R1} ->
-        error( R1 );
+        throw( {error, R1} );
 
       {ok, {OptLst, NonOptLst}} ->
 
@@ -149,7 +149,18 @@ main( Args ) ->
         ok = application:set_env( cf_client, flag_map, M1 ),
 
         % start client service
-        ok = start(),
+        ok =
+          case start() of
+
+            ok ->
+              ok;
+
+            {error, {{shutdown, {failed_to_start_child, _, R2}}, _}} ->
+              throw( {error, R2} );
+
+            {error, R2} ->
+              throw( {error, R2} )
+          end,
 
         case NonOptLst of
           []    -> throw( shell );
@@ -159,6 +170,7 @@ main( Args ) ->
     end
 
   catch
+    
     throw:version ->
       print_version();
 
@@ -172,8 +184,7 @@ main( Args ) ->
       receive
 
         {'DOWN', Ref, process, Pid, _Info} ->
-          ok = timer:sleep( 1000 ),
-          ok
+          ok = timer:sleep( 1000 )
 
       end;
 
@@ -186,8 +197,8 @@ main( Args ) ->
           ReplyLst =
             case file:read_file( File ) of
 
-              {error, R2} ->
-                [{error, load, {File, R2}}];
+              {error, R3} ->
+                [{error, load, {File, R3}}];
 
               {ok, B} ->
                 S = binary_to_list( B ),
@@ -200,8 +211,10 @@ main( Args ) ->
 
         end,
 
-      ok = lists:foreach( F, FileLst )
+      ok = lists:foreach( F, FileLst );
 
+    throw:{error, Reason} ->
+      ok = io:format( "~n~p~n", [Reason] )
 
   end.
 
@@ -222,4 +235,4 @@ print_help() ->
   getopt:usage( get_optspec_lst(), "cf_worker" ).
 
 print_version() ->
-  io:format( "cuneiform ~s~n", [?VSN] ).
+  io:format( "cf_client ~s~n", [?VSN] ).
