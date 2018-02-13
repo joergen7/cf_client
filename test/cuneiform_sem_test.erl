@@ -1175,6 +1175,9 @@ in_hole_test_() ->
     {"inserting leaves false unchanged",
      fun inserting_leaves_false_unchanged/0},
 
+    {"inserting leaves error unchanged",
+     fun inserting_leaves_error_unchanged/0},
+
     {"inserting traverses conditional's if expression",
      fun insert_traverses_cnd_if_expr/0},
 
@@ -1267,6 +1270,10 @@ inserting_leaves_true_unchanged() ->
 
 inserting_leaves_false_unchanged() ->
   ?assertEqual( false(), in_hole( str( <<"blub">> ), false() ) ).
+
+inserting_leaves_error_unchanged() ->
+  E = {err, na, na},
+  ?assertEqual( E, in_hole( str( <<"blub">> ), E ) ).
 
 insert_traverses_cnd_if_expr() ->
   E1 = true(),
