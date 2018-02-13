@@ -88,7 +88,7 @@ start( _StartType, _StartArgs ) ->
 
     end,
 
-  error_logger:info_report( [{info,        "ready to start supervision tree"},
+  error_logger:info_report( [{info,        "starting Cuneiform client"},
                              {application, cf_client},
                              {node,        node()},
                              {cre_node,    CreNode}] ),
@@ -160,6 +160,7 @@ main( Args ) ->
 
             {error, R2} ->
               throw( {error, R2} )
+
           end,
 
         case NonOptLst of
@@ -179,13 +180,16 @@ main( Args ) ->
 
     throw:shell ->
 
-      {Pid, Ref} = spawn_monitor( fun() -> cuneiform_shell:shell( cf_client ) end ),
+      F =
+        fun() ->
+          cuneiform_shell:shell( cf_client )
+        end,
+
+      {Pid, Ref} = spawn_monitor( F ),
 
       receive
-
         {'DOWN', Ref, process, Pid, _Info} ->
           ok = timer:sleep( 1000 )
-
       end;
 
     throw:{load, FileLst} ->
