@@ -37,7 +37,7 @@ Nonterminals
   r_bind e_lst define_lst from_lst from.
 
 Terminals
-  l_bash l_octave l_perl l_python l_r l_racket
+  l_bash l_matlab l_octave l_perl l_python l_r l_racket
   t_str t_file t_bool t_fn_frn t_fn_ntv
   assign bar wedge cmp cnd colon
   comma def do else eq false fold for halt import in
@@ -75,6 +75,7 @@ r               -> id colon t                 : visit_r_var( '$1', '$3' ).
 r               -> ltag r_bind_lst rtag       : visit_r_rcd( '$2' ).
 
 l               -> l_bash                     : l_bash().
+l               -> l_matlab                   : l_matlab().
 l               -> l_octave                   : l_octave().
 l               -> l_perl                     : l_perl().
 l               -> l_python                   : l_python().
@@ -154,8 +155,8 @@ Erlang code.
 -export( [string/1, file/1, join_stat/2] ).
 
 -import( cuneiform_lang, [
-                          l_bash/0, l_octave/0, l_perl/0, l_python/0,
-                          l_r/0, l_racket/0
+                          l_bash/0, l_matlab/0, l_octave/0, l_perl/0,
+                          l_python/0, l_r/0, l_racket/0
                          ] ).
 
 -import( cuneiform_lang, [

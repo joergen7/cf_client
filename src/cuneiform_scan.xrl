@@ -36,6 +36,7 @@
 Definitions.
 
 LBASH     = Bash
+LMATLAB   = Matlab
 LOCTAVE   = Octave
 LPERL     = Perl
 LPYTHON   = Python
@@ -101,6 +102,7 @@ WS        = [\000-\s]
 Rules.
 
 {LBASH}     : {token, {l_bash, TokenLine, TokenChars}}.
+{LMATLAB}   : {token, {l_matlab, TokenLine, TokenChars}}.
 {LOCTAVE}   : {token, {l_octave, TokenLine, TokenChars}}.
 {LPERL}     : {token, {l_perl, TokenLine, TokenChars}}.
 {LPYTHON}   : {token, {l_python, TokenLine, TokenChars}}.

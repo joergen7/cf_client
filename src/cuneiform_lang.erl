@@ -65,6 +65,7 @@
 %%====================================================================
 
 -spec l_bash()   -> l(). l_bash()   -> 'Bash'.
+-spec l_matlab() -> l(). l_matlab() -> 'Matlab'.
 -spec l_octave() -> l(). l_octave() -> 'Octave'.
 -spec l_perl()   -> l(). l_perl()   -> 'Perl'.
 -spec l_python() -> l(). l_python() -> 'Python'.
