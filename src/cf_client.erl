@@ -221,7 +221,7 @@ main( Args ) ->
 
           receive
             {'DOWN', Ref, process, Pid, _Info} ->
-              ok;
+              ok
           end
 
         end,
