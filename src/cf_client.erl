@@ -211,7 +211,18 @@ main( Args ) ->
             end,
 
           % print reply list on screen
-          ok = cuneiform_shell:process_reply_lst( ReplyLst, cf_client, silent )
+          G =
+            fun() ->
+              ok =
+                cuneiform_shell:process_reply_lst( ReplyLst, cf_client, silent )
+            end,
+
+          {Pid, Ref} = spawn_monitor( G ),
+
+          receive
+            {'DOWN', Ref, process, Pid, _Info} ->
+              ok;
+          end
 
         end,
 
