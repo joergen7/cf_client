@@ -39,9 +39,12 @@
 -type hash()        :: na
                      | binary().
 
--type reason()      :: {run, ExtendedScript :: binary(), Output :: binary()}
-                     | {precond, FileLst :: [binary()]}
-                     | {postcond, FileLst :: [binary()]}
+-type reason()      :: {run, AppId :: binary(), LamName :: binary(),
+                             ExtendedScript :: binary(), Output :: binary()}
+                     | {precond, AppId :: binary(), LamName :: binary(),
+                                 FileLst :: [binary()]}
+                     | {postcond, AppId :: binary(), LamName :: binary(),
+                                  FileLst :: [binary()]}
                      | {user, Msg :: binary()}.
 
 -type x()           :: atom().

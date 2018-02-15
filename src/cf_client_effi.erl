@@ -118,8 +118,10 @@ when Request :: #{ atom() => _ },
 
 effi_reply_to_expr( Request, Reply ) ->
 
-  #{ lambda := Lambda } = Request,
-  #{ ret_type_lst := RetTypeLst } = Lambda,
+  #{ app_id := AppId,
+     lambda := Lambda } = Request,
+  #{ lambda_name  := LamName,
+     ret_type_lst := RetTypeLst } = Lambda,
 
   RTL = [{ArgName, ArgType, IsList}
          || #{ arg_name := ArgName,
@@ -180,7 +182,7 @@ effi_reply_to_expr( Request, Reply ) ->
        extended_script := ExtendedScript,
        output          := Output } ->
       T = reconstruct_type( RetTypeLst ),
-      {err, na, T, {run, ExtendedScript, Output}}
+      {err, na, T, {run, AppId, LamName, ExtendedScript, Output}}
 
     % TODO: precond, postcond
 
