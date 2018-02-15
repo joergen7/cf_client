@@ -55,7 +55,8 @@
 -export( [r_var/2, r_rcd/1] ).
 
 %% Language constructors
--export( [l_bash/0, l_octave/0, l_perl/0, l_python/0, l_r/0, l_racket/0] ).
+-export( [l_bash/0, l_matlab/0, l_octave/0, l_perl/0, l_python/0, l_r/0,
+          l_racket/0] ).
 
 -export( [find_ambiguous/1] ).
 -export( [lst_literal_to_list/1, is_lst_literal/1, lst_literal_type/1] ).
@@ -312,7 +313,8 @@ when is_tuple( InitBind ),
       assign( Info, R, E ) when is_tuple( R )      -> {assign, Info, R, E}.
 
 
--spec create_closure( AssignLst, EBody ) -> e()
+-spec create_closure( AssignLst, EBody ) ->
+        {ok, e()} | {error, {ambiguous_name, info(), x()}}
 when AssignLst :: [assign()],
      EBody     :: e().
 

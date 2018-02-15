@@ -84,16 +84,16 @@ is_value( E, _ ) ->
   cuneiform_sem:is_value( E ).
 
 
--spec recv( E, A, Delta, UsrInfo ) -> e()
+-spec recv( E, A, R, UsrInfo ) -> e()
 when E       :: e(),
-     A       :: e(),
-     Delta   :: e(),
+     A       :: #{ atom() => _ },
+     R       :: #{ atom() => _ },
      UsrInfo :: _.
 
-recv( E, Request, Reply, _UsrInfo ) ->
+recv( E, A, R, _UsrInfo ) ->
 
-  #{ app_id := AppId } = Reply,
-  E1 = cf_client_effi:effi_reply_to_expr( Request, Reply ),
+  #{ app_id := AppId } = R,
+  E1 = cf_client_effi:effi_reply_to_expr( A, R ),
 
   cuneiform_sem:subst_fut( E, AppId, E1 ).
 

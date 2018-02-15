@@ -329,10 +329,20 @@ when Def     :: {def, _, _},
      Id      :: {id, _, string()},
      ArgLst  :: [t_arg()],
      RetType :: t(),
-     DefLst  :: [{_, r(), e()}],
+     DefLst  :: [assign()],
      EBody   :: e().
 
-visit_def_ntv( {def, L, _}, {id, _, SName}, ArgLst, RetType, DefLst, EBody ) ->
+visit_def_ntv( {def, L, _},
+               {id, _, SName},
+               ArgLst,
+               RetType,
+               DefLst,
+               EBody )
+when is_integer( L ),
+     is_list( SName ),
+     is_list( ArgLst ),
+     is_list( DefLst ) ->
+
   case create_closure( DefLst, EBody ) of
 
     {ok, C} ->
