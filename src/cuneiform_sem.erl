@@ -39,6 +39,7 @@
 -export( [is_value/1] ).
 -export( [rename/3, subst/3, subst_fut/3, gensym/1] ).
 -export( [in_hole/2, find_context/1] ).
+-export( [set_info/2] ).
 
 
 %%====================================================================
@@ -746,6 +747,10 @@ try_context( E = {err, _Info, _Type, _Reason}, Ctx ) ->
   throw( {E, Ctx} ).
 
 
+-spec set_info( E, Info ) -> e()
+when E    :: e(),
+     Info :: info().
+
 set_info( {true, _}, Info )            -> true( Info );
 set_info( {false, _}, Info )           -> false( Info );
 set_info( {str, _, S}, Info )          -> str( Info, S );
@@ -753,4 +758,4 @@ set_info( {file, _, S, H}, Info )      -> file( Info, S, H );
 set_info( {null, _, T}, Info )         -> null( Info, T );
 set_info( {cons, _, T, E1, E2}, Info ) -> cons( Info, T, set_info( E1, Info ), set_info( E2, Info ) );
 set_info( {rcd, _, EBindLst}, Info )   -> rcd( Info, [e_bind( X, set_info( E, Info ) ) || {X, E} <- EBindLst] );
-set_info( {err, _, Reason}, Info )     -> {err, Info, Reason}.
+set_info( {err, _, T, Reason}, Info )     -> {err, Info, T, Reason}.

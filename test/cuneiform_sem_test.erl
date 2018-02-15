@@ -39,6 +39,7 @@
 -import( cuneiform_sem, [is_value/1] ).
 -import( cuneiform_sem, [rename_pattern/3, rename/3, subst/3, gensym/1, subst_fut/3] ).
 -import( cuneiform_sem, [in_hole/2, find_context/1] ).
+-import( cuneiform_sem, [set_info/2] ).
 
 -import( cuneiform_lang, [r_var/2, r_rcd/1, r_bind/2] ).
 -import( cuneiform_lang, [l_bash/0] ).
@@ -51,7 +52,8 @@
                           str/1, file/1, true/0, false/0, cnd/3, var/1, file/2,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
                           lam_frn/5, lst/2, append/2, isnil/1, for/3, fold/3,
-                          rcd/1, proj/2, fix/1, assign/3, null/1, cons/3, err/2
+                          rcd/1, proj/2, fix/1, assign/3, null/1, cons/3, err/2,
+                          err/3
                          ] ).
  
 %%====================================================================
@@ -2040,3 +2042,20 @@ subst_fut_traverses_fold_list_expression() ->
   E1 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, {fut, na, t_lst( t_str() ), <<"1234">>} ), var( x ) ),
   E2 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, null( t_str() ) ), var( x ) ),
   ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+
+
+set_info_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"set info on error expression",
+     fun set_info_on_error_expression/0}
+   ]}.
+
+set_info_on_error_expression() ->
+  E1 = err( na, t_str(), <<"blub">> ),
+  E2 = err( 50, t_str(), <<"blub">> ),
+  ?assertEqual( E2, set_info( E1, 50 ) ).
