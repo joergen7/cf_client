@@ -30,7 +30,7 @@
 
 -module( cf_client_effi ).
 
--export( [app_to_effi_request/1, effi_reply_to_expr/2] ).
+-export( [app_to_effi_request/1, effi_reply_to_expr/2, reconstruct_type/1] ).
 
 -include( "cuneiform.hrl" ).
 
@@ -211,7 +211,7 @@ reconstruct_type( RetTypeLst ) ->
 
       case IsList of
         true  -> t_arg( X, t_lst( BaseType ) );
-        fales -> t_arg( X, BaseType )
+        false -> t_arg( X, BaseType )
       end
 
     end,
