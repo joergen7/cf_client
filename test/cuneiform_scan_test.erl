@@ -68,7 +68,9 @@ scan_test_() ->
     {"let record pattern",   fun let_record_pattern/0},
     {"native function def",  fun native_function_def/0},
     {"foreign function def", fun foreign_function_def/0},
-    {"import",               fun import/0}
+    {"import",               fun import/0},
+    {"cons",                 fun cons/0},
+    {"err",                  fun err/0}
    ]
   }.
 
@@ -429,3 +431,29 @@ import() ->
                  {filelit, 1, "blub.txt"},
                  {semicolon, 1, ";"},
                  {id, 1, "x"}], TokenLst ).
+
+cons() ->
+  S = "(\"blub\" : Str >> [\"bla\", \"foo\" : Str])",
+  {ok, TokenLst, _} = string( S ),
+  ?assertEqual( [{lparen, 1, "("},
+                 {strlit, 1, "blub"},
+                 {colon, 1, ":"},
+                 {t_str, 1, "Str"},
+                 {doublertag, 1, ">>"},
+                 {lsquarebr, 1, "["},
+                 {strlit, 1, "bla"},
+                 {comma, 1, ","},
+                 {strlit, 1, "foo"},
+                 {colon, 1, ":"},
+                 {t_str, 1, "Str"},
+                 {rsquarebr, 1, "]"},
+                 {rparen, 1, ")"}], TokenLst ).
+
+
+err() ->
+  S = "err \"blub\" : Str",
+  {ok, TokenLst, _} = string( S ),
+  ?assertEqual( [{err, 1, "err"},
+                 {strlit, 1, "blub"},
+                 {colon, 1, ":"},
+                 {t_str, 1, "Str"}], TokenLst ).

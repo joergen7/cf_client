@@ -123,7 +123,7 @@ step( E, _UsrInfo ) ->
           {ok_send, E3, EffiRequest};
 
         % when the redex is an error drop the context
-        {err, _, _} ->
+        {err, _, _, _} ->
           {ok, E1};
 
         % in all other cases reduce

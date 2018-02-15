@@ -39,7 +39,7 @@
                           t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2,
                           t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1, app/2,
                           proj/2, fix/1, lst/2, t_lst/1, append/2, isnil/1,
-                          for/3, fold/3
+                          for/3, fold/3, err/2
                          ] ).
 
 type_test_() ->
@@ -262,7 +262,10 @@ type_test_() ->
      fun fold_with_ambiguous_accumulator_and_list_expression_name_untypable/0},
 
     {"future is typable",
-     fun future_is_typable/0}
+     fun future_is_typable/0},
+
+    {"error is typable",
+     fun error_is_typable/0}
    ]
   }.
 
@@ -833,6 +836,11 @@ fold_with_ambiguous_accumulator_and_list_expression_name_untypable() ->
             var( x ) ),
   ?assertEqual( {error, {ambiguous_name, na, x}}, type( E ) ).
 
+
 future_is_typable() ->
   E = {fut, na, t_str(), na},
   ?assertEqual( {ok, t_str()}, type( E ) ).
+
+
+error_is_typable() ->
+  ?assertEqual( {ok, t_str()}, type( err( t_str(), <<"blub">> ) ) ).

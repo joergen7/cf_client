@@ -43,10 +43,10 @@
 -export( [lam_ntv_arg/2, e_bind/2, r_bind/2] ).
 -export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, lam_frn/5,
           app/2, cmp/2, conj/2, disj/2, neg/1, lst/2, append/2, isnil/1,
-          for/3, fold/3, rcd/1, proj/2, fix/1, cons/3, null/1] ).
+          for/3, fold/3, rcd/1, proj/2, fix/1, cons/3, null/1, err/2] ).
 -export( [str/2, file/2, file/3, true/1, false/1, cnd/4, var/2, lam_ntv/3, lam_frn/6,
           app/3, cmp/3, conj/3, disj/3, neg/2, lst/3, append/3, isnil/2,
-          for/4, fold/4, rcd/2, proj/3, fix/2, cons/4, null/2] ).
+          for/4, fold/4, rcd/2, proj/3, fix/2, cons/4, null/2, err/3] ).
 
 %% Assignment
 -export( [assign/2, assign/3, create_closure/2] ).
@@ -305,6 +305,14 @@ when is_tuple( InitBind ),
 
 -spec fix( Info :: info(), E :: e() ) -> e().
       fix( Info, E )                  -> {fix, Info, E}.
+
+-spec err( T :: t(), Msg :: binary() ) -> e().
+      err( T, Msg )                    -> err( na, T, Msg ).
+
+-spec err( Info :: info(), T :: t(), Msg :: binary() ) -> e().
+
+err( Info, T, Msg ) when is_binary( Msg ) ->
+  {err, Info, T, {user, Msg}}.
 
 -spec assign( R :: r(), E :: e() ) -> assign().
       assign( R, E )               -> assign( na, R, E ).

@@ -35,7 +35,8 @@
 -include( "cuneiform.hrl" ).
 
 -import( cuneiform_lang, [e_bind/2, true/0, false/0, str/1, file/1, lst/2,
-                          t_bool/0, t_str/0, t_file/0, rcd/1] ).
+                          t_bool/0, t_str/0, t_file/0, rcd/1, t_lst/1, t_rcd/1,
+                          t_arg/2] ).
 
 
 
@@ -178,11 +179,39 @@ effi_reply_to_expr( Request, Reply ) ->
        stage           := <<"run">>,
        extended_script := ExtendedScript,
        output          := Output } ->
-      {err, na, {run, ExtendedScript, Output}}
+      T = reconstruct_type( RetTypeLst ),
+      {err, na, T, {run, ExtendedScript, Output}}
 
     % TODO: precond, postcond
 
   end.
 
 
+-spec reconstruct_type( RetTypeLst :: [#{ atom() => _ }] ) -> t().
 
+reconstruct_type( RetTypeLst ) ->
+
+  F =
+    fun( TypeInfo ) ->
+
+      #{ arg_name := ArgName,
+         arg_type := ArgType,
+         is_list := IsList } = TypeInfo,
+
+      X = binary_to_atom( ArgName, utf8 ),
+
+      BaseType =
+        case ArgType of
+          <<"Str">>  -> t_str();
+          <<"File">> -> t_file();
+          <<"Bool">> -> t_bool()
+        end,
+
+      case IsList of
+        true  -> t_arg( X, t_lst( BaseType ) );
+        fales -> t_arg( X, BaseType )
+      end
+
+    end,
+
+  t_rcd( [F( TypeInfo ) || TypeInfo <- RetTypeLst] ).

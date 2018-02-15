@@ -51,7 +51,7 @@
                           str/1, file/1, true/0, false/0, cnd/3, var/1, file/2,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
                           lam_frn/5, lst/2, append/2, isnil/1, for/3, fold/3,
-                          rcd/1, proj/2, fix/1, assign/3, null/1, cons/3
+                          rcd/1, proj/2, fix/1, assign/3, null/1, cons/3, err/2
                          ] ).
  
 %%====================================================================
@@ -426,7 +426,7 @@ fixpoint_is_no_value() ->
   ?assertNot( is_value( E ) ).
 
 error_is_value() ->
-  ?assertEqual( true, is_value( {err, na, na} ) ).
+  ?assertEqual( true, is_value( err( t_str(), <<"blub">> ) ) ).
 
 %%====================================================================
 %% Substitution and renaming
@@ -735,7 +735,7 @@ rename_propagates_to_fixpoint_operand() ->
   ?assertEqual( E2, rename( E1, x, y ) ).
 
 rename_leaves_error_alone() ->
-  E = {err, na, na},
+  E = err( t_str(), <<"blub">> ),
   ?assertEqual( E, rename( E, x, y ) ).
 
 
@@ -1114,7 +1114,7 @@ fold_list_expression_is_capture_avoiding() ->
                 subst( E, y, var( x ) ) ).
 
 substitution_leaves_error_alone() ->
-  E = {err, na, na},
+  E = err( t_str(), <<"blub">> ),
   ?assertEqual( E, subst( E, x, var( y ) ) ).
 
 
@@ -1273,7 +1273,7 @@ inserting_leaves_false_unchanged() ->
   ?assertEqual( false(), in_hole( str( <<"blub">> ), false() ) ).
 
 inserting_leaves_error_unchanged() ->
-  E = {err, na, na},
+  E = err( t_str(), <<"blub">> ),
   ?assertEqual( E, in_hole( str( <<"blub">> ), E ) ).
 
 insert_traverses_cnd_if_expr() ->
@@ -1767,7 +1767,7 @@ find_context_traverses_fold_list_expression() ->
   ?assertEqual( {ok, ELst, Ctx}, find_context( in_hole( ELst, Ctx ) ) ).
 
 error_is_redex() ->
-  E = {err, na, na},
+  E = err( t_str(), <<"blub">> ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
 
@@ -2028,7 +2028,7 @@ subst_fut_traverses_fixpoint_operand() ->
   ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
 
 subst_fut_leaves_error_alone() ->
-  E = {err, na, na},
+  E = err( t_str(), <<"blub">> ),
   ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
 
 subst_fut_traverses_for_list_expression() ->

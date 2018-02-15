@@ -195,7 +195,7 @@ is_value( {fold, _, _, _, _} )          -> false;
 is_value( {rcd, _, EBindLst} )          -> lists:all( fun is_value/1, [E || {_, E} <- EBindLst] );
 is_value( {proj, _, _, _} )             -> false;
 is_value( {fix, _, _} )                 -> false;
-is_value( {err, _, _} )                 -> true.
+is_value( {err, _, _, _} )              -> true.
 
 
 %%====================================================================
@@ -215,7 +215,7 @@ rename( E = {true, _}, _, _ )                   -> E;
 rename( E = {false, _}, _, _ )                  -> E;
 rename( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
 rename( E = {fut, _, _, _}, _, _ )              -> E;
-rename( E = {err, _, _}, _, _ )                 -> E;
+rename( E = {err, _, _, _}, _, _ )              -> E;
 rename( E = {null, _, _}, _, _ )                -> E;
 
 rename( {cmp, Info, E1, E2}, X1, X2 ) ->
@@ -314,7 +314,7 @@ subst( E = {file, _, _, _}, _, _ )             -> E;
 subst( E = {true, _}, _, _ )                   -> E;
 subst( E = {false, _}, _, _ )                  -> E;
 subst( E = {fut, _, _, _}, _, _ )              -> E;
-subst( E = {err, _, _}, _, _ )                 -> E;
+subst( E = {err, _, _, _}, _, _ )              -> E;
 subst( E = {null, _, _}, _, _ )                -> E;
 subst( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
 
@@ -422,7 +422,7 @@ subst_fut( E = {var, _, _}, _, _ )                 -> E;
 subst_fut( E = {lam_ntv, _, _, _}, _, _ )          -> E;
 subst_fut( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
 subst_fut( E = {null, _, _}, _, _ )                -> E;
-subst_fut( E = {err, _, _}, _, _ )                 -> E;
+subst_fut( E = {err, _, _, _}, _, _ )              -> E;
 
 subst_fut( {cmp, Info, E1, E2}, H, ES ) ->
   cmp( Info, subst_fut( E1, H, ES ),
@@ -502,7 +502,7 @@ in_hole( _E, Ctx = {lam_ntv, _, _, _} )          -> Ctx;
 in_hole( _E, Ctx = {lam_frn, _, _, _, _, _, _} ) -> Ctx;
 in_hole( _E, Ctx = {fut, _, _, _} )              -> Ctx;
 in_hole( _E, Ctx = {null, _, _} )                -> Ctx;
-in_hole( _E, Ctx = {err, _, _} )                 -> Ctx;
+in_hole( _E, Ctx = {err, _, _, _} )              -> Ctx;
 
 in_hole( E, {cmp, Info, E1, E2} ) ->
   {cmp, Info, in_hole( E, E1 ), in_hole( E, E2 )};
@@ -742,7 +742,7 @@ try_context( E = {fold, Info, AccBind, {X, ELst}, EBody}, Ctx ) ->
         in_hole( {fold, Info, AccBind, {X, hole}, EBody}, Ctx ) )
   end;
 
-try_context( E = {err, _Info, _Reason}, Ctx ) ->
+try_context( E = {err, _Info, _Type, _Reason}, Ctx ) ->
   throw( {E, Ctx} ).
 
 

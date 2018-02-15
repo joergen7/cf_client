@@ -145,7 +145,7 @@ when is_list( ReplyLst ),
         V = cre_client:eval( ClientName, E ),
         case V of
 
-          {err, _, _} ->
+          {err, _, _, _} ->
             SE = format_error( {error, runtime, V} ),
             io:format( ?RED( "~s" )++"~n", [SE] );
 

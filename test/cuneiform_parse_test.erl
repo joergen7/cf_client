@@ -41,7 +41,7 @@
                           t_bool/0, l_perl/0, l_python/0, l_r/0, e_bind/2,
                           l_racket/0, fix/2, t_fn/4, rcd/2, r_rcd/1, r_bind/2,
                           proj/3, append/3, lst/3, isnil/2, for/4, fold/4,
-                          assign/3
+                          assign/3, cons/4, err/3
                          ] ).
 
 parse_test_() ->
@@ -96,7 +96,9 @@ parse_test_() ->
     {"zip pair",                     fun zip_pair/0},
     {"zip triple",                   fun zip_triple/0},
     {"fold",                         fun fold/0},
-    {"fold let",                     fun fold_let/0}
+    {"fold let",                     fun fold_let/0},
+    {"cons",                         fun cons/0},
+    {"err",                          fun err/0}
    ]
   }.
 
@@ -1019,3 +1021,42 @@ fold_let() ->
                                  e_bind( x_acc, var( 2, x_acc ) )] ) )] ),
   E = fold( 1, e_bind( x_acc, str( 1, <<"0">> ) ), e_bind( x, var( 1, x_lst ) ), EBody ),
   ?assertEqual( {ok, {[], [], [E]}}, parse( TokenLst ) ).
+
+
+cons() ->
+
+  TokenLst =
+    [{lparen, 1, "("},
+     {strlit, 1, "blub"},
+     {colon, 1, ":"},
+     {t_str, 1, "Str"},
+     {doublertag, 1, ">>"},
+     {lsquarebr, 1, "["},
+     {strlit, 1, "bla"},
+     {comma, 1, ","},
+     {strlit, 1, "foo"},
+     {colon, 1, ":"},
+     {t_str, 1, "Str"},
+     {rsquarebr, 1, "]"},
+     {rparen, 1, ")"},
+     {semicolon, 1, ";"}],
+
+  E = cons( 1, t_str(),
+            str( 1, <<"blub">> ),
+            lst( 1, t_str(), [str( 1, <<"bla">> ), str( 1, <<"foo">> )] ) ),
+
+  ?assertEqual( {ok, {[], [], [E]}}, parse( TokenLst ) ).
+  
+
+  err() ->
+
+    TokenLst =
+      [{err, 1, "err"},
+       {strlit, 1, "blub"},
+       {colon, 1, ":"},
+       {t_str, 1, "Str"},
+       {semicolon, 1, ";"}],
+
+    E = err( 1, t_str(), <<"blub">> ),
+
+    ?assertEqual( {ok, {[], [], [E]}}, parse( TokenLst ) ).

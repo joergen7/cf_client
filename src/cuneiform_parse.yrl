@@ -40,7 +40,7 @@ Terminals
   l_bash l_matlab l_octave l_perl l_python l_r l_racket
   t_str t_file t_bool t_fn_frn t_fn_ntv
   assign bar wedge cmp cnd colon
-  comma def do else eq false fold for halt import in
+  comma def do doublertag else eq err false fold for halt import in
   isnil larrow lbrace lparen lsquarebr ltag neg vee plus
   rarrow rbrace rparen rsquarebr rtag semicolon then true id
   intlit strlit filelit body.
@@ -118,12 +118,14 @@ e               -> ltag e_bind_lst rtag                           : visit_rcd( '
 e               -> lparen e bar id rparen                         : visit_proj( '$2', '$4' ).
 e               -> lparen e plus e rparen                         : visit_append( '$2', '$3', '$4' ).
 e               -> lsquarebr colon t rsquarebr                    : visit_lst( [], '$2', '$3' ).
+e               -> lparen e colon t doublertag e rparen           : visit_cons( '$5', '$2', '$4', '$6' ).
 e               -> lsquarebr e_lst colon t rsquarebr              : visit_lst( '$2', '$3', '$4' ).
 e               -> isnil e                                        : visit_isnil( '$1', '$2' ).
 e               -> for from_lst do e colon t halt                 : visit_for( '$1', '$2', [], '$4', '$6' ).
 e               -> for from_lst do define_lst e colon t halt      : visit_for( '$1', '$2', '$4', '$5', '$7' ).
 e               -> fold e_bind comma from do e halt               : visit_fold( '$1', '$2', '$4', [], '$6' ).
 e               -> fold e_bind comma from do define_lst e halt    : visit_fold( '$1', '$2', '$4', '$6', '$7' ).
+e               -> err strlit colon t                             : visit_err( '$1', '$2', '$4' ).
 
 from_lst        -> from                       : ['$1'].
 from_lst        -> from comma from_lst        : ['$1'|'$3'].
@@ -174,7 +176,7 @@ Erlang code.
                           create_closure/2, cmp/3, conj/3, disj/3, neg/2,
                           cnd/4, lam_frn/6, fix/2, lam_ntv/3, app/3,
                           rcd/2, proj/3, append/3, lst/3, isnil/2, for/4,
-                          fold/4
+                          fold/4, cons/4, err/3
                          ] ).
 
 
@@ -444,6 +446,7 @@ visit_for( {for, L, _}, FromLst, DefLst, E, TRet ) ->
 visit_from( {id, _, S}, E ) ->
   e_bind( list_to_atom( S ), E ).
 
+
 -spec visit_fold( {fold, L :: _, _}, AccBind :: e_bind(), LstBind :: e_bind(), DefLst :: [{r(), e()}], EBody :: e() ) -> e().
 
 visit_fold( {fold, L, _}, AccBind, LstBind, DefLst, EBody ) ->
@@ -454,7 +457,20 @@ visit_fold( {fold, L, _}, AccBind, LstBind, DefLst, EBody ) ->
       throw( Reason )
   end.
 
+
 -spec visit_assign( {assign, L :: _, _}, R :: r(), E :: e() ) -> assign().
 
 visit_assign( {assign, L, _}, R, E ) ->
   assign( L, R, E ).
+
+
+-spec visit_cons( {doublertag, L :: _, _}, E1 :: e(), T :: t(), E2 :: e() ) -> e().
+
+visit_cons( {doublertag, L, _}, E1, T, E2 ) ->
+  cons( L, T, E1, E2 ).
+
+
+-spec visit_err( {err, L :: _, _}, Msg :: {strlit, _, S :: string()}, T :: t() ) -> e().
+
+visit_err( {err, L, _}, {strlit, _, S}, T ) ->
+  err( L, T, list_to_binary( S ) ).
