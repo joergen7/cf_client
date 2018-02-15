@@ -185,7 +185,7 @@ is_value( {var, _, _} )                 -> false;
 is_value( {lam_ntv, _, _, _} )          -> true;
 is_value( {lam_frn, _, _, _, _, _, _} ) -> true;
 is_value( {app, _, _, _} )              -> false;
-is_value( {fut, _, _} )                 -> false;
+is_value( {fut, _, _, _} )              -> false;
 is_value( {null, _, _} )                -> true;
 is_value( {cons, _, _, E1, E2} )        -> is_value( E1 ) andalso is_value( E2 );
 is_value( {append, _, _, _} )           -> false;
@@ -214,7 +214,7 @@ rename( E = {file, _, _, _}, _, _ )             -> E;
 rename( E = {true, _}, _, _ )                   -> E;
 rename( E = {false, _}, _, _ )                  -> E;
 rename( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
-rename( E = {fut, _, _}, _, _ )                 -> E;
+rename( E = {fut, _, _, _}, _, _ )              -> E;
 rename( E = {err, _, _}, _, _ )                 -> E;
 rename( E = {null, _, _}, _, _ )                -> E;
 
@@ -313,7 +313,7 @@ subst( E = {str, _, _}, _, _ )                 -> E;
 subst( E = {file, _, _, _}, _, _ )             -> E;
 subst( E = {true, _}, _, _ )                   -> E;
 subst( E = {false, _}, _, _ )                  -> E;
-subst( E = {fut, _, _}, _, _ )                 -> E;
+subst( E = {fut, _, _, _}, _, _ )              -> E;
 subst( E = {err, _, _}, _, _ )                 -> E;
 subst( E = {null, _, _}, _, _ )                -> E;
 subst( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
@@ -412,8 +412,8 @@ when E     :: e(),
      A     :: e(),
      Delta :: e().
 
-subst_fut( {fut, Info, H}, H, ES )                 -> set_info( ES, Info );
-subst_fut( E = {fut, _, _}, _, _ )                 -> E;
+subst_fut( {fut, Info, _, H}, H, ES )              -> set_info( ES, Info );
+subst_fut( E = {fut, _, _, _}, _, _ )              -> E;
 subst_fut( E = {str, _, _}, _, _ )                 -> E;
 subst_fut( E = {file, _, _, _}, _, _ )             -> E;
 subst_fut( E = {true, _}, _, _ )                   -> E;
@@ -500,7 +500,7 @@ in_hole( _E, Ctx = {false, _} )                  -> Ctx;
 in_hole( _E, Ctx = {var, _, _} )                 -> Ctx;
 in_hole( _E, Ctx = {lam_ntv, _, _, _} )          -> Ctx;
 in_hole( _E, Ctx = {lam_frn, _, _, _, _, _, _} ) -> Ctx;
-in_hole( _E, Ctx = {fut, _, _} )                 -> Ctx;
+in_hole( _E, Ctx = {fut, _, _, _} )              -> Ctx;
 in_hole( _E, Ctx = {null, _, _} )                -> Ctx;
 in_hole( _E, Ctx = {err, _, _} )                 -> Ctx;
 
@@ -576,7 +576,7 @@ try_context( {false, _}, _ )                  -> no_ctx;
 try_context( {var, _, _}, _ )                 -> no_ctx;
 try_context( {lam_ntv, _, _, _}, _ )          -> no_ctx;
 try_context( {lam_frn, _, _, _, _, _, _}, _ ) -> no_ctx;
-try_context( {fut, _, _}, _ )                 -> no_ctx;
+try_context( {fut, _, _, _}, _ )              -> no_ctx;
 try_context( {null, _, _}, _ )                -> no_ctx;
 
 try_context( E = {cmp, Info, E1, E2}, Ctx ) ->

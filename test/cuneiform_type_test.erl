@@ -259,7 +259,10 @@ type_test_() ->
     {"fold with non-matching accumulator and body expression untypable",
      fun fold_with_nonmatching_accumulator_and_body_expression_untypable/0},
     {"fold with ambiguous accumulator and list expression name untypable",
-     fun fold_with_ambiguous_accumulator_and_list_expression_name_untypable/0}
+     fun fold_with_ambiguous_accumulator_and_list_expression_name_untypable/0},
+
+    {"future is typable",
+     fun future_is_typable/0}
    ]
   }.
 
@@ -830,3 +833,6 @@ fold_with_ambiguous_accumulator_and_list_expression_name_untypable() ->
             var( x ) ),
   ?assertEqual( {error, {ambiguous_name, na, x}}, type( E ) ).
 
+future_is_typable() ->
+  E = {fut, na, t_str(), na},
+  ?assertEqual( {ok, t_str()}, type( E ) ).

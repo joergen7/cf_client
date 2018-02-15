@@ -85,7 +85,7 @@
                      | {lam_ntv, info(), [lam_ntv_arg()], e()} % binding form
                      | {lam_frn, info(), x(), [t_arg()], t(), l(), s()}
                      | {app, info(), e(), [e_bind()]}
-                     | {fut, info(), hash()}
+                     | {fut, info(), t(), hash()}
                      | {null, info(), t()}
                      | {cons, info(), t(), e(), e()}
                      | {append, info(), e, e}

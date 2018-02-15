@@ -112,12 +112,12 @@ step( E, _UsrInfo ) ->
       case E1 of
 
         % when the redex is a foreign application invoke the E-send
-        {app, Info, {lam_frn, _, _, _, _, _, _}, _} ->
+        {app, Info, {lam_frn, _, _, _, RetType, _, _}, _} ->
 
           EffiRequest = cf_client_effi:app_to_effi_request( E1 ),
           #{ app_id := AppId } = EffiRequest,
 
-          E2 = {fut, Info, AppId},
+          E2 = {fut, Info, RetType, AppId},
           E3 = cuneiform_sem:in_hole( E2, Ctx ),
 
           {ok_send, E3, EffiRequest};

@@ -396,6 +396,8 @@ type( Gamma, {fold, Info, {XAcc, EAcc}, {X, ELst}, EBody} ) ->
 
   end;
 
+type( _, {fut, _, T, _} ) -> {ok, T};
+
 type( _Gamma, E ) -> error( {bad_expr, E} ).
 
 
