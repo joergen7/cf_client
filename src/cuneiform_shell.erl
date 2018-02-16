@@ -476,7 +476,7 @@ format_error( {error,
       ++"  return type: ~s~n"
       ++"~n~s",
 
-  iolib:format( S, [format_extended_script( ExtendedScript ),
+  io_lib:format( S, [format_extended_script( ExtendedScript ),
                     format_info( Info ),
                     LamName,
                     AppId,
