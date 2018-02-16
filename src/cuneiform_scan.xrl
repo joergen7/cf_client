@@ -60,7 +60,7 @@ DO         = do
 DOUBLERTAG = >>
 ELSE       = else
 EQ         = =
-ERR        = err
+ERR        = error
 FALSE      = false
 FOLD       = fold
 FOR        = for
