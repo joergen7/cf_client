@@ -461,10 +461,31 @@ get_prompt( ShellState ) ->
 
   end.
 
+
 -spec format_error( {error, Stage :: stage(), Reason :: _} ) -> string().
+
+format_error( {error,
+               runtime,
+               {err, Info,
+                     RetType,
+                     {run, AppId, LamName, ExtendedScript, Output}}} ) ->
+
+  S = "~s~n"
+      ++"runtime error at ~s executing foreign function ~s~n"
+      ++"  app id:      ~s~n"
+      ++"  return type: ~s~n"
+      ++"~n~s",
+
+  iolib:format( S, [format_extended_script( ExtendedScript ),
+                    format_info( Info ),
+                    LamName,
+                    AppId,
+                    RetType,
+                    format_output( Output )] );
 
 format_error( {error, Stage, Reason} ) ->
   io_lib:format( "~p error: ~p", [Stage, Reason] ).
+
 
 -spec format_expr( E :: e() ) -> string().
 
@@ -496,6 +517,21 @@ format_pattern( R ) ->
   io_lib:format( "~p", [R] ).
 
 
+format_info( N )
+when is_integer( N ), N > 0 ->
+  io_lib:format( "line ~b", [N] );
+
+format_info( Info ) ->
+  io_lib:format( "~p", [Info] ).
+
+
+format_extended_script( ExtendedScript ) ->
+  ExtendedScript.
+
+format_output( Output ) ->
+  Output.
+
+
 -spec brace_level( TokenLst, L ) -> integer()
 when TokenLst :: [{atom(), info(), string()}],
      L        :: integer().
@@ -504,3 +540,5 @@ brace_level( [], L )                 -> L;
 brace_level( [{lbrace, _, _}|R], L ) -> brace_level( R, L+1 );
 brace_level( [{rbrace, _, _}|R], L ) -> brace_level( R, L-1 );
 brace_level( [_|R], L )              -> brace_level( R, L ).
+
+
