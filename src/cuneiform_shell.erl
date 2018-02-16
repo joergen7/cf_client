@@ -456,7 +456,7 @@ format_error( {error,
                      {run, AppId, LamName, ExtendedScript, Output}}} ) ->
 
   S = "~s~n"
-      ++"runtime error at ~s executing foreign function ~s~n"
+      ++"runtime error ~s: executing foreign function~s~n"
       ++"  app id:      ~s~n"
       ++"  return type: ~s~n"
       ++"~n~s",
