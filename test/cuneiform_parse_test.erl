@@ -1051,7 +1051,7 @@ cons() ->
   err() ->
 
     TokenLst =
-      [{err, 1, "err"},
+      [{err, 1, "error"},
        {strlit, 1, "blub"},
        {colon, 1, ":"},
        {t_str, 1, "Str"},

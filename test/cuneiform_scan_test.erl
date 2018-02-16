@@ -451,9 +451,9 @@ cons() ->
 
 
 err() ->
-  S = "err \"blub\" : Str",
+  S = "error \"blub\" : Str",
   {ok, TokenLst, _} = string( S ),
-  ?assertEqual( [{err, 1, "err"},
+  ?assertEqual( [{err, 1, "error"},
                  {strlit, 1, "blub"},
                  {colon, 1, ":"},
                  {t_str, 1, "Str"}], TokenLst ).
