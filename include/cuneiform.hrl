@@ -71,7 +71,7 @@
                      | 'R'
                      | 'Racket'.
 
--type lam_ntv_arg() :: {x(), x(), t()}.
+-type lam_ntv_arg() :: {InternalName :: x(), ExternalName :: x(), t()}.
 
 -type e_bind()      :: {x(), e()}.
 -type r_bind()      :: {x(), r()}.

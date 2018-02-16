@@ -163,7 +163,11 @@ reduce( {fold, _Info, {_XAcc, EAcc}, {_X, {null, _, _}}, _EBody} ) ->     % E-fo
 
 reduce( {fold, Info, {XAcc, EAcc}, {X, {cons, _, _, E1, E2}}, EBody} ) -> % E-fold-cons
   EAcc1 = subst( subst( EBody, XAcc, EAcc ), X, E1 ),
-  fold( Info, e_bind( XAcc, EAcc1), e_bind( X, E2 ), EBody ).
+  fold( Info, e_bind( XAcc, EAcc1), e_bind( X, E2 ), EBody );
+
+reduce( E = {fix, _, {lam_ntv, LamInfo, [{F, _, _T}|R], EBody}} ) ->      % E-fix
+  EBody1 = subst( EBody, F, E ),
+  lam_ntv( LamInfo, R, EBody1 ).
 
   
 

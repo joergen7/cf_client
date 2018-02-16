@@ -165,7 +165,13 @@ reduce_test_() ->
      fun zip_reduces_to_list/0},
 
     {"fold reduces",
-     fun fold_reduces/0}
+     fun fold_reduces/0},
+
+    {"fixpoint operator reduces",
+     fun fixpoint_operator_reduces/0},
+
+    {"fixpoint operator inserts function definition",
+     fun fixpoint_operator_inserts_function_definition/0}
    ]
   }.
 
@@ -285,6 +291,17 @@ fold_reduces() ->
              var( x ) ),
   ?assertEqual( E2, reduce( E1 ) ).
 
+fixpoint_operator_reduces() ->
+  E1 = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+                     str( <<"blub">> ) ) ),
+  E2 = lam_ntv( [], str( <<"blub">> ) ),
+  ?assertEqual( E2, reduce( E1 ) ).
+
+fixpoint_operator_inserts_function_definition() ->
+  E1 = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+                    var( f ) ) ),
+  E2 = lam_ntv( [], E1 ),
+  ?assertEqual( E2, reduce( E1 ) ).
 
 
 %%====================================================================
