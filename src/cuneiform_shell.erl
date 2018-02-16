@@ -90,13 +90,6 @@ shell_repl( ClientName, ShellState = #shell_state{ def_lst = DefLst } ) ->
   case io:get_line( Prompt ) of
 
     "quit\n" ->
-
-      Pid =
-        if
-          is_pid( ClientName ) -> ClientName;
-          true                 -> whereis( ClientName )
-        end,
-
       ok;
 
     "help\n" ->

@@ -179,7 +179,7 @@ main( Args ) ->
       print_help();
 
     throw:shell ->
-      cuneiform_shell:shell( cf_client )
+      cuneiform_shell:shell( cf_client );
 
     throw:{load, FileLst} ->
 
