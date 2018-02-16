@@ -103,7 +103,7 @@ app_to_effi_request(
                    value    => ConvertExpr( E ) }
                 || {X, E} <- EBindLst],
 
-  Hash = crypto:hash( sha512, io_lib:format( "~w~w", [Lambda, ArgBindLst] ) ),
+  Hash = crypto:hash( sha224, io_lib:format( "~w~w", [Lambda, ArgBindLst] ) ),
 
   AppId = list_to_binary( BinaryToHexString( Hash ) ),
 
