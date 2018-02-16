@@ -179,18 +179,7 @@ main( Args ) ->
       print_help();
 
     throw:shell ->
-
-      F =
-        fun() ->
-          cuneiform_shell:shell( cf_client )
-        end,
-
-      {Pid, Ref} = spawn_monitor( F ),
-
-      receive
-        {'DOWN', Ref, process, Pid, _Info} ->
-          ok = timer:sleep( 1000 )
-      end;
+      cuneiform_shell:shell( cf_client )
 
     throw:{load, FileLst} ->
 
@@ -211,18 +200,7 @@ main( Args ) ->
             end,
 
           % print reply list on screen
-          G =
-            fun() ->
-              ok =
-                cuneiform_shell:process_reply_lst( ReplyLst, cf_client, silent )
-            end,
-
-          {Pid, Ref} = spawn_monitor( G ),
-
-          receive
-            {'DOWN', Ref, process, Pid, _Info} ->
-              ok = timer:sleep( 1000 )
-          end
+          cuneiform_shell:process_reply_lst( ReplyLst, cf_client, silent )
 
         end,
 

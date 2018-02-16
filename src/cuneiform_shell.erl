@@ -76,13 +76,7 @@
 
 shell( ClientName ) ->
 
-  Pid =
-    if
-      is_pid( ClientName ) -> ClientName;
-      true                 -> whereis( ClientName )
-    end,
 
-  true = link( Pid ),
   io:format( "~s~n~n~n", [get_banner()] ),
   shell_repl( ClientName, #shell_state{} ).
 
@@ -102,8 +96,6 @@ shell_repl( ClientName, ShellState = #shell_state{ def_lst = DefLst } ) ->
           is_pid( ClientName ) -> ClientName;
           true                 -> whereis( ClientName )
         end,
-
-      true = unlink( Pid ),
 
       ok;
 
