@@ -163,8 +163,21 @@ when is_list( ReplyLst ),
 when Input :: string().
 
 shell_eval_oneshot( Input ) ->
-  {ReplyLst, _ShellState} = shell_eval( Input, #shell_state{} ),
-  ReplyLst.
+
+  {ReplyLst, ShellState} = shell_eval( Input, #shell_state{} ),
+
+  case ShellState of
+
+    #shell_state{ string_buf = [_|_] } ->
+      [{error, scan, "input stream ended inside foreign code block"}];
+
+    #shell_state{ token_buf = [_|_] } ->
+      [{error, parse, "premature end of input stream"}];
+
+    _ ->
+      ReplyLst
+      
+  end.
 
 
 -spec shell_eval( Input, ShellState ) -> {[reply()], #shell_state{}}
