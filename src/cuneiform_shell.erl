@@ -465,7 +465,7 @@ format_error( {error,
                     format_info( Info ),
                     LamName,
                     AppId,
-                    RetType,
+                    format_type( RetType ),
                     format_output( Output )] );
 
 format_error( {error, Stage, Reason} ) ->
