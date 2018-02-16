@@ -170,6 +170,7 @@ effi_reply_to_expr( Request, Reply ) ->
     end,
 
   #{ result := Result } = Reply,
+  T = reconstruct_type( RetTypeLst ),
 
   case Result of
 
@@ -181,10 +182,17 @@ effi_reply_to_expr( Request, Reply ) ->
        stage           := <<"run">>,
        extended_script := ExtendedScript,
        output          := Output } ->
-      T = reconstruct_type( RetTypeLst ),
-      {err, na, T, {run, AppId, LamName, ExtendedScript, Output}}
+      {err, na, T, {run, AppId, LamName, ExtendedScript, Output}};
 
-    % TODO: precond, postcond
+    #{ status   := <<"error">>,
+       stage    := <<"stagein">>,
+       file_lst := FileLst } ->
+      {err, na, T, {stagein, AppId, LamName, FileLst}};
+
+    #{ status   := <<"error">>,
+       stage    := <<"stageout">>,
+       file_lst := FileLst } ->
+      {err, na, T, {stageout, AppId, LamName, FileLst}}
 
   end.
 

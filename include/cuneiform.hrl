@@ -41,9 +41,9 @@
 
 -type reason()      :: {run, AppId :: binary(), LamName :: binary(),
                              ExtendedScript :: binary(), Output :: binary()}
-                     | {precond, AppId :: binary(), LamName :: binary(),
+                     | {stagein, AppId :: binary(), LamName :: binary(),
                                  FileLst :: [binary()]}
-                     | {postcond, AppId :: binary(), LamName :: binary(),
+                     | {stageout, AppId :: binary(), LamName :: binary(),
                                   FileLst :: [binary()]}
                      | {user, Msg :: binary()}.
 
