@@ -523,8 +523,14 @@ format_info( Info ) ->
   io_lib:format( "~p", [Info] ).
 
 
+-spec format_extended_script( ExtendedScript :: binary() ) -> string().
+
 format_extended_script( ExtendedScript ) ->
-  ExtendedScript.
+  {_, S} = lists:foldl( fun( Line, {N, S} ) ->
+                          {N+1, io_lib:format( "~s~4.B  ~s~n", [S, N, Line] )}
+                        end,
+                        {1, []}, re:split( ExtendedScript, "\n" ) ),
+lists:flatten( S ).
 
 format_output( Output ) ->
   Output.
