@@ -120,6 +120,8 @@ step( E, _UsrInfo ) ->
           E2 = {fut, Info, RetType, AppId},
           E3 = cuneiform_sem:in_hole( E2, Ctx ),
 
+          garbage_collect(),
+
           {ok_send, E3, EffiRequest};
 
         % when the redex is an error drop the context
@@ -130,6 +132,8 @@ step( E, _UsrInfo ) ->
         _ ->
           E2 = cuneiform_sem:reduce( E1 ),
           E3 = cuneiform_sem:in_hole( E2, Ctx ),
+
+          garbage_collect(),
 
           {ok, E3}
 
