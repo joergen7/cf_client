@@ -497,67 +497,152 @@ gensym( X ) when is_atom( X ) ->
 when E   :: e() | ctx(),
      Ctx :: e() | ctx().
 
-in_hole( E, hole )                               -> E;
-in_hole( _E, Ctx = {str, _, _} )                 -> Ctx;
-in_hole( _E, Ctx = {file, _, _, _} )             -> Ctx;
-in_hole( _E, Ctx = {true, _} )                   -> Ctx;
-in_hole( _E, Ctx = {false, _} )                  -> Ctx;
-in_hole( _E, Ctx = {var, _, _} )                 -> Ctx;
-in_hole( _E, Ctx = {lam_ntv, _, _, _} )          -> Ctx;
-in_hole( _E, Ctx = {lam_frn, _, _, _, _, _, _} ) -> Ctx;
-in_hole( _E, Ctx = {fut, _, _, _} )              -> Ctx;
-in_hole( _E, Ctx = {null, _, _} )                -> Ctx;
-in_hole( _E, Ctx = {err, _, _, _} )              -> Ctx;
+in_hole( E, Ctx ) ->
+  case try_hole( E, Ctx ) of
+    no_hole -> error( no_hole );
+    {ok, E1} -> E1
+  end.
 
-in_hole( E, {cmp, Info, E1, E2} ) ->
-  {cmp, Info, in_hole( E, E1 ), in_hole( E, E2 )};
+try_hole( E, hole )                               -> {ok, E};
+try_hole( _E, Ctx = {str, _, _} )                 -> no_hole;
+try_hole( _E, Ctx = {file, _, _, _} )             -> no_hole;
+try_hole( _E, Ctx = {true, _} )                   -> no_hole;
+try_hole( _E, Ctx = {false, _} )                  -> no_hole;
+try_hole( _E, Ctx = {var, _, _} )                 -> no_hole;
+try_hole( _E, Ctx = {lam_ntv, _, _, _} )          -> no_hole;
+try_hole( _E, Ctx = {lam_frn, _, _, _, _, _, _} ) -> no_hole;
+try_hole( _E, Ctx = {fut, _, _, _} )              -> no_hole;
+try_hole( _E, Ctx = {null, _, _} )                -> no_hole;
+try_hole( _E, Ctx = {err, _, _, _} )              -> no_hole;
 
-in_hole( E, {cnd, Info, EIf, EThen, EElse} ) ->
+try_hole( E, {cmp, Info, E1, E2} ) ->
+  case try_hole( E, E1 ) of
+    no_hole ->
+      case try_hole( E, E2 ) of
+        no_hole -> no_hole;
+        {ok, X} -> {ok, {cmp, Info, E1, X}}
+      end;
+    {ok, X} -> {ok, {cmp, Info, X, E2}}
+  end;
+
+try_hole( E, {cnd, Info, EIf, EThen, EElse} ) ->
   % note that we do not traverse the then- and else expressions because there
   % can never be a hole down these two roads
-  {cnd, Info, in_hole( E, EIf ), EThen, EElse};
+  case try_hole( E, EIf ) of
+    no_hole -> no_hole;
+    {ok, X} -> {ok, {cnd, Info, X, EThen, EElse}}
+  end;
 
-in_hole( E, {neg, Info, E1} ) ->
-  {neg, Info, in_hole( E, E1 )};
+try_hole( E, {neg, Info, E1} ) ->
+  case try_hole( E, E1 ) of
+    no_hole -> no_hole;
+    {ok, X} -> {ok, {neg, Info, X}}
+  end;
 
-in_hole( E, {conj, Info, E1, E2} ) ->
-  {conj, Info, in_hole( E, E1 ), in_hole( E, E2 )};
+try_hole( E, {conj, Info, E1, E2} ) ->
+  case try_hole( E, E1 ) of
+    no_hole ->
+      case try_hole( E, E2 ) of
+        no_hole -> no_hole;
+        {ok, X} -> {ok, {conj, Info, E1, X}}
+      end;
+    {ok, X} -> {ok, {conj, Info, X, E2}}
+  end;
 
-in_hole( E, {disj, Info, E1, E2} ) ->
-  {disj, Info, in_hole( E, E1 ), in_hole( E, E2 )};
+try_hole( E, {disj, Info, E1, E2} ) ->
+  case try_hole( E, E1 ) of
+    no_hole ->
+      case try_hole( E, E2 ) of
+        no_hole -> no_hole;
+        {ok, X} -> {ok, {disj, Info, E1, X}}
+      end;
+    {ok, X} -> {ok, {disj, Info, X, E2}}
+  end;
 
-in_hole( E, {app, Info, EFn, EBindLst} ) ->
-  {app, Info,
-        in_hole( E, EFn ),
-        [{X, in_hole( E, E1 )} || {X, E1} <- EBindLst]};
+try_hole( E, {app, Info, EFn, EBindLst} ) ->
+  case try_hole( E, EFn ) of
+    no_hole ->
+      case try_hole_e_bind_lst( E, EBindLst, [] ) of
+        no_hole         -> no_hole;
+        {ok, EBindLst1} -> {ok, {app, Info, EFn, EBindLst1}}
+      end;
+    {ok, EFn1} -> {ok, {app, Info, EFn1, EBindLst}}
+  end;
 
-in_hole( E, {cons, Info, T, E1, E2} ) ->
-  {cons, Info, T, in_hole( E, E1 ), in_hole( E, E2 )};
+try_hole( E, {cons, Info, T, E1, E2} ) ->
+  case try_hole( E, E1 ) of
+    no_hole ->
+      case try_hole( E, E2 ) of
+        no_hole -> no_hole;
+        {ok, X} -> {ok, {cons, Info, T, E1, X}}
+      end;
+    {ok, X} -> {ok, {cons, Info, T, X, E2}}
+  end;
 
-in_hole( E, {append, Info, E1, E2} ) ->
-  {append, Info, in_hole( E, E1 ), in_hole( E, E2 )};
+try_hole( E, {append, Info, E1, E2} ) ->
+  case try_hole( E, E1 ) of
+    no_hole ->
+      case try_hole( E, E2 ) of
+        no_hole -> no_hole;
+        {ok, X} -> {ok, {append, Info, E1, X}}
+      end;
+    {ok, X} -> {ok, {append, Info, X, E2}}
+  end;
 
-in_hole( E, {isnil, Info, E1} ) ->
-  {isnil, Info, in_hole( E, E1 )};
+try_hole( E, {isnil, Info, E1} ) ->
+  case try_hole( E, E1 ) of
+    no_hole -> no_hole;
+    {ok, X} -> {ok, {isnil, Info, X}}
+  end;
 
-in_hole( E, {for, Info, TRet, EBindLst, EBody} ) ->
+try_hole( E, {for, Info, TRet, EBindLst, EBody} ) ->
   % note that we do not traverse the body expression because there can never be
   % a hole down that road
-  {for, Info, TRet, [{X1, in_hole( E, E1 )} || {X1, E1} <- EBindLst], EBody};
+  case try_hole_e_bind_lst( E, EBindLst, [] ) of
+    no_hole         -> no_hole;
+    {ok, EBindLst1} -> {ok, {for, Info, TRet, EBindLst1, EBody}}
+  end;
 
-in_hole( E, {fold, Info, AccBind, {X, ELst}, EBody} ) ->
+try_hole( E, {fold, Info, AccBind, {X, ELst}, EBody} ) ->
   % note that we traverse neither accumulator initialization expression nor body
   % expression because there can never be a hole down that road
-  {fold, Info, AccBind, {X, in_hole( E, ELst )}, EBody};
+  case try_hole( E, ELst ) of
+    no_hole     -> no_hole;
+    {ok, ELst1} -> {ok, {fold, Info, AccBind, {X, ELst1}, EBody}}
+  end;
 
-in_hole( E, {rcd, Info, EBindLst} ) ->
-  {rcd, Info, [{X, in_hole( E, E1 )} || {X, E1} <- EBindLst]};
+try_hole( E, {rcd, Info, EBindLst} ) ->
+  case try_hole_e_bind_lst( E, EBindLst, [] ) of
+    no_hole         -> no_hole;
+    {ok, EBindLst1} -> {ok, {rcd, Info, EBindLst1}}
+  end;
 
-in_hole( E, {proj, Info, X, E1} ) ->
-  {proj, Info, X, in_hole( E, E1 )};
+try_hole( E, {proj, Info, X, E1} ) ->
+  case try_hole( E, E1 ) of
+    no_hole -> no_hole;
+    {ok, Y} -> {ok, {proj, Info, X, Y}}
+  end;
 
-in_hole( E, {fix, Info, E1} ) ->
-  {fix, Info, in_hole( E, E1 )}.
+try_hole( E, {fix, Info, E1} ) ->
+  case try_hole( E, E1 ) of
+    no_hole -> no_hole;
+    {ok, X} -> {ok, {fix, Info, X}}
+  end.
+
+
+try_hole_e_bind_lst( E, [], NoHoleBindLst ) ->
+  no_hole;
+
+try_hole_e_bind_lst( E, [{X, E1}|EBindLst], NoHoleBindLst ) ->
+  case try_hole( E, E1 ) of
+
+    no_hole ->
+      try_hole_e_bind_lst( E, EBindLst, [{X, E1}|NoHoleBindLst] );
+
+    {ok, Y} ->
+      {ok, lists:reverse( NoHoleBindLst )++[{X, Y}|EBindLst]}
+
+  end.
 
 
 -spec find_context( E :: e() ) -> {ok, e(), ctx()} | no_ctx.

@@ -1269,7 +1269,7 @@ insert_in_empty_ctx_returns_original_expr() ->
   ?assertEqual( E, in_hole( E, hole ) ).
 
 inserting_leaves_string_literal_unchanged() ->
-  ?assertEqual( str( <<"blub">> ), in_hole( true(), str( <<"blub">> ) ) ).
+  ?assertError( no_hole, in_hole( true(), str( <<"blub">> ) ) ).
 
 inserting_traverses_comparison_lhs() ->
   E1 = str( <<"bla">> ),
@@ -1283,17 +1283,17 @@ inserting_traverses_comparison_rhs() ->
 
 inserting_leaves_file_unchanged() ->
   E = file( <<"bla.txt">> ),
-  ?assertEqual( E, in_hole( true(), E ) ).
+  ?assertError( no_hole, in_hole( true(), E ) ).
 
 inserting_leaves_true_unchanged() ->
-  ?assertEqual( true(), in_hole( str( <<"blub">> ), true() ) ).
+  ?assertError( no_hole, in_hole( str( <<"blub">> ), true() ) ).
 
 inserting_leaves_false_unchanged() ->
-  ?assertEqual( false(), in_hole( str( <<"blub">> ), false() ) ).
+  ?assertError( no_hole, in_hole( str( <<"blub">> ), false() ) ).
 
 inserting_leaves_error_unchanged() ->
   E = err( t_str(), <<"blub">> ),
-  ?assertEqual( E, in_hole( str( <<"blub">> ), E ) ).
+  ?assertError( no_hole, in_hole( str( <<"blub">> ), E ) ).
 
 insert_traverses_cnd_if_expr() ->
   E1 = true(),
@@ -1332,14 +1332,14 @@ inserting_traverses_disjunction_rhs() ->
   ?assertEqual( E2, in_hole( E1, Ctx ) ).
 
 inserting_leaves_variable_unchanged() ->
-  ?assertEqual( var( x ), in_hole( str( <<"blub">> ), var( x ) ) ).
+  ?assertError( no_hole, in_hole( str( <<"blub">> ), var( x ) ) ).
 
 inserting_leaves_native_function_unchanged() ->
-  ?assertEqual( e_lam1(), in_hole( true(), e_lam1() ) ).
+  ?assertError( no_hole, in_hole( true(), e_lam1() ) ).
 
 inserting_leaves_foreign_function_unchanged() ->
   Ctx = lam_frn( f, [], t_rcd( [t_arg( a, t_str() )] ), l_bash(), <<"blub">> ),
-  ?assertEqual( Ctx, in_hole( str( <<"blub">> ), Ctx ) ).
+  ?assertError( no_hole, in_hole( str( <<"blub">> ), Ctx ) ).
 
 inserting_traverses_application_function_position() ->
   E1 = var( f ),
@@ -1355,7 +1355,7 @@ inserting_traverses_application_argument_bindings() ->
 
 inserting_leaves_future_unchanged() ->
   E = {fut, na, t_str(), na},
-  ?assertEqual( E, in_hole( true(), E ) ).
+  ?assertError( no_hole, in_hole( true(), E ) ).
 
 inserting_traverses_list_elements() ->
   E1 = var( x ),
