@@ -171,7 +171,13 @@ reduce_test_() ->
      fun fixpoint_operator_reduces/0},
 
     {"fixpoint operator inserts function definition",
-     fun fixpoint_operator_inserts_function_definition/0}
+     fun fixpoint_operator_inserts_function_definition/0},
+
+    {"for over empty list reduces to empty list",
+     fun for_over_empty_list_reduces_to_empty_list/0},
+
+    {"folding over empty list reduces to initial accumulator",
+     fun folding_over_empty_list_reduces_to_initial_accumulator/0}
    ]
   }.
 
@@ -301,6 +307,16 @@ fixpoint_operator_inserts_function_definition() ->
   E1 = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
                     var( f ) ) ),
   E2 = lam_ntv( [], E1 ),
+  ?assertEqual( E2, reduce( E1 ) ).
+
+for_over_empty_list_reduces_to_empty_list() ->
+  E1 = for( t_str(), [e_bind( x, null( t_str() ) )], var( x ) ),
+  E2 = null( t_str() ),
+  ?assertEqual( E2, reduce( E1 ) ).
+
+folding_over_empty_list_reduces_to_initial_accumulator() ->
+  E1 = fold( e_bind( acc, str( <<"bla">> ) ), e_bind( x, null( t_str() ) ), var( x ) ),
+  E2 = str( <<"bla">> ),
   ?assertEqual( E2, reduce( E1 ) ).
 
 
@@ -1259,7 +1275,16 @@ in_hole_test_() ->
      fun inserting_traverses_projection_operand/0},
 
     {"inserting traverses fixpoint operand",
-     fun inserting_traverses_fixpoint_operand/0}
+     fun inserting_traverses_fixpoint_operand/0},
+
+    {"inserting in record preserves field order",
+     fun inserting_in_record_preserves_field_order/0},
+
+    {"inserting leaves empty list unchanged",
+     fun inserting_leaves_empty_list_unchanged/0},
+
+    {"inserting leaves literal comparison unchanged",
+     fun inserting_leaves_literal_comparison_unchanged/0}
 
    ]
   }.
@@ -1405,6 +1430,32 @@ inserting_traverses_fixpoint_operand() ->
   E1 = var( x ),
   Ctx = {fix, na, hole},
   ?assertEqual( fix( E1 ), in_hole( E1, Ctx ) ).
+
+inserting_in_record_preserves_field_order() ->
+
+  E1 = rcd( [e_bind( a, str( <<"a">> ) ),
+             e_bind( b, str( <<"b">> ) ),
+             {c, hole},
+             e_bind( d, str( <<"d">> ) ),
+             e_bind( e, str( <<"e">> ) )] ),
+
+  E2 = rcd( [e_bind( a, str( <<"a">> ) ),
+             e_bind( b, str( <<"b">> ) ),
+             e_bind( c, str( <<"c">> ) ),
+             e_bind( d, str( <<"d">> ) ),
+             e_bind( e, str( <<"e">> ) )] ),
+
+  ?assertEqual( E2, in_hole( str( <<"c">> ), E1 ) ).
+
+inserting_leaves_empty_list_unchanged() ->
+  E1 = null( t_str() ),
+  ?assertError( no_hole, in_hole( str( <<"bla">> ), E1 ) ).
+
+inserting_leaves_literal_comparison_unchanged() ->
+  E1 = cmp( str( <<"bla">> ), str( <<"blub">> ) ),
+  ?assertError( no_hole, in_hole( true(), E1 ) ).
+
+
 
 
 find_context_test_() ->
@@ -1899,7 +1950,7 @@ subst_fut_test_() ->
   }.
 
 subst_fut_leaves_string_literal_alone() ->
-  E = str( <<"blub">> ),
+  E = str( <<"bla">> ),
   A = <<"1234">>,
   ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
 
@@ -1998,9 +2049,10 @@ subst_fut_traverses_application_function_position() ->
   ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
 
 subst_fut_traverses_application_argument_bindings() ->
-  E1 = app( var( z ), [e_bind( x, {fut, na, t_str(), <<"1234">>} )] ),
-  E2 = app( var( z ), [e_bind( x, str( <<"bla">> ) )] ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"bla">> ) ) ).
+  EF = cons( t_str(), str( <<"blub">> ), null( t_str() ) ),
+  E1 = app( var( z ), [e_bind( x, {fut, na, t_lst( t_str() ), <<"1234">>} )] ),
+  E2 = app( var( z ), [e_bind( x, EF )] ),
+  ?assertEqual( E2, subst_fut( E1, <<"1234">>, EF ) ).
 
 subst_fut_leaves_null_alone() ->
   E = null( t_str() ),

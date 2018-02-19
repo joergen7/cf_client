@@ -503,17 +503,17 @@ in_hole( E, Ctx ) ->
     {ok, E1} -> E1
   end.
 
-try_hole( E, hole )                               -> {ok, E};
-try_hole( _E, Ctx = {str, _, _} )                 -> no_hole;
-try_hole( _E, Ctx = {file, _, _, _} )             -> no_hole;
-try_hole( _E, Ctx = {true, _} )                   -> no_hole;
-try_hole( _E, Ctx = {false, _} )                  -> no_hole;
-try_hole( _E, Ctx = {var, _, _} )                 -> no_hole;
-try_hole( _E, Ctx = {lam_ntv, _, _, _} )          -> no_hole;
-try_hole( _E, Ctx = {lam_frn, _, _, _, _, _, _} ) -> no_hole;
-try_hole( _E, Ctx = {fut, _, _, _} )              -> no_hole;
-try_hole( _E, Ctx = {null, _, _} )                -> no_hole;
-try_hole( _E, Ctx = {err, _, _, _} )              -> no_hole;
+try_hole( E, hole )                         -> {ok, E};
+try_hole( _E, {str, _, _} )                 -> no_hole;
+try_hole( _E, {file, _, _, _} )             -> no_hole;
+try_hole( _E, {true, _} )                   -> no_hole;
+try_hole( _E, {false, _} )                  -> no_hole;
+try_hole( _E, {var, _, _} )                 -> no_hole;
+try_hole( _E, {lam_ntv, _, _, _} )          -> no_hole;
+try_hole( _E, {lam_frn, _, _, _, _, _, _} ) -> no_hole;
+try_hole( _E, {fut, _, _, _} )              -> no_hole;
+try_hole( _E, {null, _, _} )                -> no_hole;
+try_hole( _E, {err, _, _, _} )              -> no_hole;
 
 try_hole( E, {cmp, Info, E1, E2} ) ->
   case try_hole( E, E1 ) of
@@ -630,7 +630,7 @@ try_hole( E, {fix, Info, E1} ) ->
   end.
 
 
-try_hole_e_bind_lst( E, [], NoHoleBindLst ) ->
+try_hole_e_bind_lst( _E, [], _NoHoleBindLst ) ->
   no_hole;
 
 try_hole_e_bind_lst( E, [{X, E1}|EBindLst], NoHoleBindLst ) ->
