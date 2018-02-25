@@ -99,9 +99,9 @@ shell_repl( ClientName, ShellState = #shell_state{ def_lst = DefLst } ) ->
     "hist\n" ->
       G =
         fun( {assign, _, R, E} ) ->
-          SR = string:pad( format_pattern( R ), 16, trailing ),
+          SR = format_pattern( R ),
           SE = format_expr( E ),
-          io:format( "let ~s = ~s;~n", [SR, SE] )
+          io:format( "let ~s =~n  ~s;~n~n", [SR, SE] )
         end,
       lists:foreach( G,
                      DefLst ),
@@ -462,6 +462,50 @@ get_prompt( ShellState ) ->
 
 -spec format_error( {error, Stage :: stage(), Reason :: _} ) -> string().
 
+format_error( {error, scan, {Info, cuneiform_scan, {illegal, S}}} ) ->
+  io_lib:format( "scan error ~s: illegal symbol ~s", [format_info( Info ), S] );
+
+format_error( {error, parse, {Info, cuneiform_parse, Msg}} ) ->
+  io_lib:format( "parse error ~s: ~s", [format_info( Info ), Msg] );
+
+format_error( {error, type, {unbound_var, Info, VarName}} ) ->
+  io_lib:format( "type error ~s: unbound variable ~p",
+                 [format_info( Info ), VarName] );
+
+format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
+  io_lib:format( "type error ~s: type mismatch, expected ~s got ~s",
+                 [format_info( Info ),
+                  format_type( T1 ),
+                  format_type( T2 )] );
+
+format_error( {error, type, {ambiguous_name, Info, Name}} ) ->
+  io_lib:format( "type error ~s: ambiguous argument or field name ~p",
+                 [format_info( Info ), Name] );
+
+format_error( {error, type, {key_missing, Info, Name}} ) ->
+  io_lib:format( "type error ~s: application argument missing ~p",
+                 [format_info( Info ), Name] );
+
+format_error( {error, type, {superfluous_key, Info, Name}} ) ->
+  io_lib:format( "type error ~s: application superfluous argument ~p",
+                 [format_info( Info ), Name] );
+
+format_error( {error, type, {no_record_type, Info, T}} ) ->
+  io_lib:format( "type error ~s: record expected, got ~s",
+                 [format_info( Info ), format_type( T )] );
+
+format_error( {error, type, {no_native_function_type, Info, T}} ) ->
+  io_lib:format( "type error ~s: native function expected, got ~s",
+                 [format_info( Info ), format_type( T )] );
+
+format_error( {error, type, {no_list_type, Info, T}} ) ->
+  io_lib:format( "type error ~s: list expected, got ~s",
+                 [format_info( Info ), format_type( T )] );
+
+format_error( {error, type, {no_comparable_type, Info, T}} ) ->
+  io_lib:format( "type error ~s: type not comparable ~s",
+                 [format_info( Info ), format_type( T )] );
+
 format_error( {error,
                runtime,
                {err, Info,
@@ -511,8 +555,12 @@ format_type( T ) ->
 format_pattern( {r_var, X, T} ) ->
   io_lib:format( "~p : ~s", [X, format_type( T )] );
 
-format_pattern( R ) ->
-  io_lib:format( "~p", [R] ).
+format_pattern( {r_rcd, RBindLst} ) ->
+  SLst = [io_lib:format( "~p = ~s", [X, format_pattern( R )] )
+          || {X, R} <- RBindLst],
+  S = string:join( SLst, ", " ),
+  io_lib:format( "<~s>", [S] ).
+
 
 
 format_info( N )
