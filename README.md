@@ -135,6 +135,20 @@ The Cuneiform client comes with an interactive shell which can be connected to a
 cuneiform_shell:shell( cf_client ).
 ```
 
+Which will start a shell that should look like the following:
+
+                ___
+               @@WB      Cuneiform
+              @@E_____
+         _g@@@@@WWWWWWL  Type help for usage info
+       g@@#*`3@B              quit to exit shell
+      @@P    3@B
+      @N____ 3@B         http://www.cuneiform-lang.org
+      "W@@@WF3@B
+
+
+    1>
+
 ## System Requirements
 
 - [Erlang](https://www.erlang.org) OTP 18.0 or higher
