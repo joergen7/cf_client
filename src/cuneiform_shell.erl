@@ -33,8 +33,7 @@
 
 -include_lib( "cf_client/include/cuneiform.hrl" ).
 
--export( [shell/1, shell_eval_oneshot/1, process_reply_lst/3, format_pattern/1,
-          format_type/1, format_expr/1, format_error/1] ).
+-export( [shell/1, shell_eval_oneshot/1, process_reply_lst/3] ).
 
 
 -define( RED( Str ), "\e[31m" ++ Str ++ "\e[0m" ).
@@ -56,12 +55,6 @@
                        query_lst  = [],
                        reply_lst  = []} ).
 
-
--type stage() :: load
-               | scan
-               | parse
-               | type
-               | runtime.
 
 -type reply() :: {query, e()}
                | {error, stage(), _}
@@ -99,8 +92,8 @@ shell_repl( ClientName, ShellState = #shell_state{ def_lst = DefLst } ) ->
     "hist\n" ->
       G =
         fun( {assign, _, R, E} ) ->
-          SR = format_pattern( R ),
-          SE = format_expr( E ),
+          SR = cuneiform_format:format_pattern( R ),
+          SE = cuneiform_format:format_expr( E ),
           io:format( "let ~s =~n  ~s;~n~n", [SR, SE] )
         end,
       lists:foreach( G,
@@ -131,13 +124,13 @@ when is_list( ReplyLst ),
         case V of
 
           {err, _, _, _} ->
-            SE = format_error( {error, runtime, V} ),
+            SE = cuneiform_format:format_error( {error, runtime, V} ),
             io:format( ?RED( "~s" )++"~n", [SE] );
 
           _ ->
             {ok, T} = cuneiform_type:type( V ),
-            SV = format_expr( V ),
-            ST = format_type( T ),
+            SV = cuneiform_format:format_expr( V ),
+            ST = cuneiform_format:format_type( T ),
             io:format( ?GRN( "~s" )++"~n"++?BLU( ": " )++?BBLU( "~s" )++"~n", [SV, ST] )
         end;
 
@@ -145,13 +138,13 @@ when is_list( ReplyLst ),
         case Verbosity of
           silent  -> ok;
           verbose ->
-            SE = format_expr( E ),
-            ST = format_type( T ),
+            SE = cuneiform_format:format_expr( E ),
+            ST = cuneiform_format:format_type( T ),
             io:format( "~s~n"++?BLU( ": " )++?BBLU( "~s" )++"~n", [SE, ST] )
         end;
 
       ( Reply = {error, _Stage, _Reason} ) ->
-        S = format_error( Reply ),
+        S = cuneiform_format:format_error( Reply ),
         io:format( ?RED( "~s" )++"~n", [S] )
 
     end,
@@ -458,175 +451,6 @@ get_prompt( ShellState ) ->
       ""
 
   end.
-
-
--spec format_error( {error, Stage :: stage(), Reason :: _} ) -> string().
-
-format_error( {error, scan, {Info, cuneiform_scan, {illegal, S}}} ) ->
-  io_lib:format( "scan error ~s: illegal symbol ~s", [format_info( Info ), S] );
-
-format_error( {error, parse, {Info, cuneiform_parse, Msg}} ) ->
-  io_lib:format( "parse error ~s: ~s", [format_info( Info ), Msg] );
-
-format_error( {error, type, {unbound_var, Info, VarName}} ) ->
-  io_lib:format( "type error ~s: unbound variable ~p",
-                 [format_info( Info ), VarName] );
-
-format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
-  io_lib:format( "type error ~s: type mismatch, expected ~s got ~s",
-                 [format_info( Info ),
-                  format_type( T1 ),
-                  format_type( T2 )] );
-
-format_error( {error, type, {ambiguous_name, Info, Name}} ) ->
-  io_lib:format( "type error ~s: ambiguous argument or field name ~p",
-                 [format_info( Info ), Name] );
-
-format_error( {error, type, {key_missing, Info, Name}} ) ->
-  io_lib:format( "type error ~s: application argument missing ~p",
-                 [format_info( Info ), Name] );
-
-format_error( {error, type, {superfluous_key, Info, Name}} ) ->
-  io_lib:format( "type error ~s: application superfluous argument ~p",
-                 [format_info( Info ), Name] );
-
-format_error( {error, type, {no_record_type, Info, T}} ) ->
-  io_lib:format( "type error ~s: record expected, got ~s",
-                 [format_info( Info ), format_type( T )] );
-
-format_error( {error, type, {no_native_function_type, Info, T}} ) ->
-  io_lib:format( "type error ~s: native function expected, got ~s",
-                 [format_info( Info ), format_type( T )] );
-
-format_error( {error, type, {no_list_type, Info, T}} ) ->
-  io_lib:format( "type error ~s: list expected, got ~s",
-                 [format_info( Info ), format_type( T )] );
-
-format_error( {error, type, {no_comparable_type, Info, T}} ) ->
-  io_lib:format( "type error ~s: type not comparable ~s",
-                 [format_info( Info ), format_type( T )] );
-
-format_error( {error,
-               runtime,
-               {err, Info,
-                     RetType,
-                     {run, AppId, LamName, ExtendedScript, Output}}} ) ->
-
-  S =   "~n~s~n"
-      ++"~s~n"
-      ++"runtime error ~s: executing foreign function ~s~n"
-      ++"  app id:      ~s~n"
-      ++"  return type: ~s~n",
-
-  io_lib:format( S, [format_output( Output ),
-                     format_extended_script( ExtendedScript ),
-                     format_info( Info ),
-                     LamName,
-                     AppId,
-                     format_type( RetType )] );
-
-format_error( {error, runtime,
-                      {err, Info,
-                            RetType,
-                            {stagein, AppId, LamName, FileLst}}} ) ->
-
-  S =   "runtime error ~s: staging in data designated for foreign function ~s~n"
-      ++"  app id:              ~s~n"
-      ++"  return type:         ~s~n"
-      ++"  missing input files: ~s~n",
-
-  io_lib:format( S, [format_info( Info ),
-                     LamName,
-                     AppId,
-                     format_type( RetType ),
-                     string:join( lists:map( fun binary_to_list/1, FileLst ),
-                                  ", " )] );
-
-format_error( {error, runtime,
-                      {err, Info,
-                            RetType,
-                            {stageout, AppId, LamName, FileLst}}} ) ->
-
-  S =   "runtime error ~s: staging out data produced by foreign function ~s~n"
-      ++"  app id:               ~s~n"
-      ++"  return type:          ~s~n"
-      ++"  missing output files: ~s~n",
-
-  io_lib:format( S, [format_info( Info ),
-                     LamName,
-                     AppId,
-                     format_type( RetType ),
-                     string:join( lists:map( fun binary_to_list/1, FileLst ),
-                                  ", " )] );
-
-format_error( {error, runtime, {err, Info, RetType, {user, Msg}}} ) ->
-
-  S =   "runtime error ~s: user error~n"
-      ++"  return type:   ~s~n"
-      ++"  error message: ~s~n",
-
-  io_lib:format( S, [format_info( Info ),
-                     format_type( RetType ),
-                     Msg] );
-
-
-format_error( {error, Stage, Reason} ) ->
-  io_lib:format( "~p error: ~p", [Stage, Reason] ).
-
-
--spec format_expr( E :: e() ) -> string().
-
-format_expr( {str, _, B} )     -> io_lib:format( "\"~s\"", [B] );
-format_expr( {file, _, B, _} ) -> io_lib:format( "'~s'", [B] );
-format_expr( {true, _} )       -> "true";
-format_expr( {false, _} )      -> "false";
-
-format_expr( E ) ->
-  io_lib:format( "~p", [E] ).
-
-
--spec format_type( T :: t() ) -> string().
-
-format_type( 'Str' )  -> "Str";
-format_type( 'File' ) -> "File";
-format_type( 'Bool' ) -> "Bool";
-
-format_type( T ) ->
-  io_lib:format( "~p", [T] ).
-
-
--spec format_pattern( R :: r() ) -> string().
-
-format_pattern( {r_var, X, T} ) ->
-  io_lib:format( "~p : ~s", [X, format_type( T )] );
-
-format_pattern( {r_rcd, RBindLst} ) ->
-  SLst = [io_lib:format( "~p = ~s", [X, format_pattern( R )] )
-          || {X, R} <- RBindLst],
-  S = string:join( SLst, ", " ),
-  io_lib:format( "<~s>", [S] ).
-
-
-
-format_info( N )
-when is_integer( N ), N > 0 ->
-  io_lib:format( "line ~b", [N] );
-
-format_info( Info ) ->
-  io_lib:format( "~p", [Info] ).
-
-
--spec format_extended_script( ExtendedScript :: binary() ) -> string().
-
-format_extended_script( ExtendedScript ) ->
-  {_, S} = lists:foldl( fun( Line, {N, S} ) ->
-                          {N+1, io_lib:format( "~s~4.B  ~s~n", [S, N, Line] )}
-                        end,
-                        {1, []}, re:split( ExtendedScript, "\n" ) ),
-lists:flatten( S ).
-
-format_output( Output ) ->
-  Output.
 
 
 -spec brace_level( TokenLst, L ) -> integer()

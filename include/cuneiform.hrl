@@ -141,3 +141,10 @@
                      | {no_argument, info(), t()}
                      | {no_list_type, info(), t()}
                      | {no_comparable_type, info(), t()}.
+
+-type stage() :: load
+               | scan
+               | parse
+               | type
+               | runtime.
+
