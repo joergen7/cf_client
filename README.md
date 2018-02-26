@@ -56,7 +56,7 @@ Here, we assume that the CRE runs on an Erlang node identified as `cre@my_node`.
 If a CRE instance is already running on the same Erlang node you can start the Cuneiform client application by calling
 
 ```erlang
-cf_client:start()
+cf_client:start().
 ```
 
 Which is exactly the same as calling
@@ -67,10 +67,73 @@ application:start( cf_client ).
 
 #### Starting Under the Default Supervisor
 
+To start the Cuneiform client default supervisor under a custom supervision tree enter
+
+```erlang
+CreNode = node().
+cf_client_sup:start_link( CreNode ).
+```
+
+This will register the Cuneiform client locally under the name `cf_client`.
+
 #### Starting Directly
+
+The Cuneiform client process can be started directly. There are several ways to do this. The first is to start the process with a function that allows it to locate the CRE:
+
+```erlang
+CreNode = node().
+F = fun() -> cre:pid( CreNode ) end.
+{ok, ClientPid} = cf_client_process:start_link( F ).
+```
+
+Giving a function instead of a plain Cre process identifier has the advantage, that if the CRE crashes, taking the Cuneiform client with it, the restarted client instance connects uses the output of the function, which offers the possibility of locating the CRE under its new process identifier.
+
+If this is too tedious, one can start it giving the CRE process identifier directly:
+
+```erlang
+CrePid = cre:pid( node() ).
+{ok, ClientPid} = cf_client_process:start_link( CrePid ).
+```
+
+Both previous direct starting methods do not register the Cuneiform client with any registry service. However, one can register the client process by starting it either with a function:
+
+```erlang
+ClientName = cf_client.
+CreNode = node().
+F = fun() -> cre:pid( CreNode ) end.
+{ok, ClientPid} = cf_client_process:start_link( {local, ClientName}, F ).
+```
+
+or with the CRE process identifier:
+
+```erlang
+ClientName = cf_client.
+CrePid = cre:pid( node() ).
+{ok, ClientPid} = cf_client_process:start_link( {local, ClientName}, CrePid ).
+```
 
 ### Interacting with a Cuneiform Client
 
+After starting the Cuneiform client instance one can interact with it by sending it expressions conforming the Cuneiform intermediate representation. The client will reply with the value that corresponds to the expression or with an error term. Communication with the client is synchronous.
+
+#### Sending Cuneiform Expressions
+
+E.g., since strings are values which evaluate to themselves we can give the client a string expression, which it will parrot:
+
+```erlang
+E = cuneiform_lang:str( <<"bla">> ).
+cre_client:eval( cf_client, E ).
+```
+
+Here we assume, that a Cuneiform client instance is running registered locally under `cf_client`.
+
+#### Connecting a Shell
+
+The Cuneiform client comes with an interactive shell which can be connected to a client instance registered under `cf_client` by entering
+
+```erlang
+cuneiform_shell:shell( cf_client ).
+```
 
 ## System Requirements
 
