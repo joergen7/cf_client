@@ -45,7 +45,22 @@ The Cuneiform client can be started in several different ways. It can be started
 
 #### Starting from the Command Line
 
-Compiling the Cuneiform client using `escriptize` creates an Erlang script file `cf_client` which allows starting the Cuneiform client via the command line. Start the script and connect with a running CRE instance by entering
+Compiling the Cuneiform client using `escriptize` creates an Erlang script file `cf_client` which allows starting the Cuneiform client via the command line.
+
+To display a help text enter
+
+    ./cf_client --help
+
+This will show the command line synopsis, which looks like the following:
+
+    Usage: cf_worker [-v] [-h] [-s <suppl_file>] [-c <cre_node>]
+
+      -v, --version     Show cf_worker version.
+      -h, --help        Show command line options.
+      -s, --suppl_file  Supplementary configuration file.
+      -c, --cre_node    Erlang node running the CRE application.
+
+To start the client from the command line and connect with a running CRE instance enter
 
     ./cf_client -c cre@my_node
 
