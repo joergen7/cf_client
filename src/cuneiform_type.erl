@@ -18,7 +18,7 @@
 %%
 %% -------------------------------------------------------------------
 %% @author Jörgen Brandt <joergen.brandt@onlinehome.de>
-%% @version 0.1.0
+%% @version 0.1.1
 %% @copyright 2015-2018 Jörgen Brandt
 %%
 %%
@@ -381,7 +381,11 @@ type( Gamma, {fold, Info, {XAcc, EAcc}, {X, ELst}, EBody} ) ->
       case type( Gamma, ELst ) of
 
         {ok, {'Lst', TAcc}} ->
-          type( Gamma#{ XAcc => TAcc, X => TAcc }, EBody );
+          case type( Gamma#{ XAcc => TAcc, X => TAcc }, EBody ) of
+            {ok, TAcc}          -> {ok, TAcc};
+            {ok, TBody}         -> {error, {type_mismatch, Info, {TAcc, TBody}}};
+            {error, ReasonBody} -> {error, ReasonBody}
+          end;
 
         {ok, {'Lst', TElem}} ->
           {error, {type_mismatch, Info, {t_lst( TAcc ), t_lst( TElem )}}};

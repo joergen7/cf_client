@@ -18,7 +18,7 @@
 %%
 %% -------------------------------------------------------------------
 %% @author Jörgen Brandt <joergen.brandt@onlinehome.de>
-%% @version 0.1.0
+%% @version 0.1.1
 %% @copyright 2015-2018 Jörgen Brandt
 %%
 %%
@@ -256,8 +256,13 @@ type_test_() ->
      fun fold_with_invalid_body_expression_untypable/0},
     {"fold with variable body expression typable",
      fun fold_with_variable_body_expression_typable/0},
+
     {"fold with non-matching accumulator and body expression untypable",
      fun fold_with_nonmatching_accumulator_and_body_expression_untypable/0},
+
+    {"fold with non-matching accumulator and list expression untypable",
+     fun fold_with_nonmatching_accumulator_and_list_expression_untypable/0},
+      
     {"fold with ambiguous accumulator and list expression name untypable",
      fun fold_with_ambiguous_accumulator_and_list_expression_name_untypable/0},
 
@@ -824,6 +829,13 @@ fold_with_variable_body_expression_typable() ->
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 fold_with_nonmatching_accumulator_and_body_expression_untypable() ->
+  E = fold( e_bind( x_acc, file( <<"0">> ) ),
+            e_bind( x, lst( t_file(), [file( <<"1">> ), file( <<"2">> )] ) ),
+            str( <<"blub">> ) ),
+  ?assertEqual( {error, {type_mismatch, na, {t_file(),
+                                             t_str()}}}, type( E ) ).
+
+fold_with_nonmatching_accumulator_and_list_expression_untypable() ->
   E = fold( e_bind( x_acc, file( <<"0">> ) ),
             e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
             var( x ) ),
