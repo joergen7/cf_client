@@ -1566,6 +1566,21 @@ find_context_test_() ->
     {"list append with cons lhs and nil rhs is redex",
      fun list_append_with_cons_lhs_and_nil_rhs_is_redex/0},
 
+    {"list append with nil lhs and cons rhs is redex",
+     fun list_append_with_nil_lhs_and_cons_rhs_is_redex/0},
+
+    {"list append with cons lhs and cons rhs is redex",
+     fun list_append_with_cons_lhs_and_cons_rhs_is_redex/0},
+
+    {"list append with nil lhs and append rhs is redex",
+     fun list_append_with_nil_lhs_and_append_rhs_is_redex/0},
+
+    {"list append with cons lhs and append rhs is redex",
+     fun list_append_with_cons_lhs_and_append_rhs_is_redex/0},
+
+
+
+
     {"list append with nil lhs and for rhs is redex",
      fun list_append_with_nil_lhs_and_for_rhs_is_redex/0},
 
@@ -1764,6 +1779,24 @@ list_append_with_nil_lhs_and_nil_rhs_is_redex() ->
 list_append_with_cons_lhs_and_nil_rhs_is_redex() ->
   E = append( lst( t_bool(), [cmp( str( <<"bla">> ), str( <<"blub">> ) )] ),
               null( t_bool ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+list_append_with_nil_lhs_and_cons_rhs_is_redex() ->
+  E = append( null( t_str() ), lst( t_str(), [str( <<"bla">> )] ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+list_append_with_cons_lhs_and_cons_rhs_is_redex() ->
+  E = append( lst( t_bool(), [cmp( str( <<"bla">> ), str( <<"blub">> ) )] ),
+              lst( t_str(), [str( <<"bla">> )] ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+list_append_with_nil_lhs_and_append_rhs_is_redex() ->
+  E = append( null( t_str() ), append( null( t_str() ), null( t_str() ) ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+list_append_with_cons_lhs_and_append_rhs_is_redex() ->
+  E = append( lst( t_bool(), [cmp( str( <<"bla">> ), str( <<"blub">> ) )] ),
+              append( null( t_bool() ), null( t_bool() ) ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
 list_append_with_nil_lhs_and_for_rhs_is_redex() ->
