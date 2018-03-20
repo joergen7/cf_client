@@ -146,8 +146,11 @@ reduce_test_() ->
     {"native application with single argument reduces to empty application",
      fun nat_app_with_single_arg_reduces_to_empty_application/0},
 
-    {"list append reduces to list",
-     fun list_append_reduces_to_list/0},
+    {"append nil and list reduces to list",
+     fun append_nil_and_list_reduces_to_list/0},
+
+    {"append cons list1 and list2 reduces to cons append list1 and list2",
+     fun append_cons_list1_and_list2_reduces_to_cons_append_list1_and_list2/0},
 
     {"isnil empty list reduces to true",
      fun isnil_empty_list_reduces_to_true/0},
@@ -246,10 +249,15 @@ nat_app_with_single_arg_reduces_to_empty_application() ->
   E2 = app( lam_ntv( [], str( <<"blub">> ) ), [] ),
   ?assertEqual( E2, reduce( E1 ) ).
 
-list_append_reduces_to_list() ->
-  E1 = append( lst( t_bool(), [true(), false()] ),
-               lst( t_bool(), [false(), true()] ) ),
-  E2 = lst( t_bool(), [true(), false(), false(), true()] ),
+append_nil_and_list_reduces_to_list() ->
+  E2 = lst( t_bool(), [false(), true()] ),
+  E1 = append( null( t_bool() ), E2 ),
+  ?assertEqual( E2, reduce( E1 ) ).
+
+append_cons_list1_and_list2_reduces_to_cons_append_list1_and_list2() ->
+  L2 = lst( t_bool(), [false(), true()] ),
+  E1 = append( lst( t_bool(), [true(), false()] ), L2 ),
+  E2 = cons( t_bool(), true(), append( lst( t_bool(), [false()] ), L2 ) ),
   ?assertEqual( E2, reduce( E1 ) ).
 
 isnil_empty_list_reduces_to_true() ->
@@ -1552,11 +1560,17 @@ find_context_test_() ->
     {"find_context traverses list elements",
      fun find_context_traverses_list_elements/0},
 
-    {"list append with value operands is redex",
-     fun list_append_with_value_operands_is_redex/0},
+    {"list append with nil lhs and nil rhs is redex",
+     fun list_append_with_nil_lhs_and_nil_rhs_is_redex/0},
 
-    {"list append with literal list operands is redex",
-     fun list_append_with_literal_list_operands_is_redex/0},
+    {"list append with cons lhs and nil rhs is redex",
+     fun list_append_with_cons_lhs_and_nil_rhs_is_redex/0},
+
+    {"list append with nil lhs and for rhs is redex",
+     fun list_append_with_nil_lhs_and_for_rhs_is_redex/0},
+
+    {"list append with cons lhs and for rhs is redex",
+     fun list_append_with_cons_lhs_and_for_rhs_is_redex/0},
 
     {"find_context traverses list append lhs",
      fun find_context_traverses_list_append_lhs/0},
@@ -1743,13 +1757,22 @@ find_context_traverses_list_elements() ->
   Ctx = {cons, na, t_str(), hole, null( t_str() )},
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
 
-list_append_with_value_operands_is_redex() ->
-  E = append( lst( t_str(), [] ), lst( t_str(), [] ) ),
+list_append_with_nil_lhs_and_nil_rhs_is_redex() ->
+  E = append( null( t_str() ), null( t_str() ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
-list_append_with_literal_list_operands_is_redex() ->
+list_append_with_cons_lhs_and_nil_rhs_is_redex() ->
   E = append( lst( t_bool(), [cmp( str( <<"bla">> ), str( <<"blub">> ) )] ),
-              lst( t_bool(), [cmp( true(), false() )] ) ),
+              null( t_bool ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+list_append_with_nil_lhs_and_for_rhs_is_redex() ->
+  E = append( null( t_str() ), for( t_bool(), [e_bind( x, null( t_bool() ) )], var( x ) ) ),
+  ?assertEqual( {ok, E, hole}, find_context( E ) ).
+
+list_append_with_cons_lhs_and_for_rhs_is_redex() ->
+  E = append( lst( t_bool(), [cmp( str( <<"bla">> ), str( <<"blub">> ) )] ),
+              for( t_bool(), [e_bind( x, null( t_bool() ) )], var( x ) ) ),
   ?assertEqual( {ok, E, hole}, find_context( E ) ).
 
 find_context_traverses_list_append_lhs() ->

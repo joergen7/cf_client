@@ -117,7 +117,8 @@
                      | {disj, info(), e(), ctx()}
                      | {app, info(), ctx(), [e_bind()]}
                      | {app, info(), e(), [{x(), e() | ctx()}]}
-                     | {lst, info(), t(), [e() | ctx()]}
+                     | {cons, info(), t(), ctx(), e()}
+                     | {cons, info(), t(), e(), ctx()}
                      | {append, info(), ctx(), e()}
                      | {append, info(), e(), ctx()}
                      | {isnil, info(), ctx()}
