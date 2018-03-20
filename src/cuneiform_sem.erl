@@ -111,13 +111,11 @@ reduce( {app, AppInfo,                                                    % E-be
   EFn1 = {lam_ntv, LamInfo, LamArgTl, EBody1},
   app( AppInfo, EFn1, AppArgTl );
 
-reduce( {append, Info, E1, E2} ) ->                                       % E-append
+reduce( {append, _, {null, _, _}, E2} ) ->                                % E-append-null
+  E2;
 
-  T = lst_literal_type( E1 ),
-  L1 = lst_literal_to_list( E1 ),
-  L2 = lst_literal_to_list( E2 ),
-
-  lst( Info, T, L1++L2 );
+reduce( {append, InfoAppend, {cons, InfoCons, T, Hd, Tl}, E2} ) ->        % E-append-cons
+  cons( InfoCons, T, Hd, append( InfoAppend, Tl, E2 ) );
 
 reduce( {isnil, Info, {null, _, _}} ) ->                                  % E-isnil-null
   true( Info );
@@ -740,16 +738,10 @@ try_context( {cons, Info, T, E1, E2}, Ctx ) ->
   try_context( E1, in_hole( {cons, Info, T, hole, E2}, Ctx ) ),
   try_context( E2, in_hole( {cons, Info, T, E1, hole}, Ctx ) );
 
-try_context( E = {append, _, {cons, _, _, _, _}, {cons, _, _, _, _}}, Ctx ) ->
+try_context( E = {append, _, {null, _, _}, _}, Ctx ) ->
   throw( {E, Ctx} );
 
-try_context( E = {append, _, {null, _, _}, {cons, _, _, _, _}}, Ctx ) ->
-  throw( {E, Ctx} );
-
-try_context( E = {append, _, {cons, _, _, _, _}, {null, _, _}}, Ctx ) ->
-  throw( {E, Ctx} );
-
-try_context( E = {append, _, {null, _, _}, {null, _, _}}, Ctx ) ->
+try_context( E = {append, _, {cons, _, _, _, _}, _}, Ctx ) ->
   throw( {E, Ctx} );
 
 try_context( {append, Info, E1, E2}, Ctx ) ->

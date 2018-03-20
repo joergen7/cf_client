@@ -1578,9 +1578,6 @@ find_context_test_() ->
     {"list append with cons lhs and append rhs is redex",
      fun list_append_with_cons_lhs_and_append_rhs_is_redex/0},
 
-
-
-
     {"list append with nil lhs and for rhs is redex",
      fun list_append_with_nil_lhs_and_for_rhs_is_redex/0},
 
