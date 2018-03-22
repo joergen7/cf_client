@@ -18,7 +18,7 @@
 %%
 %% -------------------------------------------------------------------
 %% @author Jörgen Brandt <joergen.brandt@onlinehome.de>
-%% @version 0.1.2
+%% @version 0.1.3
 %% @copyright 2015-2018 Jörgen Brandt
 %%
 %%
@@ -40,7 +40,7 @@
 %% Application callbacks
 -export( [start/2, stop/1] ).
 
--define( VSN, "0.1.2" ).
+-define( VSN, "0.1.3" ).
 
 
 %%====================================================================
@@ -90,6 +90,7 @@ start( _StartType, _StartArgs ) ->
 
   error_logger:info_report( [{info,        "starting Cuneiform client"},
                              {application, cf_client},
+                             {vsn,         ?VSN},
                              {node,        node()},
                              {cre_node,    CreNode}] ),
 
