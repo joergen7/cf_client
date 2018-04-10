@@ -64,6 +64,7 @@
                      | {'Lst', t()}.
 
 -type l()           :: 'Bash'
+                     | 'Erlang'
                      | 'Matlab'
                      | 'Octave'
                      | 'Perl'

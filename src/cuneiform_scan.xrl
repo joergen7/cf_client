@@ -42,6 +42,7 @@ LPERL      = Perl
 LPYTHON    = Python
 LR         = R
 LRACKET    = Racket
+LERLANG    = Erlang
 
 TSTR       = Str
 TFILE      = File
@@ -109,6 +110,7 @@ Rules.
 {LPYTHON}    : {token, {l_python, TokenLine, TokenChars}}.
 {LR}         : {token, {l_r, TokenLine, TokenChars}}.
 {LRACKET}    : {token, {l_racket, TokenLine, TokenChars}}.
+{LERLANG}    : {token, {l_erlang, TokenLine, TokenChars}}.
 
 {TSTR}       : {token, {t_str, TokenLine, TokenChars}}.
 {TFILE}      : {token, {t_file, TokenLine, TokenChars}}.
