@@ -13,3 +13,4 @@ rebar.lock
 rebar3.crashdump
 src/cuneiform_scan.erl
 src/cuneiform_parse.erl
+doc
