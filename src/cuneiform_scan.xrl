@@ -36,13 +36,14 @@
 Definitions.
 
 LBASH      = Bash
+LERLANG    = Erlang
+LJAVA      = Java
 LMATLAB    = Matlab
 LOCTAVE    = Octave
 LPERL      = Perl
 LPYTHON    = Python
 LR         = R
 LRACKET    = Racket
-LERLANG    = Erlang
 
 TSTR       = Str
 TFILE      = File
@@ -104,13 +105,14 @@ WS         = [\000-\s]
 Rules.
 
 {LBASH}      : {token, {l_bash, TokenLine, TokenChars}}.
+{LERLANG}    : {token, {l_erlang, TokenLine, TokenChars}}.
+{LJAVA}      : {token, {l_java, TokenLine, TokenChars}}.
 {LMATLAB}    : {token, {l_matlab, TokenLine, TokenChars}}.
 {LOCTAVE}    : {token, {l_octave, TokenLine, TokenChars}}.
 {LPERL}      : {token, {l_perl, TokenLine, TokenChars}}.
 {LPYTHON}    : {token, {l_python, TokenLine, TokenChars}}.
 {LR}         : {token, {l_r, TokenLine, TokenChars}}.
 {LRACKET}    : {token, {l_racket, TokenLine, TokenChars}}.
-{LERLANG}    : {token, {l_erlang, TokenLine, TokenChars}}.
 
 {TSTR}       : {token, {t_str, TokenLine, TokenChars}}.
 {TFILE}      : {token, {t_file, TokenLine, TokenChars}}.

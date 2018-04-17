@@ -65,6 +65,7 @@
 
 -type l()           :: 'Bash'
                      | 'Erlang'
+                     | 'Java'
                      | 'Matlab'
                      | 'Octave'
                      | 'Perl'
