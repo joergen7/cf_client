@@ -413,7 +413,7 @@ get_banner() ->
      "   g@@#*`3@B              "++?BYLW( "quit" )++?YLW( " to exit shell" ),
      "  @@P    3@B",
      "  @N____ 3@B         "++?BLU( "http://www.cuneiform-lang.org" ),
-     "  \"W@@@WF3@B"
+     "  \"W@@@WF3@B         "++?BLU( "Jorgen Brandt" )
 ], "\n" ).
 
 
