@@ -1,6 +1,6 @@
 %% -*- erlang -*-
 %%
-%% A Cuneiform client implementation.
+%% cf_client
 %%
 %% Copyright 2015-2018 Jörgen Brandt
 %%
@@ -18,7 +18,7 @@
 %%
 %% -------------------------------------------------------------------
 %% @author Jörgen Brandt <joergen.brandt@onlinehome.de>
-%% @version 0.1.5
+%% @version 0.1.6
 %% @copyright 2015-2018 Jörgen Brandt
 %%
 %%
@@ -40,7 +40,7 @@
 %% Application callbacks
 -export( [start/2, stop/1] ).
 
--define( VSN, "0.1.5" ).
+-define( VSN, "0.1.6" ).
 
 
 %%====================================================================

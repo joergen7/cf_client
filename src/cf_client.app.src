@@ -1,6 +1,6 @@
 {application, cf_client,
  [{description, "A Cuneiform client implementation."},
-  {vsn, "0.1.5"},
+  {vsn, "0.1.6"},
   {registered, []},
   {mod, {cf_client, []}},
   {applications,
