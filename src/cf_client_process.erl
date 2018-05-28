@@ -31,8 +31,6 @@
 -module( cf_client_process ).
 -behaviour( cre_client ).
 
--include_lib( "cuneiform.hrl" ).
-
 
 %%====================================================================
 %% Exports
@@ -43,6 +41,12 @@
 
 %% API functions
 -export( [start_link/1, start_link/2] ).
+
+
+
+-define( CUNEIFORM_SEM, cuneiform_sem_s_n ).
+
+-include_lib( "cuneiform.hrl" ).
 
 
 %%====================================================================
@@ -106,37 +110,5 @@ when E       :: e(),
               | norule.
 
 step( E, _UsrInfo ) ->
-  case cuneiform_sem:find_context( E ) of
-
-    {ok, E1, Ctx} ->
-      case E1 of
-
-        % when the redex is a foreign application invoke the E-send
-        {app, Info, {lam_frn, _, _, _, RetType, _, _}, _} ->
-
-          EffiRequest = cf_client_effi:app_to_effi_request( E1 ),
-          #{ app_id := AppId } = EffiRequest,
-
-          E2 = {fut, Info, RetType, AppId},
-          E3 = cuneiform_sem:in_hole( E2, Ctx ),
-
-          {ok_send, E3, EffiRequest};
-
-        % when the redex is an error drop the context
-        {err, _, _, _} ->
-          {ok, E1};
-
-        % in all other cases reduce
-        _ ->
-          E2 = cuneiform_sem:reduce( E1 ),
-          E3 = cuneiform_sem:in_hole( E2, Ctx ),
-          {ok, E3}
-
-      end;
-
-    no_ctx ->
-      norule
-
-  end.
-
+  ?CUNEIFORM_SEM:step( E ).
 
