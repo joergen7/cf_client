@@ -54,7 +54,7 @@ app_to_effi_request(
       ConvertExpr( {str, _, B} )          -> B;
       ConvertExpr( {file, _, B, _} )      -> B;
       ConvertExpr( {null, _, _} )         -> [];
-      ConvertExpr( {cons, _, _, E1, E2} ) -> [ConvertExpr( E1 )|ConvertExpr( E2 )]
+      ConvertExpr( {cons, _, E1, E2} ) -> [ConvertExpr( E1 )|ConvertExpr( E2 )]
     end,
 
   ConvertTArg =

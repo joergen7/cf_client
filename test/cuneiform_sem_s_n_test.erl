@@ -53,7 +53,7 @@
                           str/1, file/1, true/0, false/0, cnd/3, var/1, file/2,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
                           lam_frn/5, lst/2, append/2, isnil/1, for/3, fold/3,
-                          rcd/1, proj/2, fix/1, assign/3, null/1, cons/3, err/2,
+                          rcd/1, proj/2, fix/1, assign/3, null/1, cons/2, err/2,
                           err/3
                          ] ).
  
@@ -251,7 +251,7 @@ append_nil_and_list_reduces_to_list() ->
 append_cons_list1_and_list2_reduces_to_cons_append_list1_and_list2() ->
   L2 = lst( t_bool(), [false(), true()] ),
   E1 = append( lst( t_bool(), [true(), false()] ), L2 ),
-  E2 = cons( t_bool(), true(), append( lst( t_bool(), [false()] ), L2 ) ),
+  E2 = cons( true(), append( lst( t_bool(), [false()] ), L2 ) ),
   ?assertEqual( E2, reduce( E1 ) ).
 
 isnil_empty_list_reduces_to_true() ->
@@ -271,8 +271,7 @@ projection_reduces_to_record_field() ->
 
 map_reduces_to_list() ->
   E1 = for( t_bool(), [e_bind( x, lst( t_bool(), [true(), false()] ) )], neg( var( x ) ) ),
-  E2 = cons( t_bool(),
-             neg( true() ),
+  E2 = cons( neg( true() ),
              for( t_bool(), [e_bind( x, lst( t_bool(), [false()] ) )], neg( var( x ) ) ) ),
   ?assertEqual( E2, reduce( E1 ) ).
 
@@ -281,8 +280,7 @@ zip_reduces_to_list() ->
             [e_bind( x, lst( t_bool(), [true(), false()] ) ),
              e_bind( y, lst( t_bool(), [false(), false()] ) )],
             disj( var( x ), var( y ) ) ),
-  E2 = cons( t_bool(),
-             disj( true(), false() ),
+  E2 = cons( disj( true(), false() ),
              for( t_bool(),
                   [e_bind( x, lst( t_bool(), [false()] ) ),
                    e_bind( y, lst( t_bool(), [false()] ) )],
@@ -1245,7 +1243,7 @@ inserting_leaves_future_unchanged() ->
 
 inserting_traverses_list_elements() ->
   E1 = var( x ),
-  Ctx = {cons, na, t_str(), hole, null( t_str() )},
+  Ctx = {cons, na, hole, null( t_str() )},
   E2 = lst( t_str(), [E1] ),
   ?assertEqual( E2, in_hole( E1, Ctx ) ).
 
@@ -1619,7 +1617,7 @@ empty_list_is_no_redex() ->
 
 find_context_traverses_list_elements() ->
   E = cnd( true(), str( <<"bla">> ), str( <<"blub">> ) ),
-  Ctx = {cons, na, t_str(), hole, null( t_str() )},
+  Ctx = {cons, na, hole, null( t_str() )},
   ?assertEqual( {ok, E, Ctx}, find_context( in_hole( E, Ctx ) ) ).
 
 list_append_with_nil_lhs_and_nil_rhs_is_redex() ->

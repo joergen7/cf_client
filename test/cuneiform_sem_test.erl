@@ -43,7 +43,7 @@
                           str/1, file/1, true/0, false/0, cnd/3, var/1, file/2,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
                           lam_frn/5, lst/2, append/2, isnil/1, for/3, fold/3,
-                          rcd/1, proj/2, fix/1, assign/3, null/1, cons/3, err/2,
+                          rcd/1, proj/2, fix/1, assign/3, null/1, cons/2, err/2,
                           err/3
                          ] ).
 
@@ -423,7 +423,7 @@ subst_fut_traverses_application_function_position() ->
   ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
 
 subst_fut_traverses_application_argument_bindings() ->
-  EF = cons( t_str(), str( <<"blub">> ), null( t_str() ) ),
+  EF = cons( str( <<"blub">> ), null( t_str() ) ),
   E1 = app( var( z ), [e_bind( x, {fut, na, t_lst( t_str() ), <<"1234">>} )] ),
   E2 = app( var( z ), [e_bind( x, EF )] ),
   ?assertEqual( E2, subst_fut( E1, <<"1234">>, EF ) ).
@@ -433,13 +433,13 @@ subst_fut_leaves_null_alone() ->
   ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
 
 subst_fut_traverses_cons_lhs() ->
-  E1 = cons( t_str(), {fut, na, t_str(), <<"1234">>}, null( t_str() ) ),
-  E2 = cons( t_str(), str( <<"bla">> ), null( t_str() ) ),
+  E1 = cons( {fut, na, t_str(), <<"1234">>}, null( t_str() ) ),
+  E2 = cons( str( <<"bla">> ), null( t_str() ) ),
   ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"bla">> ) ) ).
 
 subst_fut_traverses_cons_rhs() ->
-  E1 = cons( t_str(), var( x ), cons( t_str(), {fut, na, t_str(), <<"1234">>}, null( t_str() ) ) ),
-  E2 = cons( t_str(), var( x ), cons( t_str(), str( <<"bla">> ), null( t_str() ) ) ),
+  E1 = cons( var( x ), cons( {fut, na, t_str(), <<"1234">>}, null( t_str() ) ) ),
+  E2 = cons( var( x ), cons( str( <<"bla">> ), null( t_str() ) ) ),
   ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"bla">> ) ) ).
 
 subst_fut_traverses_append_lhs() ->

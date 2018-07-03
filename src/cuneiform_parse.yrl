@@ -120,7 +120,7 @@ e               -> ltag e_bind_lst rtag                           : visit_rcd( '
 e               -> lparen e bar id rparen                         : visit_proj( '$2', '$4' ).
 e               -> lparen e plus e rparen                         : visit_append( '$2', '$3', '$4' ).
 e               -> lsquarebr colon t rsquarebr                    : visit_lst( [], '$2', '$3' ).
-e               -> lparen e colon t doublertag e rparen           : visit_cons( '$5', '$2', '$4', '$6' ).
+e               -> lparen e doublertag e rparen                   : visit_cons( '$3', '$2', '$4' ).
 e               -> lsquarebr e_lst colon t rsquarebr              : visit_lst( '$2', '$3', '$4' ).
 e               -> isnil e                                        : visit_isnil( '$1', '$2' ).
 e               -> for from_lst do e colon t halt                 : visit_for( '$1', '$2', [], '$4', '$6' ).
@@ -179,7 +179,7 @@ Erlang code.
                           create_closure/2, cmp/3, conj/3, disj/3, neg/2,
                           cnd/4, lam_frn/6, fix/2, lam_ntv/3, app/3,
                           rcd/2, proj/3, append/3, lst/3, isnil/2, for/4,
-                          fold/4, cons/4, err/3
+                          fold/4, cons/3, err/3
                          ] ).
 
 
@@ -467,10 +467,10 @@ visit_assign( {assign, L, _}, R, E ) ->
   assign( L, R, E ).
 
 
--spec visit_cons( {doublertag, L :: _, _}, E1 :: e(), T :: t(), E2 :: e() ) -> e().
+-spec visit_cons( {doublertag, L :: _, _}, E1 :: e(), E2 :: e() ) -> e().
 
-visit_cons( {doublertag, L, _}, E1, T, E2 ) ->
-  cons( L, T, E1, E2 ).
+visit_cons( {doublertag, L, _}, E1, E2 ) ->
+  cons( L, E1, E2 ).
 
 
 -spec visit_err( {err, L :: _, _}, Msg :: {strlit, _, S :: string()}, T :: t() ) -> e().

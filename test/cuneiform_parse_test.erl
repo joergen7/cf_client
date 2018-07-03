@@ -41,7 +41,7 @@
                           t_bool/0, l_perl/0, l_python/0, l_r/0, e_bind/2,
                           l_racket/0, fix/2, t_fn/4, rcd/2, r_rcd/1, r_bind/2,
                           proj/3, append/3, lst/3, isnil/2, for/4, fold/4,
-                          assign/3, cons/4, err/3
+                          assign/3, cons/3, err/3
                          ] ).
 
 parse_test_() ->
@@ -1028,8 +1028,6 @@ cons() ->
   TokenLst =
     [{lparen, 1, "("},
      {strlit, 1, "blub"},
-     {colon, 1, ":"},
-     {t_str, 1, "Str"},
      {doublertag, 1, ">>"},
      {lsquarebr, 1, "["},
      {strlit, 1, "bla"},
@@ -1041,7 +1039,7 @@ cons() ->
      {rparen, 1, ")"},
      {semicolon, 1, ";"}],
 
-  E = cons( 1, t_str(),
+  E = cons( 1,
             str( 1, <<"blub">> ),
             lst( 1, t_str(), [str( 1, <<"bla">> ), str( 1, <<"foo">> )] ) ),
 

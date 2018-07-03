@@ -298,15 +298,17 @@ type( Gamma, {fix, Info, E} ) ->
 type( _Gamma, {null, _Info, T} ) ->
   {ok, t_lst( T )};
 
-type( Gamma, {cons, Info, T, E1, E2} ) ->
+type( Gamma, {cons, Info, E1, E2} ) ->
 
   case type( Gamma, E1 ) of
 
-    {ok, T} ->
-      type( Gamma, E2 ); % TODO: check type against declared type
-
-    {ok, TE} ->
-      {error, {type_mismatch, Info, {T, TE}}};
+    {ok, T1} ->
+      case type( Gamma, E2 ) of
+        {ok, {'Lst', T1}} -> {ok, {'Lst', T1}};
+        {ok, {'Lst', T2}} -> {error, {type_mismatch, Info, {T2, T1}}};
+        {ok, T2}          -> {error, {type_mismatch, Info, {T2, {'Lst', T1}}}};
+        {error, Reason1}  -> {error, Reason1}
+      end;
 
     {error, Reason} ->
       {error, Reason}

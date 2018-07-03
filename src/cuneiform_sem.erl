@@ -37,7 +37,7 @@
 -import( cuneiform_lang, [
                           true/1, false/1, app/3, cmp/3, cnd/4, neg/2, conj/3,
                           disj/3, var/2, lam_ntv/3, lst/3, append/3, isnil/2,
-                          for/4, fold/4, rcd/2, proj/3, fix/2, cons/4, null/2,
+                          for/4, fold/4, rcd/2, proj/3, fix/2, cons/3, null/2,
                           str/2, file/3, e_bind/2
                          ] ).
 
@@ -69,7 +69,7 @@ is_value( {lam_frn, _, _, _, _, _, _} ) -> true;
 is_value( {app, _, _, _} )              -> false;
 is_value( {fut, _, _, _} )              -> false;
 is_value( {null, _, _} )                -> true;
-is_value( {cons, _, _, E1, E2} )        -> is_value( E1 ) andalso is_value( E2 );
+is_value( {cons, _, E1, E2} )           -> is_value( E1 ) andalso is_value( E2 );
 is_value( {append, _, _, _} )           -> false;
 is_value( {isnil, _, _} )               -> false;
 is_value( {for, _, _, _, _} )           -> false;
@@ -125,9 +125,9 @@ subst_fut( {app, Info, EF, EBindLst}, H, ES ) ->
   app( Info, subst_fut( EF, H, ES ),
              [e_bind( X, subst_fut( E, H, ES ) ) || {X, E} <- EBindLst] );
 
-subst_fut( {cons, Info, T, E1, E2}, H, ES ) ->
-  cons( Info, T, subst_fut( E1, H, ES ),
-                 subst_fut( E2, H, ES ) );
+subst_fut( {cons, Info, E1, E2}, H, ES ) ->
+  cons( Info, subst_fut( E1, H, ES ),
+              subst_fut( E2, H, ES ) );
 
 subst_fut( {append, Info, E1, E2}, H, ES ) ->
   append( Info, subst_fut( E1, H, ES ),
@@ -162,6 +162,6 @@ set_info( {false, _}, Info )           -> false( Info );
 set_info( {str, _, S}, Info )          -> str( Info, S );
 set_info( {file, _, S, H}, Info )      -> file( Info, S, H );
 set_info( {null, _, T}, Info )         -> null( Info, T );
-set_info( {cons, _, T, E1, E2}, Info ) -> cons( Info, T, set_info( E1, Info ), set_info( E2, Info ) );
+set_info( {cons, _, E1, E2}, Info )    -> cons( Info, set_info( E1, Info ), set_info( E2, Info ) );
 set_info( {rcd, _, EBindLst}, Info )   -> rcd( Info, [e_bind( X, set_info( E, Info ) ) || {X, E} <- EBindLst] );
-set_info( {err, _, T, Reason}, Info )     -> {err, Info, T, Reason}.
+set_info( {err, _, T, Reason}, Info )  -> {err, Info, T, Reason}.

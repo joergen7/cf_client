@@ -433,12 +433,10 @@ import() ->
                  {id, 1, "x"}], TokenLst ).
 
 cons() ->
-  S = "(\"blub\" : Str >> [\"bla\", \"foo\" : Str])",
+  S = "(\"blub\" >> [\"bla\", \"foo\" : Str])",
   {ok, TokenLst, _} = string( S ),
   ?assertEqual( [{lparen, 1, "("},
                  {strlit, 1, "blub"},
-                 {colon, 1, ":"},
-                 {t_str, 1, "Str"},
                  {doublertag, 1, ">>"},
                  {lsquarebr, 1, "["},
                  {strlit, 1, "bla"},

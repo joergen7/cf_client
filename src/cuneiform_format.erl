@@ -90,15 +90,18 @@ format_expr( {fut, _, _, _} ) ->
 format_expr( {null, _, T} ) ->
   io_lib:format( "[: ~s]", [format_type( T )] );
 
-format_expr( Cons = {cons, _, T, _, _} ) ->
+format_expr( Cons = {cons, _, _, _} ) ->
 
   ToExprLst =
     fun
-      ToExprLst( {cons, _, _, Hd, Tl} ) -> [Hd|ToExprLst( Tl )];
-      ToExprLst( {null, _, _} )         -> []
+      ToExprLst( {cons, _, Hd, Tl} ) ->
+        {L, T} = ToExprLst( Tl ),
+        {[Hd|L], T};
+      ToExprLst( {null, _, T} )      ->
+        {[], T}
     end,
 
-  ELst = ToExprLst( Cons ),
+  {ELst, T} = ToExprLst( Cons ),
   S = string:join( [format_expr( E ) || E <- ELst], ", " ),
 
   io_lib:format( "[~s : ~s]", [S, format_type( T )] );

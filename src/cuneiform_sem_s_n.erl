@@ -51,12 +51,11 @@
 -import( cuneiform_lang, [
                           true/1, false/1, app/3, cmp/3, cnd/4, neg/2, conj/3,
                           disj/3, var/2, lam_ntv/3, lst/3, append/3, isnil/2,
-                          for/4, fold/4, rcd/2, proj/3, fix/2, cons/4, null/2,
+                          for/4, fold/4, rcd/2, proj/3, fix/2, cons/3, null/2,
                           str/2, file/3
                          ] ).
 
--import( cuneiform_lang, [lst_literal_to_list/1, lst_literal_type/1,
-                          is_lst_literal/1] ).
+-import( cuneiform_lang, [is_lst_literal/1] ).
 
 
 %%====================================================================
@@ -112,63 +111,63 @@ step( E ) ->
 
 reduce( {cmp, Info, {str, _, S1}, {str, _, S2}} ) ->
   case S1 =:= S2 of
-    true  -> true( Info );                                                % E-cmp-str-equal
-    false -> false( Info )                                                % E-cmp-str-unequal
+    true  -> true( Info );                                             % E-cmp-str-equal
+    false -> false( Info )                                             % E-cmp-str-unequal
   end;
 
 reduce( {cmp, Info, {X, _}, {X, _}} ) ->
-  true( Info );                                                           % E-cmp-bool-equal
+  true( Info );                                                        % E-cmp-bool-equal
 
 reduce( {cmp, Info, {_, _}, {_, _}} ) ->
-  false( Info );                                                          % E-cmp-bool-unequal
+  false( Info );                                                       % E-cmp-bool-unequal
 
-reduce( {cnd, _, {true, _}, EThen, _} ) ->                                % E-cnd-true
+reduce( {cnd, _, {true, _}, EThen, _} ) ->                             % E-cnd-true
   EThen;
 
-reduce( {cnd, _, {false, _}, _, EElse} ) ->                               % E-cnd-false
+reduce( {cnd, _, {false, _}, _, EElse} ) ->                            % E-cnd-false
   EElse;
 
-reduce( {neg, Info, {true, _}} ) ->                                       % E-neg-true
+reduce( {neg, Info, {true, _}} ) ->                                    % E-neg-true
   false( Info );
 
-reduce( {neg, Info, {false, _}} ) ->                                      % E-neg-false
+reduce( {neg, Info, {false, _}} ) ->                                   % E-neg-false
   true( Info );
 
-reduce( {conj, _, {true, _}, E} ) ->                                      % E-conj-true
+reduce( {conj, _, {true, _}, E} ) ->                                   % E-conj-true
   E;
 
-reduce( {conj, Info, {false, _}, _} ) ->                                  % E-conj-false
+reduce( {conj, Info, {false, _}, _} ) ->                               % E-conj-false
   false( Info );
 
-reduce( {disj, Info, {true, _}, _} ) ->                                   % E-disj-true
+reduce( {disj, Info, {true, _}, _} ) ->                                % E-disj-true
   true( Info );
 
-reduce( {disj, _, {false, _}, E} ) ->                                     % E-disj-false
+reduce( {disj, _, {false, _}, E} ) ->                                  % E-disj-false
   E;
 
-reduce( {app, _, {lam_ntv, _, [], EBody}, []} ) ->                        % E-beta-base
+reduce( {app, _, {lam_ntv, _, [], EBody}, []} ) ->                     % E-beta-base
   EBody;
 
-reduce( {app, AppInfo,                                                    % E-beta
+reduce( {app, AppInfo,                                                 % E-beta
               {lam_ntv, LamInfo, [{XIn, XOut, _}|LamArgTl], EBody},
               [{XOut, E}|AppArgTl]} ) ->
   EBody1 = subst( EBody, XIn, E ),
   EFn1 = {lam_ntv, LamInfo, LamArgTl, EBody1},
   app( AppInfo, EFn1, AppArgTl );
 
-reduce( {append, _, {null, _, _}, E2} ) ->                                % E-append-null
+reduce( {append, _, {null, _, _}, E2} ) ->                             % E-append-null
   E2;
 
-reduce( {append, InfoAppend, {cons, InfoCons, T, Hd, Tl}, E2} ) ->        % E-append-cons
-  cons( InfoCons, T, Hd, append( InfoAppend, Tl, E2 ) );
+reduce( {append, InfoAppend, {cons, InfoCons, Hd, Tl}, E2} ) ->        % E-append-cons
+  cons( InfoCons, Hd, append( InfoAppend, Tl, E2 ) );
 
-reduce( {isnil, Info, {null, _, _}} ) ->                                  % E-isnil-null
+reduce( {isnil, Info, {null, _, _}} ) ->                               % E-isnil-null
   true( Info );
 
-reduce( {isnil, Info, {cons, _, _, _, _}} ) ->                            % E-isnil-cons
+reduce( {isnil, Info, {cons, _, _, _}} ) ->                            % E-isnil-cons
   false( Info );
 
-reduce( {proj, _, X, {rcd, _, EBindLst}} ) ->                             % E-proj
+reduce( {proj, _, X, {rcd, _, EBindLst}} ) ->                          % E-proj
   {X, E} = lists:keyfind( X, 1, EBindLst ),
   E;
 
@@ -176,39 +175,38 @@ reduce( {for, Info, TRet, EBindLst, EBody} ) ->
 
   IsCons =
     fun
-      ( {_, {cons, _, _, _, _}} ) -> true;
-      ( {_, {null, _, _}} )       -> false
+      ( {_, {cons, _, _, _}} ) -> true;
+      ( {_, {null, _, _}} )    -> false
     end,
 
   Gobble =
-    fun( {X, {cons, _, _, E1, E2}}, {EBody1, EBindLst2} ) ->
+    fun( {X, {cons, _, E1, E2}}, {EBody1, EBindLst2} ) ->
       {subst( EBody1, X, E1 ), [e_bind( X, E2 )|EBindLst2]}
     end,
 
   case lists:all( IsCons, EBindLst ) of
 
-    false ->                                                              % E-for-null
+    false ->                                                           % E-for-null
       null( Info, TRet );
 
-    true ->                                                               % E-for-cons
+    true ->                                                            % E-for-cons
 
       {EBody1, EBindLst1} = lists:foldr( Gobble, {EBody, []}, EBindLst ),
 
       cons( Info,
-            TRet,
             EBody1,
             for( Info, TRet, EBindLst1, EBody) )
 
   end;
 
-reduce( {fold, _Info, {_XAcc, EAcc}, {_X, {null, _, _}}, _EBody} ) ->     % E-fold-null
+reduce( {fold, _Info, {_XAcc, EAcc}, {_X, {null, _, _}}, _EBody} ) ->  % E-fold-null
   EAcc;
 
-reduce( {fold, Info, {XAcc, EAcc}, {X, {cons, _, _, E1, E2}}, EBody} ) -> % E-fold-cons
+reduce( {fold, Info, {XAcc, EAcc}, {X, {cons, _, E1, E2}}, EBody} ) -> % E-fold-cons
   EAcc1 = subst( subst( EBody, XAcc, EAcc ), X, E1 ),
   fold( Info, e_bind( XAcc, EAcc1), e_bind( X, E2 ), EBody );
 
-reduce( E = {fix, _, {lam_ntv, LamInfo, [{F, _, _T}|R], EBody}} ) ->      % E-fix
+reduce( E = {fix, _, {lam_ntv, LamInfo, [{F, _, _T}|R], EBody}} ) ->   % E-fix
   EBody1 = subst( EBody, F, E ),
   lam_ntv( LamInfo, R, EBody1 ).
 
@@ -280,8 +278,8 @@ rename( {app, Info, EFn, ArgLst}, X, Y ) ->
 
   app( Info, EFn1, ArgLst1 );
 
-rename( {cons, Info, T, E1, E2}, X1, X2 ) ->
-  cons( Info, T, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+rename( {cons, Info, E1, E2}, X1, X2 ) ->
+  cons( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
 
 rename( {append, Info, E1, E2}, X1, X2 ) ->
   append( Info, rename( E1, X1, X2 ),
@@ -376,8 +374,8 @@ subst( {app, Info, EFn, ArgLst}, X, E2 ) ->
 
   app( Info, EFn1, ArgLst1 );
 
-subst( {cons, Info, T, E1, E2}, X, ES ) ->
-  cons( Info, T, subst( E1, X, ES ), subst( E2, X, ES ) );
+subst( {cons, Info, E1, E2}, X, ES ) ->
+  cons( Info, subst( E1, X, ES ), subst( E2, X, ES ) );
 
 subst( {append, Info, E1, E2}, X, ES ) ->
   append( Info, subst( E1, X, ES ),
@@ -513,14 +511,14 @@ try_hole( E, {app, Info, EFn, EBindLst} ) ->
     {ok, EFn1} -> {ok, {app, Info, EFn1, EBindLst}}
   end;
 
-try_hole( E, {cons, Info, T, E1, E2} ) ->
+try_hole( E, {cons, Info, E1, E2} ) ->
   case try_hole( E, E1 ) of
     no_hole ->
       case try_hole( E, E2 ) of
         no_hole -> no_hole;
-        {ok, X} -> {ok, {cons, Info, T, E1, X}}
+        {ok, X} -> {ok, {cons, Info, E1, X}}
       end;
-    {ok, X} -> {ok, {cons, Info, T, X, E2}}
+    {ok, X} -> {ok, {cons, Info, X, E2}}
   end;
 
 try_hole( E, {append, Info, E1, E2} ) ->
@@ -680,14 +678,14 @@ try_context( E = {app, Info, LamFrn = {lam_frn, _, _, _, _, _, _}, EBindLst},
 try_context( {app, Info, EFn, ArgLst}, Ctx ) ->
   try_context( EFn, in_hole( {app, Info, hole, ArgLst}, Ctx ) );
 
-try_context( {cons, Info, T, E1, E2}, Ctx ) ->
-  try_context( E1, in_hole( {cons, Info, T, hole, E2}, Ctx ) ),
-  try_context( E2, in_hole( {cons, Info, T, E1, hole}, Ctx ) );
+try_context( {cons, Info, E1, E2}, Ctx ) ->
+  try_context( E1, in_hole( {cons, Info, hole, E2}, Ctx ) ),
+  try_context( E2, in_hole( {cons, Info, E1, hole}, Ctx ) );
 
 try_context( E = {append, _, {null, _, _}, _}, Ctx ) ->
   throw( {E, Ctx} );
 
-try_context( E = {append, _, {cons, _, _, _, _}, _}, Ctx ) ->
+try_context( E = {append, _, {cons, _, _, _}, _}, Ctx ) ->
   throw( {E, Ctx} );
 
 try_context( {append, Info, E1, E2}, Ctx ) ->
@@ -697,7 +695,7 @@ try_context( {append, Info, E1, E2}, Ctx ) ->
 try_context( E = {isnil, _, {null, _, _}}, Ctx ) ->
   throw( {E, Ctx} );
 
-try_context( E = {isnil, _, {cons, _, _, _, _}}, Ctx ) ->
+try_context( E = {isnil, _, {cons, _, _, _}}, Ctx ) ->
   throw( {E, Ctx} );
 
 try_context( {isnil, Info, E1}, Ctx ) ->
