@@ -1,6 +1,6 @@
 %% -*- erlang -*-
 %%
-%% cf_client
+%% A Cuneiform client implementation.
 %%
 %% Copyright 2015-2018 Jörgen Brandt
 %%
@@ -18,7 +18,7 @@
 %%
 %% -------------------------------------------------------------------
 %% @author Jörgen Brandt <joergen.brandt@onlinehome.de>
-%% @version 0.1.6
+%% @version 0.1.5
 %% @copyright 2015-2018 Jörgen Brandt
 %%
 %%
@@ -371,30 +371,27 @@ type( Gamma, {for, Info, TRet, [{X1, E1}|EBindLst], EBody} ) ->
 type( _Gamma, {fold, Info, {X, _EAcc}, {X, _ELst}, _EBody} ) ->
   {error, {ambiguous_name, Info, X}};
 
-type( Gamma, {fold, Info, {XAcc, EAcc}, {X, ELst}, EBody} ) ->
-  case type( Gamma, EAcc ) of
+type( Gamma, {fold, Info, {X1, E1}, {X2, E2}, EBody} ) ->
+  case type( Gamma, E1 ) of
 
-    {error, ReasonAcc} ->
-      {error, ReasonAcc};
+    {error, Reason1} ->
+      {error, Reason1};
 
-    {ok, TAcc} ->
-      case type( Gamma, ELst ) of
+    {ok, T1} ->
+      case type( Gamma, E2 ) of
 
-        {ok, {'Lst', TAcc}} ->
-          case type( Gamma#{ XAcc => TAcc, X => TAcc }, EBody ) of
-            {ok, TAcc}          -> {ok, TAcc};
-            {ok, TBody}         -> {error, {type_mismatch, Info, {TAcc, TBody}}};
+        {ok, {'Lst', T2}} ->
+          case type( Gamma#{ X1 => T1, X2 => T2 }, EBody ) of
+            {ok, T1}            -> {ok, T1};
+            {ok, TBody}         -> {error, {type_mismatch, Info, {T1, TBody}}};
             {error, ReasonBody} -> {error, ReasonBody}
           end;
 
-        {ok, {'Lst', TElem}} ->
-          {error, {type_mismatch, Info, {t_lst( TAcc ), t_lst( TElem )}}};
-
-        {ok, TLst} ->
-          {error, {no_list_type, Info, TLst}};
+        {ok, T2} ->
+          {error, {no_list_type, Info, T2}};
         
-        {error, ReasonLst} ->
-          {error, ReasonLst}
+        {error, Reason2} ->
+          {error, Reason2}
 
       end
 

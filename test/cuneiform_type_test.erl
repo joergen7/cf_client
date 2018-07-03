@@ -1,6 +1,6 @@
 %% -*- erlang -*-
 %%
-%% cf_client
+%% A Cuneiform client implementation.
 %%
 %% Copyright 2015-2018 Jörgen Brandt
 %%
@@ -18,7 +18,7 @@
 %%
 %% -------------------------------------------------------------------
 %% @author Jörgen Brandt <joergen.brandt@onlinehome.de>
-%% @version 0.1.6
+%% @version 0.1.5
 %% @copyright 2015-2018 Jörgen Brandt
 %%
 %%
@@ -39,7 +39,7 @@
                           t_arg/2, t_fn/3, neg/1, cnd/3, conj/2, disj/2,
                           t_rcd/1, l_bash/0, lam_frn/5, e_bind/2, rcd/1, app/2,
                           proj/2, fix/1, lst/2, t_lst/1, append/2, isnil/1,
-                          for/3, fold/3, err/2
+                          for/3, fold/3, err/2, null/1
                          ] ).
 
 type_test_() ->
@@ -265,6 +265,9 @@ type_test_() ->
       
     {"fold with ambiguous accumulator and list expression name untypable",
      fun fold_with_ambiguous_accumulator_and_list_expression_name_untypable/0},
+
+    {"fold with independent accumulator and list types typable",
+     fun fold_with_independent_accumulator_and_list_types_typable/0},
 
     {"future is typable",
      fun future_is_typable/0},
@@ -839,14 +842,19 @@ fold_with_nonmatching_accumulator_and_list_expression_untypable() ->
   E = fold( e_bind( x_acc, file( <<"0">> ) ),
             e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
             var( x ) ),
-  ?assertEqual( {error, {type_mismatch, na, {t_lst( t_file() ),
-                                             t_lst( t_str() )}}}, type( E ) ).
+  ?assertEqual( {error, {type_mismatch, na, {t_file(), t_str()}}}, type( E ) ).
 
 fold_with_ambiguous_accumulator_and_list_expression_name_untypable() ->
   E = fold( e_bind( x, str( <<"0">> ) ),
             e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
             var( x ) ),
   ?assertEqual( {error, {ambiguous_name, na, x}}, type( E ) ).
+
+fold_with_independent_accumulator_and_list_types_typable() ->
+  E = fold( e_bind( acc, str( <<"bla">> ) ),
+            e_bind( x, null( t_bool() ) ),
+            var( acc ) ),
+  ?assertEqual( {ok, t_str()}, type( E ) ).
 
 
 future_is_typable() ->
