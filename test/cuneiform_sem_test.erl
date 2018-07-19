@@ -115,7 +115,7 @@ is_value_test_() ->
 
     {"projection is no value",  fun projection_is_no_value/0},
     {"fixpoint is no value",    fun fixpoint_is_no_value/0},
-    {"error is value",          fun error_is_value/0}
+    {"error is no value",       fun error_is_no_value/0}
    ]
   }.
 
@@ -211,8 +211,8 @@ fixpoint_is_no_value() ->
   E = fix( ELam ),
   ?assertNot( is_value( E ) ).
 
-error_is_value() ->
-  ?assertEqual( true, is_value( err( t_str(), <<"blub">> ) ) ).
+error_is_no_value() ->
+  ?assertEqual( false, is_value( err( t_str(), <<"blub">> ) ) ).
 
 
 subst_fut_test_() ->
