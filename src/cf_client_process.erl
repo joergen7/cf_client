@@ -84,6 +84,8 @@ init( _ClientArg ) -> [].
 
 -spec is_value( E :: e(), UsrInfo :: _ ) -> boolean().
 
+is_value( {err, _, _, _} ) -> true;
+
 is_value( E, _ ) ->
   cuneiform_sem:is_value( E ).
 
