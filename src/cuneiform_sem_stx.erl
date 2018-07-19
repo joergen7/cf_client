@@ -71,7 +71,6 @@ step( E ) ->
   case find_context( E ) of
 
     {ok, E1, Ctx} ->
-      io:format( "e: ~p    ctx: ~p~n", [E1, Ctx] ),
       case E1 of
 
         % when the redex is a foreign application invoke the E-send
