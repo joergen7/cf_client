@@ -28,7 +28,7 @@
 %% @end
 %% -------------------------------------------------------------------
 
--module( cuneiform_sem_s_n_test ).
+-module( cuneiform_sem_stx_test ).
 -include_lib( "eunit/include/eunit.hrl" ).
 
 %%====================================================================
@@ -37,10 +37,10 @@
 
 -import( cuneiform_sem, [is_value/1] ).
 
--import( cuneiform_sem_s_n, [reduce/1] ).
--import( cuneiform_sem_s_n, [rename_pattern/3, rename/3, subst/3, gensym/1, subst_fut/3] ).
--import( cuneiform_sem_s_n, [in_hole/2, find_context/1] ).
--import( cuneiform_sem_s_n, [set_info/2] ).
+-import( cuneiform_sem_stx, [reduce/1] ).
+-import( cuneiform_sem_stx, [rename_pattern/3, rename/3, subst/3, gensym/1, subst_fut/3] ).
+-import( cuneiform_sem_stx, [in_hole/2, find_context/1] ).
+-import( cuneiform_sem_stx, [set_info/2] ).
 
 -import( cuneiform_lang, [r_var/2, r_rcd/1, r_bind/2] ).
 -import( cuneiform_lang, [l_bash/0] ).
