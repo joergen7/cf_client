@@ -28,7 +28,7 @@
 %% @end
 %% -------------------------------------------------------------------
 
--module( cuneiform_sem_s_n ).
+-module( cuneiform_sem_stx ).
 -behavior( cuneiform_sem ).
 
 
@@ -64,9 +64,9 @@
 
 -spec step( E ) -> Result
 when E       :: e(),
-     Result  :: {ok, e()}
-              | {ok_send, e(), e()}
+     Result  :: {ok, e(), [e()]}
               | norule.
+
 step( E ) ->
   case find_context( E ) of
 
@@ -82,17 +82,17 @@ step( E ) ->
           E2 = {fut, Info, RetType, AppId},
           E3 = in_hole( E2, Ctx ),
 
-          {ok_send, E3, EffiRequest};
+          {ok, E3, [EffiRequest]};
 
         % when the redex is an error drop the context
         {err, _, _, _} ->
-          {ok, E1};
+          {ok, E1, []};
 
         % in all other cases reduce
         _ ->
           E2 = reduce( E1 ),
           E3 = in_hole( E2, Ctx ),
-          {ok, E3}
+          {ok, E3, []}
 
       end;
 

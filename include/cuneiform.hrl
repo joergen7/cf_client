@@ -125,10 +125,7 @@
                      | {append, info(), e(), ctx()}
                      | {isnil, info(), ctx()}
                      | {for, info(), [{x(), e() | ctx()}], e()}
-                     | {for, info(), [e_bind()], ctx()}
-                     | {fold, info(), {x(), ctx()}, e_bind(), e()}
                      | {fold, info(), e_bind(), {x(), ctx()}, e()}
-                     | {fold, info(), e_bind(), e_bind(), ctx()}
                      | {rcd, info(), [{x(), e() | ctx()}]}
                      | {proj, info(), x(), ctx()}
                      | {fix, info(), ctx()}.

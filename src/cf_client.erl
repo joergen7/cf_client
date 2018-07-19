@@ -97,7 +97,7 @@ start( _StartType, _StartArgs ) ->
 
   cf_client_sup:start_link( CreNode ).
 
-stop(_State) ->
+stop( _State ) ->
   ok.
 
 
