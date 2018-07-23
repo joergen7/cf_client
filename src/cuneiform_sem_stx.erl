@@ -32,8 +32,6 @@
 -behavior( cuneiform_sem ).
 
 
--include_lib( "cuneiform.hrl" ).
-
 %%====================================================================
 %% Exports
 %%====================================================================
@@ -41,6 +39,12 @@
 -export( [step/1] ).
 -export( [reduce/1, rename/3, subst/3, gensym/1, in_hole/2, find_context/1] ).
 
+
+%%====================================================================
+%% Includes
+%%====================================================================
+
+-include_lib( "cuneiform.hrl" ).
 
 %%====================================================================
 %% Imports
@@ -57,6 +61,31 @@
 
 -import( cuneiform_lang, [is_lst_literal/1] ).
 
+%%====================================================================
+%% Type definitions
+%%====================================================================
+
+-type ctx()         :: hole
+                     | {cmp, info(), ctx(), e()}
+                     | {cmp, info(), e(), ctx()}
+                     | {cnd, info(), ctx(), e(), e()}
+                     | {neg, info(), ctx()}
+                     | {conj, info(), ctx(), e()}
+                     | {conj, info(), e(), ctx()}
+                     | {disj, info(), ctx(), e()}
+                     | {disj, info(), e(), ctx()}
+                     | {app, info(), ctx(), [e_bind()]}
+                     | {app, info(), e(), [{x(), e() | ctx()}]}
+                     | {cons, info(), t(), ctx(), e()}
+                     | {cons, info(), t(), e(), ctx()}
+                     | {append, info(), ctx(), e()}
+                     | {append, info(), e(), ctx()}
+                     | {isnil, info(), ctx()}
+                     | {for, info(), [{x(), e() | ctx()}], e()}
+                     | {fold, info(), e_bind(), {x(), ctx()}, e()}
+                     | {rcd, info(), [{x(), e() | ctx()}]}
+                     | {proj, info(), x(), ctx()}
+                     | {fix, info(), ctx()}.
 
 %%====================================================================
 %% Reduction relation

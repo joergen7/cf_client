@@ -34,7 +34,7 @@
 %% Definitions
 %%====================================================================
 
--define( CUNEIFORM_SEM, cuneiform_sem_stx ).
+-define( CUNEIFORM_SEM, cuneiform_sem_cek ).
 
 
 %%====================================================================
@@ -98,11 +98,20 @@ reduce_test_() ->
     {"comparison of unequal booleans reduces to false",
      fun comparison_of_unequal_booleans_reduces_to_false/0},
 
+    {"comparison with expression lhs reduces",
+     fun comparison_with_expression_lhs_reduces/0},
+
+    {"comparison with expression rhs reduces",
+     fun comparison_with_expression_rhs_reduces/0},
+
     {"condition with true if expression reduces to then expression",
      fun cnd_with_true_if_expr_reduces_to_then_expr/0},
 
     {"condition with false if expression reduces to then expression",
      fun cnd_with_false_if_expr_reduces_to_then_expr/0},
+
+    {"condition with expression predicate reduces",
+     fun cnd_with_expression_predicate_reduces/0},
 
     {"negation with true operand reduces to false",
      fun negation_with_true_operand_reduces_to_false/0},
@@ -110,77 +119,80 @@ reduce_test_() ->
     {"negation with false operand reduces to true",
      fun negation_with_false_operand_reduces_to_true/0},
 
-    {"true and true reduces to true",
-     fun true_and_true_reduces_to_true/0},
+    {"negation with expression operand reduces",
+     fun negation_with_expression_operand_reduces/0}
 
-    {"true and false reduces to false",
-     fun true_and_false_reduces_to_false/0},
+    % {"true and true reduces to true",
+    %  fun true_and_true_reduces_to_true/0},
 
-    {"false and true reduces to false",
-     fun false_and_true_reduces_to_false/0},
+    % {"true and false reduces to false",
+    %  fun true_and_false_reduces_to_false/0},
 
-    {"false and false reduces to false",
-     fun false_and_false_reduces_to_false/0},
+    % {"false and true reduces to false",
+    %  fun false_and_true_reduces_to_false/0},
 
-    {"true or true reduces to true",
-     fun true_or_true_reduces_to_true/0},
+    % {"false and false reduces to false",
+    %  fun false_and_false_reduces_to_false/0},
 
-    {"true or false reduces to true",
-     fun true_or_false_reduces_to_true/0},
+    % {"true or true reduces to true",
+    %  fun true_or_true_reduces_to_true/0},
 
-    {"false or true reduces to true",
-     fun false_or_true_reduces_to_true/0},
+    % {"true or false reduces to true",
+    %  fun true_or_false_reduces_to_true/0},
 
-    {"false or false reduces to false",
-     fun false_or_false_reduces_to_false/0},
+    % {"false or true reduces to true",
+    %  fun false_or_true_reduces_to_true/0},
 
-    {"native application without arguments reduces to lambda body",
-     fun nat_app_without_arg_reduces_to_lam_body/0},
+    % {"false or false reduces to false",
+    %  fun false_or_false_reduces_to_false/0},
 
-    {"native application with single argument reduces to empty application",
-     fun nat_app_with_single_arg_reduces_to_empty_application/0},
+    % {"native application without arguments reduces to lambda body",
+    %  fun nat_app_without_arg_reduces_to_lam_body/0},
 
-    {"append nil and list reduces to list",
-     fun append_nil_and_list_reduces_to_list/0},
+    % {"native application with single argument reduces to empty application",
+    %  fun nat_app_with_single_arg_reduces_to_empty_application/0},
 
-    {"append cons list1 and list2 reduces to cons append list1 and list2",
-     fun append_cons_list1_and_list2_reduces_to_cons_append_list1_and_list2/0},
+    % {"append nil and list reduces to list",
+    %  fun append_nil_and_list_reduces_to_list/0},
 
-    {"isnil empty list reduces to true",
-     fun isnil_empty_list_reduces_to_true/0},
+    % {"append cons list1 and list2 reduces to cons append list1 and list2",
+    %  fun append_cons_list1_and_list2_reduces_to_cons_append_list1_and_list2/0},
 
-    {"isnil non-empty list reduces to false",
-     fun isnil_nonempty_list_reduces_to_false/0},
+    % {"isnil empty list reduces to true",
+    %  fun isnil_empty_list_reduces_to_true/0},
 
-    {"projection reduces to record field",
-     fun projection_reduces_to_record_field/0},
+    % {"isnil non-empty list reduces to false",
+    %  fun isnil_nonempty_list_reduces_to_false/0},
 
-    {"map reduces to list",
-     fun map_reduces_to_list/0},
+    % {"projection reduces to record field",
+    %  fun projection_reduces_to_record_field/0},
 
-    {"zip reduces to list",
-     fun zip_reduces_to_list/0},
+    % {"map reduces to list",
+    %  fun map_reduces_to_list/0},
 
-    {"fold reduces",
-     fun fold_reduces/0},
+    % {"zip reduces to list",
+    %  fun zip_reduces_to_list/0},
 
-    {"fixpoint operator reduces",
-     fun fixpoint_operator_reduces/0},
+    % {"fold reduces",
+    %  fun fold_reduces/0},
 
-    {"fixpoint operator inserts function definition",
-     fun fixpoint_operator_inserts_function_definition/0},
+    % {"fixpoint operator reduces",
+    %  fun fixpoint_operator_reduces/0},
 
-    {"for over empty list reduces to empty list",
-     fun for_over_empty_list_reduces_to_empty_list/0},
+    % {"fixpoint operator inserts function definition",
+    %  fun fixpoint_operator_inserts_function_definition/0},
 
-    {"folding over empty list reduces to initial accumulator",
-     fun folding_over_empty_list_reduces_to_initial_accumulator/0},
+    % {"for over empty list reduces to empty list",
+    %  fun for_over_empty_list_reduces_to_empty_list/0},
 
-    {"foreign function application reduces to future",
-     fun foreign_function_application_reduces_to_future/0},
+    % {"folding over empty list reduces to initial accumulator",
+    %  fun folding_over_empty_list_reduces_to_initial_accumulator/0},
 
-    {"nested error reduces to error",
-     fun nested_error_reduces_to_error/0}
+    % {"foreign function application reduces to future",
+    %  fun foreign_function_application_reduces_to_future/0},
+
+    % {"nested error reduces to error",
+    %  fun nested_error_reduces_to_error/0}
    ]
   }.
 
@@ -210,6 +222,18 @@ comparison_of_unequal_booleans_reduces_to_false() ->
     {ok, false(), []},
     step( cmp( false(), true() ) ) ).
 
+comparison_with_expression_lhs_reduces() ->
+  E = cmp( cmp( str( <<"bla">> ), str( <<"blub">> ) ), false() ),
+  ?assertEqual(
+    {ok, true(), []},
+    step( E ) ).
+
+comparison_with_expression_rhs_reduces() ->
+  E = cmp( false(), cmp( str( <<"bla">> ), str( <<"blub">> ) ) ),
+  ?assertEqual(
+    {ok, true(), []},
+    step( E ) ).
+
 cnd_with_true_if_expr_reduces_to_then_expr() ->
   ETrue = str( <<"blub">> ),
   E1 = cnd( true(), ETrue, str( <<"bla">> ) ),
@@ -224,6 +248,13 @@ cnd_with_false_if_expr_reduces_to_then_expr() ->
     {ok, EFalse, []},
     step( E1 ) ).
 
+cnd_with_expression_predicate_reduces() ->
+  E1 = cmp( str( <<"bla">>), str( <<"bla">>) ),
+  E = cnd( E1, str( <<"ok">> ), str( <<"not ok">> ) ),
+  ?assertEqual(
+    {ok, str( <<"ok">> ), []},
+    step( E ) ).
+
 negation_with_true_operand_reduces_to_false() ->
   ?assertEqual(
     {ok, false(), []},
@@ -233,6 +264,12 @@ negation_with_false_operand_reduces_to_true() ->
   ?assertEqual(
     {ok, true(), []},
     step( neg( false() ) ) ).
+
+negation_with_expression_operand_reduces() ->
+  E = neg( cmp( str( <<"bla">> ), str( <<"blub">> ) ) ),
+  ?assertEqual(
+    {ok, true(), []},
+    step( E ) ).
 
 true_and_true_reduces_to_true() ->
   ?assertEqual(

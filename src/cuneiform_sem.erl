@@ -77,7 +77,6 @@ is_value( {fold, _, _, _, _} )          -> false;
 is_value( {rcd, _, EBindLst} )          -> lists:all( fun is_value/1, [E || {_, E} <- EBindLst] );
 is_value( {proj, _, _, _} )             -> false;
 is_value( {fix, _, _} )                 -> false;
-% is_value( {err, _, _, _} )              -> true.
 is_value( {err, _, _, _} )              -> false.
 
 %%====================================================================

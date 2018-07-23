@@ -108,28 +108,6 @@
 -type r()           :: {r_var, x(), t()}
                      | {r_rcd, [r_bind()]}.
 
--type ctx()         :: hole
-                     | {cmp, info(), ctx(), e()}
-                     | {cmp, info(), e(), ctx()}
-                     | {cnd, info(), ctx(), e(), e()}
-                     | {neg, info(), ctx()}
-                     | {conj, info(), ctx(), e()}
-                     | {conj, info(), e(), ctx()}
-                     | {disj, info(), ctx(), e()}
-                     | {disj, info(), e(), ctx()}
-                     | {app, info(), ctx(), [e_bind()]}
-                     | {app, info(), e(), [{x(), e() | ctx()}]}
-                     | {cons, info(), t(), ctx(), e()}
-                     | {cons, info(), t(), e(), ctx()}
-                     | {append, info(), ctx(), e()}
-                     | {append, info(), e(), ctx()}
-                     | {isnil, info(), ctx()}
-                     | {for, info(), [{x(), e() | ctx()}], e()}
-                     | {fold, info(), e_bind(), {x(), ctx()}, e()}
-                     | {rcd, info(), [{x(), e() | ctx()}]}
-                     | {proj, info(), x(), ctx()}
-                     | {fix, info(), ctx()}.
-
 -type type_error()  :: {unbound_var, info(), x()}
                      | {type_mismatch, info(), {t(), t()}}
                      | {ambiguous_name, info(), x()}
