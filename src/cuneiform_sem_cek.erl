@@ -63,10 +63,12 @@
 
 %% Continuation Element
 
--type k() :: {lhs, info(), e(), env()}
-           | {rhs, info(), e()}
+-type k() :: {cmp_lhs, info(), e(), env()}
+           | {cmp_rhs, info(), e()}
            | {pred, e(), e(), env()}
-           | neg.
+           | {neg, info()}
+           | {conj_lhs, info(), e(), env()}
+           | {conj_rhs, info(), e()}.
 
 
 %% Program
@@ -112,38 +114,43 @@ eval_cek( P ) ->
 % descending rules
 
 step_cek( {{{cmp, Info, E1, E2}, Env}, K, Outbox} ) ->
-  {{E1, Env}, [{lhs, Info, E2, Env}|K], Outbox};
+  {{E1, Env}, [{cmp_lhs, Info, E2, Env}|K], Outbox};
 
 step_cek( {{{cnd, _, E1, E2, E3}, Env}, K, Outbox} ) ->
   {{E1, Env}, [{pred, E2, E3, Env}|K], Outbox};
 
-step_cek( {{{neg, _, E1}, Env}, K, Outbox} ) ->
-  {{E1, Env}, [neg|K], Outbox};
+step_cek( {{{neg, Info, E1}, Env}, K, Outbox} ) ->
+  {{E1, Env}, [{neg, Info}|K], Outbox};
+
+step_cek( {{{conj, Info, E1, E2}, Env}, K, Outbox} ) ->
+  {{E1, Env}, [{conj_lhs, Info, E2, Env}|K], Outbox};
 
 
 % ascending rules
 
-step_cek( {{E1, _}, [{lhs, Info, E2, Env}|K], Outbox} ) ->
-  {{E2, Env}, [{rhs, Info, E1}|K], Outbox};
+step_cek( {{E1, _}, [{cmp_lhs, Info, E2, Env}|K], Outbox} ) ->
+  {{E2, Env}, [{cmp_rhs, Info, E1}|K], Outbox};
 
-step_cek( {{E2, _}, [{rhs, Info, E1}|K], Outbox} ) ->
-  case {E1, E2} of
-    {{str, _, S1}, {str, _, S2}} ->
-      {{{S1 =:= S2, Info}, #{}}, K, Outbox};
-    {{B1, _}, {B2, _}} ->
-      {{{B1 =:= B2, Info}, #{}}, K, Outbox};
-    _ ->
-      norule
-  end;
+step_cek( {{{str, _, S2}, _}, [{cmp_rhs, Info, {str, _, S1}}|K], Outbox} ) ->
+  {{{S1 =:= S2, Info}, #{}}, K, Outbox};
 
-step_cek( {{E1, _}, [{pred, E2, E3, Env}|K], Outbox} ) ->
-  case E1 of
-    {true, _}  -> {{E2, Env}, K, Outbox};
-    {false, _} -> {{E3, Env}, K, Outbox}
-  end;
+step_cek( {{{B2, _}, _}, [{cmp_rhs, Info, {B1, _}}|K], Outbox} ) ->
+  {{{B1 =:= B2, Info}, #{}}, K, Outbox};
 
-step_cek( {{{B, Info}, _}, [neg|K], Outbox} ) ->
-  {{{not B, Info}, #{}}, K, Outbox};
+step_cek( {{{true, _}, _}, [{pred, E2, _, Env}|K], Outbox} ) ->
+  {{E2, Env}, K, Outbox};
+
+step_cek( {{{false, _}, _}, [{pred, _, E3, Env}|K], Outbox} ) ->
+  {{E3, Env}, K, Outbox};
+
+step_cek( {{{B1, _}, _}, [{neg, Info}|K], Outbox} ) ->
+  {{{not B1, Info}, #{}}, K, Outbox};
+
+step_cek( {{{B1, Info1}, _}, [{conj_lhs, Info, E2, Env}|K], Outbox} ) ->
+  {{E2, Env}, [{conj_rhs, Info, {B1, Info1}}|K], Outbox};
+
+step_cek( {{{B2, _}, _}, [{conj_rhs, Info, {B1, _}}|K], Outbox} ) ->
+  {{{B1 and B2, Info}, #{}}, K, Outbox};
 
 
 step_cek( _ ) ->

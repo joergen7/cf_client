@@ -120,19 +120,25 @@ reduce_test_() ->
      fun negation_with_false_operand_reduces_to_true/0},
 
     {"negation with expression operand reduces",
-     fun negation_with_expression_operand_reduces/0}
+     fun negation_with_expression_operand_reduces/0},
 
-    % {"true and true reduces to true",
-    %  fun true_and_true_reduces_to_true/0},
+    {"true and true reduces to true",
+     fun true_and_true_reduces_to_true/0},
 
-    % {"true and false reduces to false",
-    %  fun true_and_false_reduces_to_false/0},
+    {"true and false reduces to false",
+     fun true_and_false_reduces_to_false/0},
 
-    % {"false and true reduces to false",
-    %  fun false_and_true_reduces_to_false/0},
+    {"false and true reduces to false",
+     fun false_and_true_reduces_to_false/0},
 
-    % {"false and false reduces to false",
-    %  fun false_and_false_reduces_to_false/0},
+    {"false and false reduces to false",
+     fun false_and_false_reduces_to_false/0},
+
+    {"conjugation with expression lhs reduces",
+     fun conjugation_with_expression_lhs_reduces/0},
+
+    {"conjugation with expression rhs reduces",
+     fun conjugation_with_expression_rhs_reduces/0}
 
     % {"true or true reduces to true",
     %  fun true_or_true_reduces_to_true/0},
@@ -290,6 +296,18 @@ false_and_false_reduces_to_false() ->
   ?assertEqual(
     {ok, false(), []},
     step( conj( false(), false() ) ) ).
+
+conjugation_with_expression_lhs_reduces() ->
+  E = conj( cmp( str( <<"bla">> ), str( <<"bla">> ) ), true() ),
+  ?assertEqual(
+    {ok, true(), []},
+    step( E ) ).
+
+conjugation_with_expression_rhs_reduces() ->
+  E = conj( true(), cmp( str( <<"bla">> ), str( <<"bla">> ) ) ),
+  ?assertEqual(
+    {ok, true(), []},
+    step( E ) ).
 
 true_or_true_reduces_to_true() ->
   ?assertEqual(
