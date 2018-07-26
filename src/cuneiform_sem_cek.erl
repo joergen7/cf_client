@@ -36,7 +36,7 @@
 %% Exports
 %%====================================================================
 
--export( [step/1] ).
+-export( [step/1, step_cek/1] ).
 
 %%====================================================================
 %% Includes
@@ -65,10 +65,22 @@
 
 -type k() :: {cmp_lhs, info(), e(), env()}
            | {cmp_rhs, info(), e()}
-           | {pred, e(), e(), env()}
-           | {neg, info()}
+           | {cnd_pred, e(), e(), env()}
+           | {neg_op, info()}
            | {conj_lhs, info(), e(), env()}
-           | {conj_rhs, info(), e()}.
+           | {conj_rhs, info(), e()}
+           | {disj_lhs, info(), e(), env()}
+           | {disj_rhs, info(), e()}
+           | {app_fn, info(), [e_bind()], env()}
+           | {app_arg, info(), e(), [e_bind()], x(), [e_bind()], env()}
+           | {cons_hd, info(), e(), env()}
+           | {cons_tl, info(), e()}
+           | {append_lhs, e(), env()}
+           | {append_rhs, e()}
+           | {isnil_op, info()}
+           | {rcd_field, info(), [e_bind()], x(), [e_bind()], env()}
+           | {proj_op, x()}
+           | {fix_op, info()}.
 
 
 %% Program
@@ -81,7 +93,7 @@
 
 
 %%====================================================================
-%% cuneiform_sem callback function implementations
+%% cuneiform_sem callback implementation
 %%====================================================================
 
 -spec step( E ) -> Result
@@ -96,7 +108,7 @@ step( E ) ->
 
 
 %%====================================================================
-%% API functions
+%% CEK machine
 %%====================================================================
 
 -spec eval_cek( P :: prog() ) -> prog().
@@ -110,48 +122,246 @@ eval_cek( P ) ->
 
 -spec step_cek( P :: prog() ) -> prog() | norule.
 
+step_cek( P ) ->
+  case try_descend( P ) of
+    norule -> try_ascend( P );
+    P1     -> P1
+  end.
 
 % descending rules
 
-step_cek( {{{cmp, Info, E1, E2}, Env}, K, Outbox} ) ->
+-spec try_descend( P :: prog() ) -> prog() | norule.
+
+try_descend( {{{err, _, _, _}, _}, [], []} ) ->
+  norule;
+
+try_descend( {{E = {err, _, _, _}, _}, _, _} ) ->
+  {{E, #{}}, [], []};
+
+try_descend( {{{var, _, X}, Env}, K, Outbox} ) ->
+  #{ X := {E1, Env1} } = Env,
+  {{E1, Env1}, K, Outbox};
+
+try_descend( {{{cmp, Info, E1, E2}, Env}, K, Outbox} ) ->
   {{E1, Env}, [{cmp_lhs, Info, E2, Env}|K], Outbox};
 
-step_cek( {{{cnd, _, E1, E2, E3}, Env}, K, Outbox} ) ->
-  {{E1, Env}, [{pred, E2, E3, Env}|K], Outbox};
+try_descend( {{{cnd, _, E1, E2, E3}, Env}, K, Outbox} ) ->
+  {{E1, Env}, [{cnd_pred, E2, E3, Env}|K], Outbox};
 
-step_cek( {{{neg, Info, E1}, Env}, K, Outbox} ) ->
-  {{E1, Env}, [{neg, Info}|K], Outbox};
+try_descend( {{{neg, Info, E1}, Env}, K, Outbox} ) ->
+  {{E1, Env}, [{neg_op, Info}|K], Outbox};
 
-step_cek( {{{conj, Info, E1, E2}, Env}, K, Outbox} ) ->
+try_descend( {{{conj, Info, E1, E2}, Env}, K, Outbox} ) ->
   {{E1, Env}, [{conj_lhs, Info, E2, Env}|K], Outbox};
+
+try_descend( {{{disj, Info, E1, E2}, Env}, K, Outbox} ) ->
+  {{E1, Env}, [{disj_lhs, Info, E2, Env}|K], Outbox};
+
+try_descend( {{{app, Info, E1, EBindLst}, Env}, K, Outbox} ) ->
+  {{E1, Env}, [{app_fn, Info, EBindLst, Env}|K], Outbox};
+
+try_descend( {{E = {cons, Info, E1, E2}, Env}, K, Outbox} ) ->
+  case is_value( E ) of
+    true  -> norule;
+    false -> {{E1, Env}, [{cons_hd, Info, E2, Env}|K], Outbox}
+  end;
+
+try_descend( {{{append, _, E1, E2}, Env}, K, Outbox} ) ->
+  {{E1, Env}, [{append_lhs, E2, Env}|K], Outbox};
+
+try_descend( {{{isnil, Info, E1}, Env}, K, Outbox} ) ->
+  {{E1, Env}, [{isnil_op, Info}|K], Outbox};
+
+try_descend( {{E = {rcd, Info, [{X1, E1}|BindLst]}, Env}, K, Outbox} ) ->
+  case is_value( E ) of
+    true  -> norule;
+    false -> {{E1, Env}, [{rcd_field, Info, [], X1, BindLst, Env}|K], Outbox}
+  end;
+
+try_descend( {{{proj, _, X, E1}, Env}, K, Outbox} ) ->
+  {{E1, Env}, [{proj_op, X}|K], Outbox};
+
+try_descend( {{{fix, Info, E1}, Env}, K, Outbox} ) ->
+  {{E1, Env}, [{fix_op, Info}|K], Outbox};
+
+try_descend( _ ) ->
+  norule.
 
 
 % ascending rules
 
-step_cek( {{E1, _}, [{cmp_lhs, Info, E2, Env}|K], Outbox} ) ->
-  {{E2, Env}, [{cmp_rhs, Info, E1}|K], Outbox};
+try_ascend( {{E1, _}, [{cmp_lhs, Info, E2, Env}|K], Outbox} ) ->
+  case is_value( E1 ) of
+    false -> norule;
+    true  -> {{E2, Env}, [{cmp_rhs, Info, E1}|K], Outbox}
+  end;
 
-step_cek( {{{str, _, S2}, _}, [{cmp_rhs, Info, {str, _, S1}}|K], Outbox} ) ->
+try_ascend( {{{str, _, S2}, _}, [{cmp_rhs, Info, {str, _, S1}}|K], Outbox} ) ->
   {{{S1 =:= S2, Info}, #{}}, K, Outbox};
 
-step_cek( {{{B2, _}, _}, [{cmp_rhs, Info, {B1, _}}|K], Outbox} ) ->
+try_ascend( {{{B2, _}, _}, [{cmp_rhs, Info, {B1, _}}|K], Outbox} ) ->
   {{{B1 =:= B2, Info}, #{}}, K, Outbox};
 
-step_cek( {{{true, _}, _}, [{pred, E2, _, Env}|K], Outbox} ) ->
+try_ascend( {{{true, _}, _}, [{cnd_pred, E2, _, Env}|K], Outbox} ) ->
   {{E2, Env}, K, Outbox};
 
-step_cek( {{{false, _}, _}, [{pred, _, E3, Env}|K], Outbox} ) ->
+try_ascend( {{{false, _}, _}, [{cnd_pred, _, E3, Env}|K], Outbox} ) ->
   {{E3, Env}, K, Outbox};
 
-step_cek( {{{B1, _}, _}, [{neg, Info}|K], Outbox} ) ->
+try_ascend( {{{B1, _}, _}, [{neg_op, Info}|K], Outbox} ) ->
   {{{not B1, Info}, #{}}, K, Outbox};
 
-step_cek( {{{B1, Info1}, _}, [{conj_lhs, Info, E2, Env}|K], Outbox} ) ->
+try_ascend( {{{B1, Info1}, _}, [{conj_lhs, Info, E2, Env}|K], Outbox} ) ->
   {{E2, Env}, [{conj_rhs, Info, {B1, Info1}}|K], Outbox};
 
-step_cek( {{{B2, _}, _}, [{conj_rhs, Info, {B1, _}}|K], Outbox} ) ->
+try_ascend( {{{B2, _}, _}, [{conj_rhs, Info, {B1, _}}|K], Outbox} ) ->
   {{{B1 and B2, Info}, #{}}, K, Outbox};
 
+try_ascend( {{{B1, Info1}, _}, [{disj_lhs, Info, E2, Env}|K], Outbox} ) ->
+  {{E2, Env}, [{disj_rhs, Info, {B1, Info1}}|K], Outbox};
 
-step_cek( _ ) ->
-  norule. 
+try_ascend( {{{B2, _}, _}, [{disj_rhs, Info, {B1, _}}|K], Outbox} ) ->
+  {{{B1 or B2, Info}, #{}}, K, Outbox};
+
+try_ascend( {{{lam_ntv, _, _, EBody}, _},
+          [{app_fn, _, EBindLst, Env}|K],
+          Outbox} ) ->
+  Env1 = maps:from_list( [{X, {E, Env}} || {X, E} <- EBindLst] ),
+  Env2 = maps:merge( Env, Env1 ),
+  {{EBody, Env2}, K, Outbox};
+
+try_ascend( {{{lam_frn, LamInfo, FName, ArgLst, RetType, Lang, Body}, _},
+          [{app_fn, Info, [], _}|K],
+          Outbox} ) ->
+  E1 = {app,
+         Info,
+         {lam_frn, LamInfo, FName, ArgLst, RetType, Lang, Body},
+         []},
+  EffiRequest = cf_client_effi:app_to_effi_request( E1 ),
+  #{ app_id := AppId } = EffiRequest,
+  {{{fut, Info, RetType, AppId}, #{}}, K, [EffiRequest|Outbox]};
+
+try_ascend( {{Lam = {lam_frn, _, _, _, _, _, _}, _},
+          [{app_fn, Info, [{X1, E1}|EBindLst], Env}|K],
+          Outbox} ) ->
+  {{E1, Env}, [{app_arg, Info, Lam, [], X1, EBindLst, Env}|K], Outbox};
+
+try_ascend( {{E1, _},
+           [{app_arg, Info,
+                      Lam = {lam_frn, _, _, _, RetType, _, _},
+                      PreBindLst,
+                      X1,
+                      [],
+                      _}|K],
+           Outbox} ) ->
+  case is_value( E1 ) of
+    false -> norule;
+    true  ->
+      E = {app,
+            Info,
+            Lam,
+            lists:reverse( [{X1, E1}|PreBindLst] )},
+      EffiRequest = cf_client_effi:app_to_effi_request( E ),
+      #{ app_id := AppId } = EffiRequest,
+      {{{fut, Info, RetType, AppId}, #{}}, K, [EffiRequest|Outbox]}
+  end;
+
+try_ascend( {{E1, _},
+           [{app_arg, Info,
+                      Lam,
+                      PreBindLst,
+                      X1,
+                      [{X2, E2}|PostBindLst],
+                      Env}|K],
+           Outbox} ) ->
+  case is_value( E1 ) of
+    false -> norule;
+    true  ->
+      {{E2, Env},
+       [{app_arg, Info,
+                  Lam,
+                  [{X1, E1}|PreBindLst],
+                  X2,
+                  PostBindLst,
+                  Env}|K],
+       Outbox}
+  end;
+
+try_ascend( {{E1, _}, [{cons_hd, Info, E2, Env}|K], Outbox} ) ->
+  case is_value( E1 ) of
+    false -> norule;
+    true  -> {{E2, Env}, [{cons_tl, Info, E1}|K], Outbox}
+  end;
+
+try_ascend( {{E2, _}, [{cons_tl, Info, E1}|K], Outbox} ) ->
+  case is_value( E2 ) of
+    false -> norule;
+    true  -> {{{cons, Info, E1, E2}, #{}}, K, Outbox}
+  end;
+
+try_ascend( {{E1, _}, [{append_lhs, E2, Env}|K], Outbox} ) ->
+  case is_value( E1 ) of
+    false -> norule;
+    true  -> {{E2, Env}, [{append_rhs, E1}|K], Outbox}
+  end;
+
+try_ascend( {{E2, _}, [{append_rhs, E1}|K], Outbox} ) ->
+  F =
+    fun
+      F( {null, _, _}, EE2 )             -> EE2;
+      F( {cons, Info, EE11, EE12}, EE2 ) -> {cons, Info, EE11, F( EE12, EE2 )}
+    end,
+  case is_value( E2 ) of
+    false -> norule;
+    true  -> {{F( E1, E2 ), #{}}, K, Outbox}
+  end;
+
+try_ascend( {{{null, _, _}, _}, [{isnil_op, Info}|K], Outbox} ) ->
+  {{{true, Info}, #{}}, K, Outbox};
+
+try_ascend( {{E = {cons, _, _, _}, _}, [{isnil_op, Info}|K], Outbox} ) ->
+  case is_value( E ) of
+    false -> norule;
+    true  -> {{{false, Info}, #{}}, K, Outbox}
+  end;
+
+try_ascend( {{E1, _}, [{rcd_field, Info, PreLst, X1, [], _}|K], Outbox} ) ->
+  case is_value( E1 ) of
+    false -> norule;
+    true  -> {{{rcd, Info, lists:reverse( [{X1, E1}|PreLst] )}, #{}}, K, Outbox}
+  end;
+
+try_ascend( {{E1, _},
+            [{rcd_field, Info, PreLst, X1, [{X2, E2}|PostLst], Env}|K],
+            Outbox} ) ->
+  case is_value( E1 ) of
+    false -> norule;
+    true  ->
+      {{E2, Env},
+       [{rcd_field, Info, [{X1, E1}|PreLst], X2, PostLst, Env}|K],
+       Outbox}
+  end;
+
+try_ascend( {{{rcd, _, EBindLst}, _}, [{proj_op, X}|K], Outbox} ) ->
+  {_, EX} = lists:keyfind( X, 1, EBindLst ),
+  case is_value( EX ) of
+    false -> norule;
+    true  -> {{EX, #{}}, K, Outbox}
+  end;
+
+try_ascend( {{E = {lam_ntv, LamInfo, [FArg = {_, ExtName, _}|ArgLst], EBody}, _},
+            [{fix_op, Info}|K],
+            Outbox} ) ->
+  EBody1 = {app, Info,
+                 {lam_ntv, Info, [FArg], EBody},
+                 [{ExtName, {fix, Info, E}}]},
+  {{{lam_ntv, LamInfo, ArgLst, EBody1}, #{}}, K, Outbox};
+
+try_ascend( _ ) ->
+  norule.
+
+
+
+
+
+

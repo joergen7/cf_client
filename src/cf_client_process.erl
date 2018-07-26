@@ -107,8 +107,7 @@ recv( E, A, R, _UsrInfo ) ->
 -spec step( E, UsrInfo ) -> Result
 when E       :: e(),
      UsrInfo :: _,
-     Result  :: {ok, e()}
-              | {ok_send, e(), e()}
+     Result  :: {ok, e(), [e()]}
               | norule.
 
 step( E, _UsrInfo ) ->

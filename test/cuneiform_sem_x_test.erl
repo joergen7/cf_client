@@ -134,44 +134,95 @@ reduce_test_() ->
     {"false and false reduces to false",
      fun false_and_false_reduces_to_false/0},
 
-    {"conjugation with expression lhs reduces",
-     fun conjugation_with_expression_lhs_reduces/0},
+    {"conjunction with expression lhs reduces",
+     fun conjunction_with_expression_lhs_reduces/0},
 
-    {"conjugation with expression rhs reduces",
-     fun conjugation_with_expression_rhs_reduces/0}
+    {"conjunction with expression rhs reduces",
+     fun conjunction_with_expression_rhs_reduces/0},
 
-    % {"true or true reduces to true",
-    %  fun true_or_true_reduces_to_true/0},
+    {"true or true reduces to true",
+     fun true_or_true_reduces_to_true/0},
 
-    % {"true or false reduces to true",
-    %  fun true_or_false_reduces_to_true/0},
+    {"true or false reduces to true",
+     fun true_or_false_reduces_to_true/0},
 
-    % {"false or true reduces to true",
-    %  fun false_or_true_reduces_to_true/0},
+    {"false or true reduces to true",
+     fun false_or_true_reduces_to_true/0},
 
-    % {"false or false reduces to false",
-    %  fun false_or_false_reduces_to_false/0},
+    {"false or false reduces to false",
+     fun false_or_false_reduces_to_false/0},
 
-    % {"native application without arguments reduces to lambda body",
-    %  fun nat_app_without_arg_reduces_to_lam_body/0},
+    {"disjunction with expression lhs reduces",
+     fun disjunction_with_expression_lhs_reduces/0},
 
-    % {"native application with single argument reduces to empty application",
-    %  fun nat_app_with_single_arg_reduces_to_empty_application/0},
+    {"disjunction with expression rhs reduces",
+     fun disjunction_with_expression_rhs_reduces/0},
 
-    % {"append nil and list reduces to list",
-    %  fun append_nil_and_list_reduces_to_list/0},
+    {"native application without arguments reduces to lambda body",
+     fun nat_app_without_arg_reduces_to_lam_body/0},
 
-    % {"append cons list1 and list2 reduces to cons append list1 and list2",
-    %  fun append_cons_list1_and_list2_reduces_to_cons_append_list1_and_list2/0},
+    {"native application identity reduces to argument",
+     fun nat_app_identity_reduces_to_arg/0},
 
-    % {"isnil empty list reduces to true",
-    %  fun isnil_empty_list_reduces_to_true/0},
+    {"nat lambda shadows bound occurrences",
+     fun nat_lambda_shadows_bound_occurrences/0},
 
-    % {"isnil non-empty list reduces to false",
-    %  fun isnil_nonempty_list_reduces_to_false/0},
+    {"nat lambda with function expression reduces",
+     fun nat_lambda_with_function_expression_reduces/0},
 
-    % {"projection reduces to record field",
-    %  fun projection_reduces_to_record_field/0},
+    {"nat lambda with argument expression reduces",
+     fun nat_lambda_with_argument_expression_reduces/0},
+
+    {"foreign function application no arg reduces to future",
+     fun foreign_function_application_no_arg_reduces_to_future/0},
+
+    {"foreign function application one arg reduces to future",
+     fun foreign_function_application_one_arg_reduces_to_future/0},
+
+    {"foreign function application reduces function expression",
+     fun foreign_function_application_reduces_function_expression/0},
+
+    {"foreign function application reduces argument expression",
+     fun foreign_function_application_reduces_argument_expression/0},
+
+    {"cons car reduces",
+     fun cons_car_reduces/0},
+
+    {"cons cdr reduces",
+     fun cons_cdr_reduces/0},
+
+    {"append nil and list reduces to list",
+     fun append_nil_and_list_reduces_to_list/0},
+
+    {"append cons list1 and list2 reduces to cons append list1 and list2",
+     fun append_cons_list1_and_list2_reduces_to_cons_append_list1_and_list2/0},
+
+    {"append with expression lhs reduces",
+     fun append_with_expression_lhs_reduces/0},
+
+    {"append with expression rhs reduces",
+     fun append_with_expression_rhs_reduces/0},
+
+    {"isnil empty list reduces to true",
+     fun isnil_empty_list_reduces_to_true/0},
+
+    {"isnil non-empty list reduces to false",
+     fun isnil_nonempty_list_reduces_to_false/0},
+
+    {"isnil with expression operand reduces",
+     fun isnil_with_expression_operand_reduces/0},
+
+    {"record with expression field reduces",
+     fun record_with_expression_field_reduces/0},
+
+    {"projection reduces to record field",
+     fun projection_reduces_to_record_field/0},
+
+    {"projection with expression operand reduces",
+     fun projection_with_expression_operand_reduces/0},
+
+    {"fixpoint operator reduces",
+     fun fixpoint_operator_reduces/0}
 
     % {"map reduces to list",
     %  fun map_reduces_to_list/0},
@@ -179,26 +230,17 @@ reduce_test_() ->
     % {"zip reduces to list",
     %  fun zip_reduces_to_list/0},
 
-    % {"fold reduces",
-    %  fun fold_reduces/0},
-
-    % {"fixpoint operator reduces",
-    %  fun fixpoint_operator_reduces/0},
-
-    % {"fixpoint operator inserts function definition",
-    %  fun fixpoint_operator_inserts_function_definition/0},
-
     % {"for over empty list reduces to empty list",
     %  fun for_over_empty_list_reduces_to_empty_list/0},
 
-    % {"folding over empty list reduces to initial accumulator",
-    %  fun folding_over_empty_list_reduces_to_initial_accumulator/0},
-
-    % {"foreign function application reduces to future",
-    %  fun foreign_function_application_reduces_to_future/0},
-
     % {"nested error reduces to error",
-    %  fun nested_error_reduces_to_error/0}
+    %  fun nested_error_reduces_to_error/0},
+
+    % {"fold reduces",
+    %  fun fold_reduces/0},
+
+    % {"folding over empty list reduces to initial accumulator",
+    %  fun folding_over_empty_list_reduces_to_initial_accumulator/0}
    ]
   }.
 
@@ -297,13 +339,13 @@ false_and_false_reduces_to_false() ->
     {ok, false(), []},
     step( conj( false(), false() ) ) ).
 
-conjugation_with_expression_lhs_reduces() ->
+conjunction_with_expression_lhs_reduces() ->
   E = conj( cmp( str( <<"bla">> ), str( <<"bla">> ) ), true() ),
   ?assertEqual(
     {ok, true(), []},
     step( E ) ).
 
-conjugation_with_expression_rhs_reduces() ->
+conjunction_with_expression_rhs_reduces() ->
   E = conj( true(), cmp( str( <<"bla">> ), str( <<"bla">> ) ) ),
   ?assertEqual(
     {ok, true(), []},
@@ -329,6 +371,18 @@ false_or_false_reduces_to_false() ->
     {ok, false(), []},
     step( disj( false(), false() ) ) ).
 
+disjunction_with_expression_lhs_reduces() ->
+  E = disj( cmp( str( <<"bla">> ), str( <<"bla">> ) ), true() ),
+  ?assertEqual(
+    {ok, true(), []},
+    step( E ) ).
+
+disjunction_with_expression_rhs_reduces() ->
+  E = disj( true(), cmp( str( <<"bla">> ), str( <<"bla">> ) ) ),
+  ?assertEqual(
+    {ok, true(), []},
+    step( E ) ).
+
 nat_app_without_arg_reduces_to_lam_body() ->
   E1 = app( e_lam_const(), [] ),
   E2 = str( <<"blub">> ),
@@ -336,12 +390,115 @@ nat_app_without_arg_reduces_to_lam_body() ->
     {ok, E2, []},
     step( E1 ) ).
 
-nat_app_with_single_arg_reduces_to_empty_application() ->
+nat_app_identity_reduces_to_arg() ->
   E1 = e_app_id(),
-  E2 = app( lam_ntv( [], str( <<"blub">> ) ), [] ),
+  E2 = str( <<"blub">> ),
   ?assertEqual(
     {ok, E2, []},
     step( E1 ) ).
+
+nat_lambda_shadows_bound_occurrences() ->
+  E1 =
+    app(
+      lam_ntv(
+        [lam_ntv_arg( x, t_str() )],
+        app(
+          lam_ntv(
+            [lam_ntv_arg( x, t_str() )],
+            var( x ) ),
+          [e_bind( x, str( <<"5">> ) )]) ),
+      [e_bind( x, str( <<"4">> ) )] ),
+  E2 = str( <<"5">> ),
+  ?assertEqual(
+    {ok, E2, []},
+    step( E1 ) ).
+
+nat_lambda_with_function_expression_reduces() ->
+  E1 =
+    app(
+      lam_ntv(
+        [lam_ntv_arg( f, t_fn( ntv, [t_arg( x, t_str() )], t_str() ) )],
+        app( var( f ), [e_bind( x, str( <<"5">> ) )] ) ),
+      [e_bind( f, lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ) )] ),
+  ?assertEqual(
+    {ok, str( <<"5">> ), []},
+    step( E1 ) ).
+
+nat_lambda_with_argument_expression_reduces() ->
+  E1 =
+    app(
+      lam_ntv( [lam_ntv_arg( x, t_bool() )], var( x ) ),
+      [e_bind( x, cmp( str( <<"bla">> ), str( <<"blub">> ) ) )] ),
+  ?assertEqual(
+    {ok, false(), []},
+    step( E1 ) ).
+
+foreign_function_application_no_arg_reduces_to_future() ->
+  E1 = app( lam_frn( f, [], t_rcd( [t_arg( out, t_str() )]), l_bash(), <<"blub">> ), [] ),
+  ?assertMatch(
+    {ok, {fut, na, {'Rcd', [{out, 'Str'}]}, _}, [_]},
+    step( E1 ) ).
+
+foreign_function_application_one_arg_reduces_to_future() ->
+  E1 =
+    app(
+      lam_frn(
+        f,
+        [t_arg( x, t_str() )],
+        t_rcd( [t_arg( out, t_str() )]),
+        l_bash(),
+        <<"blub">> ),
+      [e_bind( x, str( <<"bla">> ) )] ),
+  ?assertMatch(
+    {ok, {fut, na, {'Rcd', [{out, 'Str'}]}, _}, [_]},
+    step( E1 ) ).
+
+foreign_function_application_reduces_function_expression() ->
+  E1 =
+    app(
+      lam_ntv(
+        [lam_ntv_arg( f, t_fn( frn, [], t_rcd( [t_arg( out, t_str() )] ) ) )],
+        app( var( f ), [] ) ),
+      [e_bind(
+        f,
+        lam_frn(
+          f,
+          [],
+          t_rcd( [t_arg( out, t_str() )] ),
+          l_bash(),
+          <<"blub">> ) )] ),
+  ?assertMatch(
+    {ok, {fut, na, {'Rcd', [{out, 'Str'}]}, _}, [_]},
+    step( E1 ) ).
+
+foreign_function_application_reduces_argument_expression() ->
+  E1 =
+    app(
+      lam_frn(
+        f,
+        [t_arg( x, t_bool() )],
+        t_rcd( [t_arg( out, t_bool() )] ),
+        l_bash(),
+        <<"blub">> ),
+      [e_bind( x, neg( true() ) )] ),
+  ?assertMatch(
+    {ok, {fut, na, {'Rcd', [{out, 'Bool'}]}, _}, [_]},
+    step( E1 ) ).
+
+cons_car_reduces() ->
+  E1 =
+    cons( cmp( str( <<"bla">> ), str( <<"blub">> ) ), null( t_bool() ) ),
+  ?assertEqual(
+    {ok, cons( false(), null( t_bool() ) ), []},
+    step( E1 ) ).
+
+cons_cdr_reduces() ->
+  E1 =
+    cons( false(), cnd( true(), null( t_bool() ), null( t_bool() ) ) ),
+  ?assertEqual(
+    {ok, cons( false(), null( t_bool() ) ), []},
+    step( E1 ) ).
+
 
 append_nil_and_list_reduces_to_list() ->
   E2 = lst( t_bool(), [false(), true()] ),
@@ -351,11 +508,28 @@ append_nil_and_list_reduces_to_list() ->
     step( E1 ) ).
 
 append_cons_list1_and_list2_reduces_to_cons_append_list1_and_list2() ->
+  L1 = lst( t_bool(), [true(), false()] ),
   L2 = lst( t_bool(), [false(), true()] ),
-  E1 = append( lst( t_bool(), [true(), false()] ), L2 ),
-  E2 = cons( true(), append( lst( t_bool(), [false()] ), L2 ) ),
+  E1 = append( L1, L2 ),
+  E2 = lst( t_bool(), [true(), false(), false(), true()] ),
   ?assertEqual(
     {ok, E2, []},
+    step( E1 ) ).
+
+append_with_expression_lhs_reduces() ->
+  L1 = cnd( true(), null( t_bool() ), null( t_bool() ) ),
+  L2 = null( t_bool() ),
+  E1 = append( L1, L2 ),
+  ?assertEqual(
+    {ok, null( t_bool() ), []},
+    step( E1 ) ).
+
+append_with_expression_rhs_reduces() ->
+  L1 = null( t_bool() ),
+  L2 = cnd( true(), null( t_bool() ), null( t_bool() ) ),
+  E1 = append( L1, L2 ),
+  ?assertEqual(
+    {ok, null( t_bool() ), []},
     step( E1 ) ).
 
 isnil_empty_list_reduces_to_true() ->
@@ -372,11 +546,41 @@ isnil_nonempty_list_reduces_to_false() ->
     {ok, E2, []},
     step( E1 ) ).
 
+isnil_with_expression_operand_reduces() ->
+  L = cnd( true(), null( t_bool() ), null( t_bool() ) ),
+  E1 = isnil( L ),
+  ?assertEqual(
+    {ok, true(), []},
+    step( E1 ) ).
+
+record_with_expression_field_reduces() ->
+  E0 = cmp( str( <<"bla">> ), str( <<"blub">> ) ),
+  E1 = rcd( [e_bind( a, E0 )] ),
+  E2 = rcd( [e_bind( a, false() )] ),
+  ?assertEqual(
+    {ok, E2, []},
+    step( E1 ) ).
+
 projection_reduces_to_record_field() ->
   E2 = str( <<"bla">> ),
   E1 = proj( a, rcd( [e_bind( a, E2 )] ) ),
   ?assertEqual(
     {ok, E2, []},
+    step( E1 ) ).
+
+projection_with_expression_operand_reduces() ->
+  E2 = cmp( str( <<"blub">> ), str( <<"bla">> ) ),
+  E1 = proj( a, rcd( [e_bind( a, E2 )] ) ),
+  ?assertEqual(
+    {ok, false(), []},
+    step( E1 ) ).
+
+fixpoint_operator_reduces() ->
+  E2 = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+                     str( <<"blub">> ) ) ),
+  E1 = app( E2, [] ),
+  ?assertEqual(
+    {ok, str( <<"blub">> ), []},
     step( E1 ) ).
 
 map_reduces_to_list() ->
@@ -413,22 +617,6 @@ fold_reduces() ->
     {ok, E2, []},
     step( E1 ) ).
 
-fixpoint_operator_reduces() ->
-  E1 = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
-                     str( <<"blub">> ) ) ),
-  E2 = lam_ntv( [], str( <<"blub">> ) ),
-  ?assertEqual(
-    {ok, E2, []},
-    step( E1 ) ).
-
-fixpoint_operator_inserts_function_definition() ->
-  E1 = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
-                    var( f ) ) ),
-  E2 = lam_ntv( [], E1 ),
-  ?assertEqual(
-    {ok, E2, []},
-    step( E1 ) ).
-
 for_over_empty_list_reduces_to_empty_list() ->
   E1 = for( t_str(), [e_bind( x, null( t_str() ) )], var( x ) ),
   E2 = null( t_str() ),
@@ -441,12 +629,6 @@ folding_over_empty_list_reduces_to_initial_accumulator() ->
   E2 = str( <<"bla">> ),
   ?assertEqual(
     {ok, E2, []},
-    step( E1 ) ).
-
-foreign_function_application_reduces_to_future() ->
-  E1 = app( lam_frn( f, [], t_rcd( [t_arg( out, t_str() )]), l_bash(), <<"blub">> ), [] ),
-  ?assertMatch(
-    {ok, {fut, na, {'Rcd', [{out, 'Str'}]}, _}, [_]},
     step( E1 ) ).
 
 nested_error_reduces_to_error() ->

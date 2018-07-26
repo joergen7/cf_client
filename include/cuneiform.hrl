@@ -93,7 +93,7 @@
                      | {app, info(), e(), [e_bind()]}
                      | {fut, info(), t(), hash()}
                      | {null, info(), t()}
-                     | {cons, info(), t(), e(), e()}
+                     | {cons, info(), e(), e()}
                      | {append, info(), e, e}
                      | {isnil, info(), e}
                      | {for, info(), t(), [e_bind()], e()}     % binding form
