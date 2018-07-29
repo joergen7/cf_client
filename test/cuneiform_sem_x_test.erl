@@ -48,9 +48,9 @@
 %% Imports
 %%====================================================================
 
--import( ?CUNEIFORM_SEM, [step/1] ).
+-import( ?CUNEIFORM_SEM, [step/1, split_zip/1, bind_all/3] ).
 
--import( cuneiform_lang, [t_str/0, t_bool/0, t_fn/3, t_rcd/1] ).
+-import( cuneiform_lang, [t_str/0, t_bool/0, t_fn/3, t_rcd/1, t_lst/1] ).
 -import( cuneiform_lang, [lam_ntv_arg/2, e_bind/2, t_arg/2] ).
 -import( cuneiform_lang, [l_bash/0] ).
 -import( cuneiform_lang, [
@@ -79,7 +79,7 @@ e_app_id() ->
 %% Notion of reduction
 %%====================================================================
 
-reduce_test_() ->
+step_test_() ->
   {foreach,
 
    fun() -> ok end,
@@ -222,25 +222,27 @@ reduce_test_() ->
      fun projection_with_expression_operand_reduces/0},
 
     {"fixpoint operator reduces",
-     fun fixpoint_operator_reduces/0}
+     fun fixpoint_operator_reduces/0},
 
-    % {"map reduces to list",
-    %  fun map_reduces_to_list/0},
+    {"map reduces to list",
+     fun map_reduces_to_list/0},
 
-    % {"zip reduces to list",
-    %  fun zip_reduces_to_list/0},
+    {"zip reduces to list",
+     fun zip_reduces_to_list/0},
 
-    % {"for over empty list reduces to empty list",
-    %  fun for_over_empty_list_reduces_to_empty_list/0},
+    {"for over empty list reduces to empty list",
+     fun for_over_empty_list_reduces_to_empty_list/0},
 
-    % {"nested error reduces to error",
-    %  fun nested_error_reduces_to_error/0},
 
-    % {"fold reduces",
-    %  fun fold_reduces/0},
+    {"fold reduces",
+     fun fold_reduces/0},
 
-    % {"folding over empty list reduces to initial accumulator",
-    %  fun folding_over_empty_list_reduces_to_initial_accumulator/0}
+    {"folding over empty list reduces to initial accumulator",
+     fun folding_over_empty_list_reduces_to_initial_accumulator/0},
+
+    {"nested error reduces to error",
+     fun nested_error_reduces_to_error/0}
+
    ]
   }.
 
@@ -585,8 +587,7 @@ fixpoint_operator_reduces() ->
 
 map_reduces_to_list() ->
   E1 = for( t_bool(), [e_bind( x, lst( t_bool(), [true(), false()] ) )], neg( var( x ) ) ),
-  E2 = cons( neg( true() ),
-             for( t_bool(), [e_bind( x, lst( t_bool(), [false()] ) )], neg( var( x ) ) ) ),
+  E2 = cons( false(), cons( true(), null( t_bool() ) ) ),
   ?assertEqual(
     {ok, E2, []},
     step( E1 ) ).
@@ -596,12 +597,7 @@ zip_reduces_to_list() ->
             [e_bind( x, lst( t_bool(), [true(), false()] ) ),
              e_bind( y, lst( t_bool(), [false(), false()] ) )],
             disj( var( x ), var( y ) ) ),
-  E2 = cons( disj( true(), false() ),
-             for( t_bool(),
-                  [e_bind( x, lst( t_bool(), [false()] ) ),
-                   e_bind( y, lst( t_bool(), [false()] ) )],
-                  disj( var( x ), var( y ) ) ) ),
-
+  E2 = cons( true(), cons( false(), null( t_bool() ) ) ),
   ?assertEqual(
     {ok, E2, []},
     step( E1 ) ).
@@ -610,11 +606,8 @@ fold_reduces() ->
   E1 = fold( e_bind( x_acc, str( <<"0">> ) ),
              e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
              var( x ) ),
-  E2 = fold( e_bind( x_acc, str( <<"1">> ) ),
-             e_bind( x, lst( t_str(), [str( <<"2">> )] ) ),
-             var( x ) ),
   ?assertEqual(
-    {ok, E2, []},
+    {ok, str( <<"2">> ), []},
     step( E1 ) ).
 
 for_over_empty_list_reduces_to_empty_list() ->
@@ -637,3 +630,75 @@ nested_error_reduces_to_error() ->
   ?assertEqual(
     {ok, Err, []},
     step( E1 ) ).
+
+
+
+split_zip_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"all lists empty returns null",
+     fun all_lists_empty_returns_null/0},
+
+    {"some list empty returns null",
+     fun some_list_empty_returns_null/0},
+
+    {"some list unevaluated returns stalled",
+     fun some_list_unevaluated_returns_stalled/0},
+
+    {"all lists non-empty splits head",
+     fun all_lists_nonempty_splits_head/0}
+   ]}.
+
+all_lists_empty_returns_null() ->
+  EBindLst = [e_bind( a, null( t_str() ) ),
+              e_bind( b, null( t_str() ) )],
+  ?assertEqual( null, split_zip( EBindLst ) ).
+
+some_list_empty_returns_null() ->
+  EBindLst = [e_bind( a, null( t_str() ) ),
+              e_bind( b, cons( str( <<"bla">> ), null( t_str() ) ) )],
+  ?assertEqual( null, split_zip( EBindLst ) ).
+
+some_list_unevaluated_returns_stalled() ->
+  EBindLst = [e_bind( a, cons( str( <<"bla">> ), null( t_str() ) ) ),
+              e_bind( b, {fut, na, t_lst( t_str() )} )],
+  ?assertEqual( stalled, split_zip( EBindLst ) ).
+
+all_lists_nonempty_splits_head() ->
+  EBindLst = [e_bind( a, cons( str( <<"bla">> ), null( t_str() ) ) ),
+              e_bind( b, cons( str( <<"blub">> ), null( t_str() ) ) )],
+  ?assertEqual( {ok, [e_bind( a, str( <<"bla">> ) ),
+                      e_bind( b, str( <<"blub">> ) )],
+                     [e_bind( a, null( t_str() ) ),
+                      e_bind( b, null( t_str() ) )]},
+                split_zip( EBindLst ) ).
+
+
+bind_all_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"empty binding list returns body",
+     fun empty_binding_list_returns_body/0},
+
+    {"non-empty binding produces application",
+     fun nonempty_binding_produces_application/0}
+   ]}.
+
+empty_binding_list_returns_body() ->
+  EBody = str( <<"bla">> ),
+  ?assertEqual( EBody, bind_all( na, [], EBody ) ).
+
+
+nonempty_binding_produces_application() ->
+  EBody = str( <<"bla">> ),
+  E2 = app( lam_ntv( [lam_ntv_arg( x, undefined_type )], EBody ),
+            [e_bind( x, str( <<"x">> ) )] ),
+  ?assertEqual( E2, bind_all( na, [e_bind( x, str( <<"x">> ) )], EBody ) ).
