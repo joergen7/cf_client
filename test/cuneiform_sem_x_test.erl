@@ -57,7 +57,7 @@
                           str/1, true/0, false/0, cnd/3, var/1, lam_frn/5,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
                           lst/2, append/2, isnil/1, for/3, fold/3, err/2,
-                          rcd/1, proj/2, fix/1, null/1, cons/2
+                          rcd/1, proj/2, fix/1, null/1, cons/2, file/1
                          ] ).
 
  
@@ -470,7 +470,9 @@ foreign_function_application_reduces_function_expression() ->
           l_bash(),
           <<"blub">> ) )] ),
   ?assertMatch(
-    {ok, {fut, na, {'Rcd', [{out, 'Str'}]}, _}, [_]},
+    {ok, {app, na,
+               {lam_ntv, na, [_], {fut, na, {'Rcd', [{out, 'Str'}]}, _}},
+               [{f, _}]}, [_]},
     step( E1 ) ).
 
 foreign_function_application_reduces_argument_expression() ->
@@ -646,8 +648,8 @@ split_zip_test_() ->
     {"some list empty returns null",
      fun some_list_empty_returns_null/0},
 
-    {"some list unevaluated returns stalled",
-     fun some_list_unevaluated_returns_stalled/0},
+    {"some list unevaluated returns norule",
+     fun some_list_unevaluated_returns_norule/0},
 
     {"all lists non-empty splits head",
      fun all_lists_nonempty_splits_head/0}
@@ -663,18 +665,18 @@ some_list_empty_returns_null() ->
               e_bind( b, cons( str( <<"bla">> ), null( t_str() ) ) )],
   ?assertEqual( null, split_zip( EBindLst ) ).
 
-some_list_unevaluated_returns_stalled() ->
+some_list_unevaluated_returns_norule() ->
   EBindLst = [e_bind( a, cons( str( <<"bla">> ), null( t_str() ) ) ),
               e_bind( b, {fut, na, t_lst( t_str() )} )],
-  ?assertEqual( stalled, split_zip( EBindLst ) ).
+  ?assertEqual( stuck, split_zip( EBindLst ) ).
 
 all_lists_nonempty_splits_head() ->
   EBindLst = [e_bind( a, cons( str( <<"bla">> ), null( t_str() ) ) ),
               e_bind( b, cons( str( <<"blub">> ), null( t_str() ) ) )],
-  ?assertEqual( {ok, [e_bind( a, str( <<"bla">> ) ),
-                      e_bind( b, str( <<"blub">> ) )],
-                     [e_bind( a, null( t_str() ) ),
-                      e_bind( b, null( t_str() ) )]},
+  ?assertEqual( {[e_bind( a, str( <<"bla">> ) ),
+                  e_bind( b, str( <<"blub">> ) )],
+                 [e_bind( a, null( t_str() ) ),
+                  e_bind( b, null( t_str() ) )]},
                 split_zip( EBindLst ) ).
 
 
@@ -702,3 +704,6 @@ nonempty_binding_produces_application() ->
   E2 = app( lam_ntv( [lam_ntv_arg( x, undefined_type )], EBody ),
             [e_bind( x, str( <<"x">> ) )] ),
   ?assertEqual( E2, bind_all( na, [e_bind( x, str( <<"x">> ) )], EBody ) ).
+
+
+
