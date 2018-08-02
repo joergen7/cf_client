@@ -685,8 +685,8 @@ try_ascend( {{{rcd, _, EBindLst}, _}, [{proj_op, _, X}|K], Outbox} ) ->
   {_, EX} = lists:keyfind( X, 1, EBindLst ),
   {{EX, #{}}, K, Outbox};
 
-try_ascend( {{_, _}, [{proj_op, _, _}|_], _} ) ->
-  io:format( "========\n~p\n========\n" ),
+try_ascend( P = {{_, _}, [{proj_op, _, _}|_], _} ) ->
+  io:format( "========\n~p\n========\n", [P] ),
   error( "stuck: bad state" );
 
 
