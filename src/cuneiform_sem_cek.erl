@@ -120,7 +120,6 @@ step( E ) ->
 -spec eval_cek( P :: prog() ) -> prog().
 
 eval_cek( P ) ->
-  io:format( "~p\n\n", [P] ),
   case step_cek( P ) of
     norule -> P;
     P1     -> eval_cek( P1 )
@@ -203,6 +202,9 @@ try_descend( {{{fold, Info, {XAcc, EAcc}, {XLst, ELst}, EBody}, Env},
               K,
               Outbox} ) ->
   {{ELst, Env}, [{fold_arg, Info, {XAcc, EAcc}, XLst, EBody, Env}|K], Outbox};
+
+try_descend( {{E1 = {fut, _, _, _}, _}, K, Output} ) ->
+  {{{stalled, E1}, #{}}, K, Output};
 
 try_descend( _ ) ->
   norule.
@@ -428,7 +430,7 @@ try_ascend( {{{lam_frn, LamInfo, FName, ArgLst, RetType, Lang, Body}, _},
          []},
   EffiRequest = cf_client_effi:app_to_effi_request( E1 ),
   #{ app_id := AppId } = EffiRequest,
-  {{{stalled, {fut, Info, RetType, AppId}}, #{}}, K, [EffiRequest|Outbox]};
+  {{{fut, Info, RetType, AppId}, #{}}, K, [EffiRequest|Outbox]};
 
 try_ascend( {{Lam = {lam_frn, _, _, _, _, _, _}, _},
           [{app_fn, Info, [{X1, E1}|EBindLst], Env}|K],
@@ -491,7 +493,7 @@ try_ascend( {{E1, _},
                 EBindLst1},
           EffiRequest = cf_client_effi:app_to_effi_request( E ),
           #{ app_id := AppId } = EffiRequest,
-          {{{stalled, {fut, Info, RetType, AppId}}, #{}},
+          {{{fut, Info, RetType, AppId}, #{}},
            K,
            [EffiRequest|Outbox]}
 
@@ -689,7 +691,7 @@ try_ascend( {{{rcd, _, EBindLst}, _}, [{proj_op, _, X}|K], Outbox} ) ->
   {_, EX} = lists:keyfind( X, 1, EBindLst ),
   {{EX, #{}}, K, Outbox};
 
-try_ascend( P = {{_, _}, [{proj_op, _, _}|_], _} ) ->
+try_ascend( {{_, _}, [{proj_op, _, _}|_], _} ) ->
   error( "stuck: bad state" );
 
 
