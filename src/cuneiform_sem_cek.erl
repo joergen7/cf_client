@@ -120,6 +120,7 @@ step( E ) ->
 -spec eval_cek( P :: prog() ) -> prog().
 
 eval_cek( P ) ->
+  io:format( "~p\n\n", [P] ),
   case step_cek( P ) of
     norule -> P;
     P1     -> eval_cek( P1 )
@@ -405,6 +406,7 @@ when is_boolean( B2 ) ->
 try_ascend( {{_, _}, [{disj_rhs, _, _}|_], _} ) ->
   error( "stuck: bad state" );
 
+
 % application function argument
 
 try_ascend( {{{stalled, E1}, _}, [{app_fn, Info, EBindLst, _}|K], Outbox} ) ->
@@ -678,6 +680,8 @@ try_ascend( {{E1, _},
 
 % record projection
 
+% TODO: reach under stalled projection if operand has the form of a record
+
 try_ascend( {{{stalled, E1}, _}, [{proj_op, Info, X}|K], Outbox} ) ->
   {{{stalled, {proj, Info, X, E1}}, #{}}, K, Outbox};
 
@@ -686,7 +690,6 @@ try_ascend( {{{rcd, _, EBindLst}, _}, [{proj_op, _, X}|K], Outbox} ) ->
   {{EX, #{}}, K, Outbox};
 
 try_ascend( P = {{_, _}, [{proj_op, _, _}|_], _} ) ->
-  io:format( "========\n~p\n========\n", [P] ),
   error( "stuck: bad state" );
 
 
