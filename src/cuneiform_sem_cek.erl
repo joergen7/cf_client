@@ -105,12 +105,20 @@ when E      :: e(),
              | norule.
 
 step( E ) ->
+
   P = {{E, #{}}, [], []},
+
   {{E1, _}, [], Outbox} = eval_cek( P ),
-  case E1 of
-    E              -> norule;
-    {stalled, E11} -> {ok, E11, Outbox};
-    _              -> {ok, E1, Outbox}
+
+  E2 =
+    case E1 of
+      {stalled, E11} -> {ok, E11, Outbox};
+      _              -> {ok, E1, Outbox}
+    end,
+
+  case E2 of
+    E -> norule;
+    _ -> E2
   end.
 
 
