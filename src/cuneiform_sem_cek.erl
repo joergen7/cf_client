@@ -112,8 +112,8 @@ step( E ) ->
 
   E2 =
     case E1 of
-      {stalled, E11} -> {ok, E11, Outbox};
-      _              -> {ok, E1, Outbox}
+      {stalled, E11} -> E11;
+      _              -> E1
     end,
 
   case E2 of
