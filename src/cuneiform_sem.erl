@@ -95,10 +95,12 @@ subst_fut( E = {file, _, _, _}, _, _ )             -> E;
 subst_fut( E = {true, _}, _, _ )                   -> E;
 subst_fut( E = {false, _}, _, _ )                  -> E;
 subst_fut( E = {var, _, _}, _, _ )                 -> E;
-subst_fut( E = {lam_ntv, _, _, _}, _, _ )          -> E;
 subst_fut( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
 subst_fut( E = {null, _, _}, _, _ )                -> E;
 subst_fut( E = {err, _, _, _}, _, _ )              -> E;
+
+subst_fut( {lam_ntv, Info, ArgLst, EBody}, H, ES ) ->
+  {lam_ntv, Info, ArgLst, subst_fut( EBody, H, ES )};
 
 subst_fut( {cmp, Info, E1, E2}, H, ES ) ->
   cmp( Info, subst_fut( E1, H, ES ),

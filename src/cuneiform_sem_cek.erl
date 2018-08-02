@@ -119,7 +119,6 @@ step( E ) ->
   case E2 of
     E -> norule;
     _ ->
-      io:format( "~p~n~n", [E2] ),
       {ok, E2, Outbox}
   end.
 
@@ -691,9 +690,20 @@ try_ascend( {{E1, _},
        Outbox}
   end;
 
+
 % record projection
 
-% TODO: reach under stalled projection if operand has the form of a record
+try_ascend( {{{stalled, {rcd, _, EBindLst}}, _},
+             [{proj_op, _, X}|K],
+             Outbox} ) ->
+  {_, EX} = lists:keyfind( X, 1, EBindLst ),
+  EX1 =
+    case is_value( EX ) of
+      true  -> EX;
+      false -> {stalled, EX}
+    end,
+  {{EX1, #{}}, K, Outbox};
+  
 
 try_ascend( {{{stalled, E1}, _}, [{proj_op, Info, X}|K], Outbox} ) ->
   {{{stalled, {proj, Info, X, E1}}, #{}}, K, Outbox};
