@@ -108,6 +108,7 @@ step( E ) ->
   P = {{E, #{}}, [], []},
   {{E1, _}, [], Outbox} = eval_cek( P ),
   case E1 of
+    E              -> norule;
     {stalled, E11} -> {ok, E11, Outbox};
     _              -> {ok, E1, Outbox}
   end.
@@ -119,8 +120,7 @@ step( E ) ->
 
 -spec eval_cek( P :: prog() ) -> prog().
 
-eval_cek( P = {{C, _}, _, _}) ->
-  io:format( "{{~p, _}, _, _}\n\n", [C] ),
+eval_cek( P ) ->
   case step_cek( P ) of
     norule -> P;
     P1     -> eval_cek( P1 )
