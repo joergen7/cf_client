@@ -686,6 +686,7 @@ try_ascend( {{{rcd, _, EBindLst}, _}, [{proj_op, _, X}|K], Outbox} ) ->
   {{EX, #{}}, K, Outbox};
 
 try_ascend( {{_, _}, [{proj_op, _, _}|_], _} ) ->
+  io:format( "========\n~p\n========\n" ),
   error( "stuck: bad state" );
 
 
