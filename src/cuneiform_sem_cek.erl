@@ -119,8 +119,8 @@ step( E ) ->
 
 -spec eval_cek( P :: prog() ) -> prog().
 
-eval_cek( P ) ->
-  io:format( "~p\n\n", [P] ),
+eval_cek( P = {{C, _}, K, _}) ->
+  io:format( "{{~p, _}, ~p, _}\n\n", [C, K] ),
   case step_cek( P ) of
     norule -> P;
     P1     -> eval_cek( P1 )
