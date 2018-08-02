@@ -118,7 +118,7 @@ step( E ) ->
 
   case E2 of
     E -> norule;
-    _ -> E2
+    _ -> {ok, E2, Outbox}
   end.
 
 
