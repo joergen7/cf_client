@@ -44,7 +44,7 @@
 
 
 
--define( CUNEIFORM_SEM, cuneiform_sem_stx ).
+-define( CUNEIFORM_SEM, cuneiform_sem_cek ).
 
 -include_lib( "cuneiform.hrl" ).
 
