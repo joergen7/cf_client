@@ -120,6 +120,7 @@ step( E ) ->
 -spec eval_cek( P :: prog() ) -> prog().
 
 eval_cek( P ) ->
+  io:format( "~p\n\n", [P] ),
   case step_cek( P ) of
     norule -> P;
     P1     -> eval_cek( P1 )
