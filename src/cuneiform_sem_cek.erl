@@ -596,6 +596,13 @@ try_ascend( {{E2, _}, [{cons_tl, Info, E1}|K], Outbox} ) ->
 try_ascend( {{{stalled, {cons, ConsInfo, E11, E12}}, _},
              [{append_lhs, Info, E2, Env}|K],
              Outbox} ) ->
+
+  F11 =
+    case is_value( E11 ) of
+      true  -> E11;
+      false -> {stalled, E11}
+    end,
+
   F12 =
     case is_value( E12 ) of
       true  -> E12;
@@ -603,7 +610,7 @@ try_ascend( {{{stalled, {cons, ConsInfo, E11, E12}}, _},
     end,
 
   {{F12, #{}},
-   [{append_lhs, Info, E2, Env}, {cons_tl, ConsInfo, E11}|K],
+   [{append_lhs, Info, E2, Env}, {cons_tl, ConsInfo, F11}|K],
    Outbox};
 
 try_ascend( {{{stalled, E1}, _}, [{append_lhs, Info, E2, Env}|K], Outbox} ) ->
