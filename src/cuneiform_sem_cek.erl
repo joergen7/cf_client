@@ -454,10 +454,11 @@ try_ascend( {{_, _}, [{app_fn, _, _, _}|_], _} ) ->
 % application function body
 
 try_ascend( {{{stalled, EBody}, _},
-             [{app_body, Info, {lam_ntv, Info, ArgLst, _}, EBindLst}|K],
+             [{app_body, Info, {lam_ntv, LamInfo, ArgLst, _}, EBindLst}|K],
              Outbox} ) ->
-  Lam = {lam_ntv, Info, ArgLst, EBody},
-  {{{stalled, {app, Info, Lam, EBindLst}}, #{}}, K, Outbox};
+  Lam = {lam_ntv, LamInfo, ArgLst, EBody},
+  EBindLst1 = unstall( EBindLst ),
+  {{{stalled, {app, Info, Lam, EBindLst1}}, #{}}, K, Outbox};
 
 try_ascend( {{EBody, _}, [{app_body, _, _, _}|K], Outbox} ) ->
   case is_value( EBody ) of
@@ -469,7 +470,7 @@ try_ascend( {{EBody, _}, [{app_body, _, _, _}|K], Outbox} ) ->
 % application argument
 
 try_ascend( {{{stalled, E1}, _},
-             [{app_arg, Info, Lam, PreBindLst, X1, []}|K],
+             [{app_arg, Info, Lam, PreBindLst, X1, [], _}|K],
              Outbox} ) ->
   EBindLst1 = lists:reverse( [{X1, E1}|PreBindLst] ),
   EBindLst2 = unstall( EBindLst1 ),
