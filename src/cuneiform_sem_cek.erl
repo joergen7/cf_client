@@ -119,6 +119,7 @@ step( E ) ->
   case E2 of
     E -> norule;
     _ ->
+      io:format( "~p~n~n", [E2] ),
       {ok, E2, Outbox}
   end.
 
