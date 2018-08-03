@@ -594,14 +594,35 @@ try_ascend( {{E2, _}, [{cons_tl, Info, E1}|K], Outbox} ) ->
 
 % append lhs
 
+try_ascend( {{{stalled, {cons, ConsInfo, E11, E12}}, _},
+             [{append_lhs, Info, E2, Env}|K],
+             Outbox} ) ->
+  F12 =
+    case is_value( E12 ) of
+      true  -> E12;
+      false -> {stalled, E12}
+    end,
+
+  {{F12, Env},
+   [{append_lhs, Info, E2, Env}, {cons_tl, ConsInfo, E11}|K],
+   Outbox};
+
 try_ascend( {{{stalled, E1}, _}, [{append_lhs, Info, E2, Env}|K], Outbox} ) ->
   {{E2, Env}, [{append_rhs, Info, {stalled, E1}}|K], Outbox};
 
-try_ascend( {{E1, _}, [{append_lhs, Info, E2, Env}|K], Outbox} ) ->
-  case is_value( E1 ) of
+try_ascend( {{{cons, ConsInfo, E11, E12}, _},
+             [{append_lhs, Info, E2, Env}|K], Outbox} ) ->
+  case is_value( E11 ) andalso is_value( E12 ) of
     false -> error( "stuck: bad state" );
-    true  -> {{E2, Env}, [{append_rhs, Info, E1}|K], Outbox}
+    true  ->
+      {{E12, Env},
+       [{append_lhs, Info, E2, Env}, {cons_tl, ConsInfo, E11}|K],
+       Outbox}
   end;
+
+try_ascend( {{{null, _, _}, _}, [{append_lhs, _, E2, Env}|K], Outbox} ) ->
+  {{E2, Env}, K, Outbox};
+
 
 
 % append rhs
@@ -609,24 +630,8 @@ try_ascend( {{E1, _}, [{append_lhs, Info, E2, Env}|K], Outbox} ) ->
 try_ascend( {{{stalled, E2}, _}, [{append_rhs, Info, {stalled, E1}}|K], Outbox} ) ->
   {{{stalled, {append, Info, E1, E2}}, #{}}, K, Outbox};
 
-try_ascend( {{{stalled, E2}, _}, [{append_rhs, Info, E1}|K], Outbox} ) ->
-  {{{stalled, {append, Info, E1, E2}}, #{}}, K, Outbox};
-
 try_ascend( {{E2, _}, [{append_rhs, Info, {stalled, E1}}|K], Outbox} ) ->
   {{{stalled, {append, Info, E1, E2}}, #{}}, K, Outbox};
-
-try_ascend( {{E2, _}, [{append_rhs, _, E1}|K], Outbox} ) ->
-
-  F =
-    fun
-      F( {null, _, _}, EE2 )             -> EE2;
-      F( {cons, I, EE11, EE12}, EE2 ) -> {cons, I, EE11, F( EE12, EE2 )}
-    end,
-
-  case is_value( E1 ) andalso is_value( E2 ) of
-    false -> error( "stuck: bad state" );
-    true  -> {{F( E1, E2 ), #{}}, K, Outbox}
-  end;
 
 
 % isnil operand
@@ -741,7 +746,7 @@ try_ascend( {{E1, _},
             Outbox} ) ->
   EBindLst1 = lists:reverse( [{X1, E1}|PreLst] ),
   case split_zip( EBindLst1 ) of
-    stuck   -> error( "stuck: bad state" );
+    stuck    -> error( "stuck: bad state" );
     null     -> {{{null, Info, Type}, #{}}, K, Outbox};
     {L1, L2} ->
       EBody1 = bind_all( Info, L1, EBody ),
