@@ -603,7 +603,7 @@ try_ascend( {{{stalled, {cons, ConsInfo, E11, E12}}, _},
       false -> {stalled, E12}
     end,
 
-  {{F12, Env},
+  {{F12, #{}},
    [{append_lhs, Info, E2, Env}, {cons_tl, ConsInfo, E11}|K],
    Outbox};
 
@@ -615,7 +615,7 @@ try_ascend( {{{cons, ConsInfo, E11, E12}, _},
   case is_value( E11 ) andalso is_value( E12 ) of
     false -> error( "stuck: bad state" );
     true  ->
-      {{E12, Env},
+      {{E12, #{}},
        [{append_lhs, Info, E2, Env}, {cons_tl, ConsInfo, E11}|K],
        Outbox}
   end;
