@@ -116,6 +116,9 @@ try_descend( {{{err, _, _, _}, _}, [], []} ) ->
 try_descend( {{E = {err, _, _, _}, _}, _, _} ) ->
   {{E, #{}}, [], []};
 
+try_descend( {{E1 = {fut, _, _, _}, _}, K, Output} ) ->
+  {{{stalled, E1}, #{}}, K, Output};
+
 try_descend( {{{var, _, X}, Env}, K, Outbox} ) ->
   #{ X := {E1, Env1} } = Env,
   {{E1, Env1}, K, Outbox};
@@ -169,13 +172,10 @@ try_descend( {{{for, Info, Type, [{X1, E1}|EBindLst], EBody}, Env},
    [{for_arg, Info, Type, [], X1, EBindLst, EBody, Env}|K],
    Outbox};
 
-try_descend( {{{fold, Info, {XAcc, EAcc}, {XLst, ELst}, EBody}, Env},
+try_descend( {{{fold, Info, {XAcc, EAcc}, {XArg, EArg}, EBody}, Env},
               K,
               Outbox} ) ->
-  {{ELst, Env}, [{fold_arg, Info, {XAcc, EAcc}, XLst, EBody, Env}|K], Outbox};
-
-try_descend( {{E1 = {fut, _, _, _}, _}, K, Output} ) ->
-  {{{stalled, E1}, #{}}, K, Output};
+  {{EAcc, Env}, [{fold_acc, Info, XAcc, {XArg, EArg}, EBody, Env}|K], Outbox};
 
 try_descend( _ ) ->
   norule.
@@ -742,6 +742,28 @@ try_ascend( {{E1, _},
        [{for_arg, Info, Type, [{X1, E1}|PreLst], X2, PostLst, EBody, Env}|K],
        Outbox}
   end;
+
+
+% fold accumulator
+
+try_ascend( {{{stalled, EAcc}, _},
+             [{fold_acc, Info, XAcc, {XArg, EArg}, EBody, Env}|K],
+             Outbox} ) ->
+  {{EArg, Env}, [{fold_arg, Info, {XAcc, EAcc}, XArg, EBody, Env}|K], Outbox};
+
+try_ascend( {{EAcc, _},
+             [{fold_acc, Info, XAcc, {XArg, EArg}, EBody, Env}|K],
+             Outbox} ) ->
+  case is_value( EAcc ) of
+    false -> error( "stuck: bad state" );
+    true  -> 
+      {{EArg, Env},
+       [{fold_arg, Info, {XAcc, EAcc}, XArg, EBody, Env}|K],
+       Outbox}
+  end;
+
+
+% fold argument
 
 try_ascend( {{{stalled, {cons, _, EHd, ETl}}, _},
              [{fold_arg, Info, {XAcc, EAcc}, XLst, EBody, Env}|K],
