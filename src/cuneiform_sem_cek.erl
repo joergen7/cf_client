@@ -38,11 +38,12 @@
 
 -export( [step/1, split_zip/1, bind_all/3] ).
 
+
 %%====================================================================
 %% Includes
 %%====================================================================
 
--include( "cuneiform.hrl" ).
+-include( "cuneiform_sem_cek.hrl" ).
 
 
 %%====================================================================
@@ -50,49 +51,6 @@
 %%====================================================================
 
 -import( cuneiform_sem, [is_value/1] ).
-
-%%====================================================================
-%% Type definitions
-%%====================================================================
-
-
-%% Environment
-
--type env() :: #{ x() => {e(), env()} }.
-
-
-%% Continuation Element
-
--type k() :: {cmp_lhs, info(), e(), env()}
-           | {cmp_rhs, info(), e()}
-           | {cnd_pred, info(), e(), e(), env()}
-           | {neg_op, info()}
-           | {conj_lhs, info(), e(), env()}
-           | {conj_rhs, info(), e()}
-           | {disj_lhs, info(), e(), env()}
-           | {disj_rhs, info(), e()}
-           | {app_fn, info(), [e_bind()], env()}
-           | {app_body, info(), e(), [e_bind()]}
-           | {app_arg, info(), e(), [e_bind()], x(), [e_bind()], env()}
-           | {cons_hd, info(), e(), env()}
-           | {cons_tl, info(), e()}
-           | {append_lhs, info(), e(), env()}
-           | {append_rhs, info(), e()}
-           | {isnil_op, info()}
-           | {rcd_field, info(), [e_bind()], x(), [e_bind()], env()}
-           | {proj_op, info(), x()}
-           | {fix_op, info()}
-           | {for_arg, info(), t(), [e_bind()], x(), [e_bind()], e(), env()}
-           | {fold_arg, info(), e_bind(), x(), e(), env()}.
-
-
-%% Program
-
--type prog() :: {{e() | {stalled, e()}, env()}, % closure (control string + environment)
-                 [k()],        % continuation
-                 [e()]}.       % foreign function applications
-
-
 
 
 %%====================================================================
@@ -106,16 +64,20 @@ when E      :: e(),
 
 step( E ) ->
 
+  % load expression
   P = {{E, #{}}, [], []},
 
+  % evaluate expression
   {{E1, _}, [], Outbox} = eval_cek( P ),
 
+  % remove stalled flag if necessary
   E2 =
     case E1 of
       {stalled, E11} -> E11;
       _              -> E1
     end,
 
+  % if the expression is altered, report progress
   case E2 of
     E -> norule;
     _ -> {ok, E2, Outbox}
