@@ -37,7 +37,7 @@
 %%====================================================================
 
 %% CRE client callbacks
--export( [init/1, is_value/2, recv/4, step/2] ).
+-export( [init/1, is_value/2, recv/3, step/2] ).
 
 %% API functions
 -export( [start_link/1, start_link/2] ).
@@ -90,18 +90,17 @@ is_value( E, _ ) ->
   cuneiform_sem:is_value( E ).
 
 
--spec recv( E, A, R, UsrInfo ) -> e()
-when E       :: e(),
-     A       :: #{ atom() => _ },
-     R       :: #{ atom() => _ },
-     UsrInfo :: _.
+-spec recv( E, ReplyLst, UsrInfo ) -> e()
+when E        :: e(),
+     ReplyLst :: [{#{ atom() => _ }, #{ atom() => _ }}],
+     UsrInfo  :: _.
 
-recv( E, A, R, _UsrInfo ) ->
+recv( E, ReplyLst, _UsrInfo ) ->
 
-  #{ app_id := AppId } = R,
-  E1 = cf_client_effi:effi_reply_to_expr( A, R ),
+  ReplyLst1 = [{AppId, cf_client_effi:effi_reply_to_expr( A, R )}
+               || {A = #{ app_id := AppId }, R} <- ReplyLst],
 
-  cuneiform_sem:subst_fut( E, AppId, E1 ).
+  cuneiform_sem:subst_fut( E, ReplyLst1 ).
 
 
 -spec step( E, UsrInfo ) -> Result

@@ -30,7 +30,7 @@
 
 -module( cuneiform_sem ).
 
--export( [is_value/1, subst_fut/3, set_info/2] ).
+-export( [is_value/1, subst_fut/2, set_info/2] ).
 
 -include_lib( "cuneiform.hrl" ).
 
@@ -45,7 +45,7 @@
 %% Callback function definition
 %%====================================================================
 
--callback step( E :: e() ) -> {ok, e(), [e()]} | norule.
+-callback step( E :: e() ) -> {ok, e(), [e()]}.
 
 
 %%====================================================================
@@ -83,75 +83,80 @@ is_value( {err, _, _, _} )              -> false.
 %% Substituting futures
 %%====================================================================
 
--spec subst_fut( E, A, Delta ) -> e()
-when E     :: e(),
-     A     :: e(),
-     Delta :: e().
+-spec subst_fut( E, ReplyLst ) -> e()
+when E        :: e(),
+     ReplyLst :: [{hash(), e()}].
 
-subst_fut( {fut, Info, _, H}, H, ES )              -> set_info( ES, Info );
-subst_fut( E = {fut, _, _, _}, _, _ )              -> E;
-subst_fut( E = {str, _, _}, _, _ )                 -> E;
-subst_fut( E = {file, _, _, _}, _, _ )             -> E;
-subst_fut( E = {true, _}, _, _ )                   -> E;
-subst_fut( E = {false, _}, _, _ )                  -> E;
-subst_fut( E = {var, _, _}, _, _ )                 -> E;
-subst_fut( E = {lam_frn, _, _, _, _, _, _}, _, _ ) -> E;
-subst_fut( E = {null, _, _}, _, _ )                -> E;
-subst_fut( E = {err, _, _, _}, _, _ )              -> E;
+subst_fut( E = {fut, Info, _, H}, ReplyLst )              ->
+  case lists:keyfind( H, 1, ReplyLst ) of
+    false   -> E;
+    {H, E1} -> set_info( E1, Info )
+  end;
 
-subst_fut( {lam_ntv, Info, ArgLst, EBody}, H, ES ) ->
-  {lam_ntv, Info, ArgLst, subst_fut( EBody, H, ES )};
+subst_fut( E = {str, _, _}, _ )                 -> E;
+subst_fut( E = {file, _, _, _}, _ )             -> E;
+subst_fut( E = {true, _}, _ )                   -> E;
+subst_fut( E = {false, _}, _ )                  -> E;
+subst_fut( E = {var, _, _}, _ )                 -> E;
+subst_fut( E = {lam_frn, _, _, _, _, _, _}, _ ) -> E;
+subst_fut( E = {null, _, _}, _ )                -> E;
+subst_fut( E = {err, _, _, _}, _ )              -> E;
 
-subst_fut( {cmp, Info, E1, E2}, H, ES ) ->
-  cmp( Info, subst_fut( E1, H, ES ),
-             subst_fut( E2, H, ES ) );
+subst_fut( {lam_ntv, Info, ArgLst, EBody}, ReplyLst ) ->
+  {lam_ntv, Info, ArgLst, subst_fut( EBody, ReplyLst )};
 
-subst_fut( {cnd, Info, E1, E2, E3}, H, ES ) ->
-  cnd( Info, subst_fut( E1, H, ES ),
-             subst_fut( E2, H, ES ),
-             subst_fut( E3, H, ES ) );
+subst_fut( {cmp, Info, E1, E2}, ReplyLst ) ->
+  cmp( Info, subst_fut( E1, ReplyLst ),
+             subst_fut( E2, ReplyLst ) );
 
-subst_fut( {neg, Info, E1}, H, ES ) ->
-  neg( Info, subst_fut( E1, H, ES ) );
+subst_fut( {cnd, Info, E1, E2, E3}, ReplyLst ) ->
+  cnd( Info, subst_fut( E1, ReplyLst ),
+             E2,
+             E3 );
 
-subst_fut( {conj, Info, E1, E2}, H, ES ) ->
-  conj( Info, subst_fut( E1, H, ES ),
-              subst_fut( E2, H, ES ) );
+subst_fut( {neg, Info, E1}, ReplyLst ) ->
+  neg( Info, subst_fut( E1, ReplyLst ) );
 
-subst_fut( {disj, Info, E1, E2}, H, ES ) ->
-  disj( Info, subst_fut( E1, H, ES ),
-              subst_fut( E2, H, ES ) );
+subst_fut( {conj, Info, E1, E2}, ReplyLst ) ->
+  conj( Info, subst_fut( E1, ReplyLst ),
+              subst_fut( E2, ReplyLst ) );
 
-subst_fut( {app, Info, EF, EBindLst}, H, ES ) ->
-  app( Info, subst_fut( EF, H, ES ),
-             [e_bind( X, subst_fut( E, H, ES ) ) || {X, E} <- EBindLst] );
+subst_fut( {disj, Info, E1, E2}, ReplyLst ) ->
+  disj( Info, subst_fut( E1, ReplyLst ),
+              subst_fut( E2, ReplyLst ) );
 
-subst_fut( {cons, Info, E1, E2}, H, ES ) ->
-  cons( Info, subst_fut( E1, H, ES ),
-              subst_fut( E2, H, ES ) );
+subst_fut( {app, Info, EF, EBindLst}, ReplyLst ) ->
+  app( Info, subst_fut( EF, ReplyLst ),
+             [e_bind( X, subst_fut( E, ReplyLst ) ) || {X, E} <- EBindLst] );
 
-subst_fut( {append, Info, E1, E2}, H, ES ) ->
-  append( Info, subst_fut( E1, H, ES ),
-                subst_fut( E2, H, ES ) );
+subst_fut( {cons, Info, E1, E2}, ReplyLst ) ->
+  cons( Info, subst_fut( E1, ReplyLst ),
+              subst_fut( E2, ReplyLst ) );
 
-subst_fut( {isnil, Info, E1}, H, ES ) ->
-  isnil( Info, subst_fut( E1, H, ES ) );
+subst_fut( {append, Info, E1, E2}, ReplyLst ) ->
+  append( Info, subst_fut( E1, ReplyLst ),
+                subst_fut( E2, ReplyLst ) );
 
-subst_fut( {rcd, Info, EBindLst}, H, ES ) ->
-  rcd( Info, [e_bind( X, subst_fut( E, H, ES ) ) || {X, E} <- EBindLst] );
+subst_fut( {isnil, Info, E1}, ReplyLst ) ->
+  isnil( Info, subst_fut( E1, ReplyLst ) );
 
-subst_fut( {proj, Info, X, E1}, H, ES ) ->
-  proj( Info, X, subst_fut( E1, H, ES ) );
+subst_fut( {rcd, Info, EBindLst}, ReplyLst ) ->
+  rcd( Info, [e_bind( X, subst_fut( E, ReplyLst ) ) || {X, E} <- EBindLst] );
 
-subst_fut( {fix, Info, E1}, H, ES ) ->
-  fix( Info, subst_fut( E1, H, ES ) );
+subst_fut( {proj, Info, X, E1}, ReplyLst ) ->
+  proj( Info, X, subst_fut( E1, ReplyLst ) );
 
-subst_fut( {for, Info, TRet, EBindLst, EBody}, H, ES ) ->
-  for( Info, TRet, [e_bind( X, subst_fut( E, H, ES )) || {X, E} <- EBindLst],
+subst_fut( {fix, Info, E1}, ReplyLst ) ->
+  fix( Info, subst_fut( E1, ReplyLst ) );
+
+subst_fut( {for, Info, TRet, EBindLst, EBody}, ReplyLst ) ->
+  for( Info, TRet, [e_bind( X, subst_fut( E, ReplyLst )) || {X, E} <- EBindLst],
        EBody );
 
-subst_fut( {fold, Info, AccBind, {X, E}, EBody}, H, ES ) ->
-  fold( Info, AccBind, e_bind( X, subst_fut( E, H, ES ) ), EBody ).
+subst_fut( {fold, Info, {XAcc, EAcc}, {XArg, EArg}, EBody}, ReplyLst ) ->
+  fold( Info,
+        e_bind( XAcc, subst_fut( EAcc, ReplyLst ) ),
+        e_bind( XArg, subst_fut( EArg, ReplyLst ) ), EBody ).
 
 
 -spec set_info( E, Info ) -> e()

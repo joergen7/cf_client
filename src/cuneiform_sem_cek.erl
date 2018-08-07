@@ -59,8 +59,7 @@
 
 -spec step( E ) -> Result
 when E      :: e(),
-     Result :: {ok, e(), [e()]}
-             | norule.
+     Result :: {ok, e(), [e()]}.
 
 step( E ) ->
 
@@ -77,11 +76,7 @@ step( E ) ->
       _              -> E1
     end,
 
-  % if the expression is altered, report progress
-  case E2 of
-    E -> norule;
-    _ -> {ok, E2, Outbox}
-  end.
+  {ok, E2, Outbox}.
 
 
 %%====================================================================

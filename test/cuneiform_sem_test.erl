@@ -31,7 +31,7 @@
 -module( cuneiform_sem_test ).
 -include_lib( "eunit/include/eunit.hrl" ).
 
--import( cuneiform_sem, [is_value/1, subst_fut/3, set_info/2] ).
+-import( cuneiform_sem, [is_value/1, subst_fut/2, set_info/2] ).
 
 -import( cuneiform_lang, [
                           t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2, t_rcd/1,
@@ -249,12 +249,6 @@ subst_fut_test_() ->
     {"subst_fut traverses condition if expression",
      fun subst_fut_traverses_condition_if_term/0},
 
-    {"subst_fut traverses condition then expression",
-     fun subst_fut_traverses_condition_then_expression/0},
-
-    {"subst_fut traverses condition else expression",
-     fun subst_fut_traverses_condition_else_expression/0},
-
     {"subst_fut traverses negation",
      fun subst_fut_traverses_negation/0},
 
@@ -326,165 +320,155 @@ subst_fut_test_() ->
 subst_fut_leaves_string_literal_alone() ->
   E = str( <<"bla">> ),
   A = <<"1234">>,
-  ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E, subst_fut( E, [{A, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_leaves_file_literal_alone() ->
   E = file( <<"blub.txt">> ),
   A = <<"1234">>,
-  ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E, subst_fut( E, [{A, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_leaves_true_alone() ->
   E = true(),
   A = <<"1234">>,
-  ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E, subst_fut( E, [{A, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_leaves_false_alone() ->
   E = false(),
   A = <<"1234">>,
-  ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E, subst_fut( E, [{A, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_alters_matching_future() ->
   Info = 12,
   E1 = {fut, Info, t_file(), <<"1234">>},
   E2 = file( Info, <<"idx.tar">> ),
   A = <<"1234">>,
-  ?assertEqual( E2, subst_fut( E1, A, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{A, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_leaves_nonmatching_future_alone() ->
   E = {fut, na, t_file(), <<"123">>},
   A = <<"1234">>,
-  ?assertEqual( E, subst_fut( E, A, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E, subst_fut( E, [{A, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_traverses_comparison_lhs() ->
   E1 = cmp( {fut, na, t_str(), <<"1234">>}, str( <<"bla">> ) ),
   E2 = cmp( str( <<"blub">> ), str( <<"bla">> ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"blub">> ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, str( <<"blub">> )}] ) ).
 
 subst_fut_traverses_comparison_rhs() ->
   E1 = cmp( str( <<"bla">> ), {fut, na, t_str(), <<"1234">>} ),
   E2 = cmp( str( <<"bla">> ), str( <<"blub">> ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"blub">> ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, str( <<"blub">> )}] ) ).
 
 subst_fut_traverses_condition_if_term() ->
   E1 = cnd( {fut, na, t_bool(), <<"1234">>}, str( <<"bla">>), str( <<"blub">> ) ),
   E2 = cnd( true(), str( <<"bla">>), str( <<"blub">> ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
-
-subst_fut_traverses_condition_then_expression() ->
-  E1 = cnd( true(), {fut, na, t_str(), <<"1234">>}, str( <<"blub">> ) ),
-  E2 = cnd( true(), str( <<"bla">>), str( <<"blub">> ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"bla">>) ) ).
-
-subst_fut_traverses_condition_else_expression() ->
-  E1 = cnd( true(), str( <<"bla">> ), {fut, na, t_str(), <<"1234">>} ),
-  E2 = cnd( true(), str( <<"bla">>), str( <<"blub">> ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"blub">>) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, true()}] ) ).
 
 subst_fut_traverses_negation() ->
   E1 = neg( {fut, na, t_bool(), <<"1234">>} ),
   E2 = neg( true() ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, true()}] ) ).
 
 subst_fut_traverses_conjunction_lhs() ->
   E1 = conj( {fut, na, t_bool(), <<"1234">>}, false() ),
   E2 = conj( true(), false() ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, true()}] ) ).
 
 subst_fut_traverses_conjunction_rhs() ->
   E1 = conj( true(), {fut, na, t_bool(), <<"1234">>} ),
   E2 = conj( true(), false() ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, false() ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, false()}] ) ).
 
 subst_fut_traverses_disjunction_lhs() ->
   E1 = disj( {fut, na, t_bool(), <<"1234">>}, false() ),
   E2 = disj( true(), false() ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, true()}] ) ).
 
 subst_fut_traverses_disjunction_rhs() ->
   E1 = disj( true(), {fut, na, t_bool(), <<"1234">>} ),
   E2 = disj( true(), false() ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, false() ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, false()}] ) ).
 
 subst_fut_leaves_variable_alone() ->
   E = var( x ),
-  ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E, subst_fut( E, [{<<"1234">>, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_leaves_native_lambda_alone() ->
   E = e_lam_const(),
-  ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E, subst_fut( E, [{<<"1234">>, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_leaves_foreign_lambda_alone() ->
   E = e_lam_greet(),
-  ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E, subst_fut( E, [{<<"1234">>, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_traverses_application_function_position() ->
   E1 = app( cnd( {fut, na, t_bool(), <<"1234">>}, var( f ), var( g ) ), [] ),
   E2 = app( cnd( true(), var( f ), var( g ) ), [] ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, true()}] ) ).
 
 subst_fut_traverses_application_argument_bindings() ->
   EF = cons( str( <<"blub">> ), null( t_str() ) ),
   E1 = app( var( z ), [e_bind( x, {fut, na, t_lst( t_str() ), <<"1234">>} )] ),
   E2 = app( var( z ), [e_bind( x, EF )] ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, EF ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, EF}] ) ).
 
 subst_fut_leaves_null_alone() ->
   E = null( t_str() ),
-  ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E, subst_fut( E, [{<<"1234">>, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_traverses_cons_lhs() ->
   E1 = cons( {fut, na, t_str(), <<"1234">>}, null( t_str() ) ),
   E2 = cons( str( <<"bla">> ), null( t_str() ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"bla">> ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, str( <<"bla">> )}] ) ).
 
 subst_fut_traverses_cons_rhs() ->
   E1 = cons( var( x ), cons( {fut, na, t_str(), <<"1234">>}, null( t_str() ) ) ),
   E2 = cons( var( x ), cons( str( <<"bla">> ), null( t_str() ) ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, str( <<"bla">> ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, str( <<"bla">> )}] ) ).
 
 subst_fut_traverses_append_lhs() ->
   E1 = append( {fut, na, t_lst( t_str() ), <<"1234">>}, null( t_str() ) ),
   E2 = append( null( t_str() ), null( t_str() ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, null( t_str() )}] ) ).
 
 subst_fut_traverses_append_rhs() ->
   E1 = append( null( t_str() ), {fut, na, t_lst( t_str() ), <<"1234">>} ),
   E2 = append( null( t_str() ), null( t_str() ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, null( t_str() )}] ) ).
 
 subst_fut_traverses_isnil_operand() ->
   E1 = isnil( {fut, na, t_lst( t_str() ), <<"1234">>} ),
   E2 = isnil( null( t_str() ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, null( t_str() )}] ) ).
 
 subst_fut_traverses_record_fields() ->
   E1 = rcd( [e_bind( a, {fut, na, t_lst( t_str() ), <<"1234">>} )] ),
   E2 = rcd( [e_bind( a, null( t_str() ) )] ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, null( t_str() )}] ) ).
 
 subst_fut_traverses_projection_operand() ->
   E1 = proj( a, {fut, na, t_rcd( [t_arg( a, t_str() )] ), <<"1234">>} ),
   E2 = proj( a, rcd( [e_bind( a, str( <<"blub">> ) )] ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, rcd( [e_bind( a, str( <<"blub">> ) )] ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, rcd( [e_bind( a, str( <<"blub">> ) )] )}] ) ).
 
 subst_fut_traverses_fixpoint_operand() ->
   E1 = fix( cnd( {fut, na, t_bool(), <<"1234">>}, var( f ), var( g ) ) ),
   E2 = fix( cnd( true(), var( f ), var( g ) ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, true() ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, true()}] ) ).
 
 subst_fut_leaves_error_alone() ->
   E = err( t_str(), <<"blub">> ),
-  ?assertEqual( E, subst_fut( E, <<"1234">>, file( <<"idx.tar">> ) ) ).
+  ?assertEqual( E, subst_fut( E, [{<<"1234">>, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_traverses_for_list_expression() ->
   E1 = for( t_str(), [e_bind( x, {fut, na, t_lst( t_str() ), <<"1234">>} )], var( x ) ),
   E2 = for( t_str(), [e_bind( x, null( t_str() ) )], var( x ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, null( t_str() )}] ) ).
 
 subst_fut_traverses_fold_list_expression() ->
   E1 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, {fut, na, t_lst( t_str() ), <<"1234">>} ), var( x ) ),
   E2 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, null( t_str() ) ), var( x ) ),
-  ?assertEqual( E2, subst_fut( E1, <<"1234">>, null( t_str() ) ) ).
+  ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, null( t_str() )}] ) ).
 
 
 set_info_test_() ->
