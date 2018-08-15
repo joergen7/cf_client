@@ -106,8 +106,7 @@ recv( E, ReplyLst, _UsrInfo ) ->
 -spec step( E, UsrInfo ) -> Result
 when E       :: e(),
      UsrInfo :: _,
-     Result  :: {ok, e(), [e()]}
-              | norule.
+     Result  :: {ok, e(), [e()]}.
 
 step( E, _UsrInfo ) ->
   ?CUNEIFORM_SEM:step( E ).
