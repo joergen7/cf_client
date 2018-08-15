@@ -67,9 +67,9 @@
            | {rcd_field, info(), [e_bind()], x(), [e_bind()], env()}
            | {proj_op, info(), x()}
            | {fix_op, info()}
-           | {for_arg, info(), t(), [e_bind()], x(), [e_bind()], e(), env()}
-           | {for_acc, info(), x(), e_bind(), e(), env()}
-           | {fold_arg, info(), e_bind(), x(), e(), env()}.
+           | {for_arg, info(), t(), [typed_bind()], x(), t(), [typed_bind()], e(), env()}
+           | {for_acc, info(), x(), t(), typed_bind(), e(), env()}
+           | {fold_arg, info(), typed_bind(), x(), t(), e(), env()}.
 
 
 %% Program

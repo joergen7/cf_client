@@ -37,31 +37,29 @@
                           t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2, t_rcd/1,
                           t_lst/1
                          ] ).
--import( cuneiform_lang, [l_bash/0] ).
--import( cuneiform_lang, [lam_ntv_arg/2, e_bind/2] ).
 -import( cuneiform_lang, [
                           str/1, file/1, true/0, false/0, cnd/3, var/1, file/2,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
                           lam_frn/5, lst/2, append/2, isnil/1, for/3, fold/3,
                           rcd/1, proj/2, fix/1, assign/3, null/1, cons/2, err/2,
-                          err/3
+                          err/3, typed_bind/3, e_bind/2, l_bash/0
                          ] ).
 
 
 e_lam1() ->
-  lam_ntv( [lam_ntv_arg( x, t_str() ),
-            lam_ntv_arg( y, t_file() )], var( x ) ).
+  lam_ntv( [t_arg( x, t_str() ),
+            t_arg( y, t_file() )], var( x ) ).
 
 
 e_lam_first() ->
-  lam_ntv( [lam_ntv_arg( x, t_str() ),
-            lam_ntv_arg( y, t_str() )], var( x ) ).
+  lam_ntv( [t_arg( x, t_str() ),
+            t_arg( y, t_str() )], var( x ) ).
 
 e_lam_const() ->
   lam_ntv( [], str( <<"blub">> ) ).
 
 e_lam_id() ->
-  lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ).
+  lam_ntv( [t_arg( x, t_str() )], var( x ) ).
 
 e_app_id() ->
   app( e_lam_id(), [e_bind( x, str( <<"blub">> ) )] ).
@@ -188,8 +186,8 @@ for_is_no_value() ->
   ?assertNot( is_value( E ) ).
 
 fold_is_no_value() ->
-  E = fold( e_bind( x_acc, str( <<"0">> ) ),
-            e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+  E = fold( typed_bind( x_acc, t_str(), str( <<"0">> ) ),
+            typed_bind( x, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
             var( x ) ),
   ?assertNot( is_value( E ) ).
 
@@ -206,7 +204,7 @@ projection_is_no_value() ->
   ?assertNot( is_value( E ) ).
 
 fixpoint_is_no_value() ->
-  ELam = lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+  ELam = lam_ntv( [t_arg( f, t_fn( ntv, [], t_str() ) )],
                   str( <<"bla">> ) ),
   E = fix( ELam ),
   ?assertNot( is_value( E ) ).
@@ -461,13 +459,16 @@ subst_fut_leaves_error_alone() ->
   ?assertEqual( E, subst_fut( E, [{<<"1234">>, file( <<"idx.tar">> )}] ) ).
 
 subst_fut_traverses_for_list_expression() ->
-  E1 = for( t_str(), [e_bind( x, {fut, na, t_lst( t_str() ), <<"1234">>} )], var( x ) ),
-  E2 = for( t_str(), [e_bind( x, null( t_str() ) )], var( x ) ),
+  E1 = for( t_str(), [typed_bind( x, t_str(), {fut, na, t_lst( t_str() ), <<"1234">>} )], var( x ) ),
+  E2 = for( t_str(), [typed_bind( x, t_str(), null( t_str() ) )], var( x ) ),
   ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, null( t_str() )}] ) ).
 
 subst_fut_traverses_fold_list_expression() ->
-  E1 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, {fut, na, t_lst( t_str() ), <<"1234">>} ), var( x ) ),
-  E2 = fold( e_bind( x_acc, var( x0 ) ), e_bind( x, null( t_str() ) ), var( x ) ),
+  E1 = fold( typed_bind( x_acc, t_str(), var( x0 ) ),
+             typed_bind( x, t_str(), {fut, na, t_lst( t_str() ), <<"1234">>} ),
+             var( x ) ),
+  E2 = fold( typed_bind( x_acc, t_str(), var( x0 ) ),
+             typed_bind( x, t_str(), null( t_str() ) ), var( x ) ),
   ?assertEqual( E2, subst_fut( E1, [{<<"1234">>, null( t_str() )}] ) ).
 
 

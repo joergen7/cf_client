@@ -38,7 +38,7 @@
                           true/1, false/1, app/3, cmp/3, cnd/4, neg/2, conj/3,
                           disj/3, var/2, lam_ntv/3, lst/3, append/3, isnil/2,
                           for/4, fold/4, rcd/2, proj/3, fix/2, cons/3, null/2,
-                          str/2, file/3, e_bind/2
+                          str/2, file/3, e_bind/2, typed_bind/3
                          ] ).
 
 %%====================================================================
@@ -149,14 +149,16 @@ subst_fut( {proj, Info, X, E1}, ReplyLst ) ->
 subst_fut( {fix, Info, E1}, ReplyLst ) ->
   fix( Info, subst_fut( E1, ReplyLst ) );
 
-subst_fut( {for, Info, TRet, EBindLst, EBody}, ReplyLst ) ->
-  for( Info, TRet, [e_bind( X, subst_fut( E, ReplyLst )) || {X, E} <- EBindLst],
+subst_fut( {for, Info, TRet, TypedBindLst, EBody}, ReplyLst ) ->
+  for( Info,
+       TRet,
+       [typed_bind( X, T, subst_fut( E, ReplyLst )) || {X, T, E} <- TypedBindLst],
        EBody );
 
-subst_fut( {fold, Info, {XAcc, EAcc}, {XArg, EArg}, EBody}, ReplyLst ) ->
+subst_fut( {fold, Info, {XAcc, TAcc, EAcc}, {XArg, TArg, EArg}, EBody}, ReplyLst ) ->
   fold( Info,
-        e_bind( XAcc, subst_fut( EAcc, ReplyLst ) ),
-        e_bind( XArg, subst_fut( EArg, ReplyLst ) ), EBody ).
+        typed_bind( XAcc, TAcc, subst_fut( EAcc, ReplyLst ) ),
+        typed_bind( XArg, TArg, subst_fut( EArg, ReplyLst ) ), EBody ).
 
 
 -spec set_info( E, Info ) -> e()

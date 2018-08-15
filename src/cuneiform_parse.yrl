@@ -100,39 +100,41 @@ t_arg_lst       -> t_arg                      : ['$1'].
 t_arg_lst       -> t_arg comma t_arg_lst      : ['$1'|'$3'].
 
 
-e               -> id                                             : visit_var( '$1' ).
-e               -> strlit                                         : visit_str( '$1' ).
-e               -> intlit                                         : visit_str( '$1' ).
-e               -> filelit                                        : visit_file( '$1' ).
-e               -> true                                           : visit_true( '$1' ).
-e               -> false                                          : visit_false( '$1' ).
-e               -> lparen e cmp e rparen                          : visit_cmp( '$2', '$3', '$4' ).
-e               -> cnd e then e else e halt                       : visit_cnd( '$1', '$2', [], '$4', [], '$6' ).
-e               -> cnd e then define_lst e else e halt            : visit_cnd( '$1', '$2', '$4', '$5', [], '$7' ).
-e               -> cnd e then e else define_lst e halt            : visit_cnd( '$1', '$2', [], '$4', '$6', '$7' ).
-e               -> cnd e then define_lst e else define_lst e halt : visit_cnd( '$1', '$2', '$4', '$5', '$7', '$8' ).
-e               -> neg e                                          : visit_neg( '$1', '$2' ).
-e               -> lparen e wedge e rparen                        : visit_conj( '$2', '$3', '$4' ).
-e               -> lparen e vee e rparen                          : visit_disj( '$2', '$3', '$4' ).
-e               -> id lparen rparen                               : visit_app( '$1', [] ).
-e               -> id lparen e_bind_lst rparen                    : visit_app( '$1', '$3' ).
-e               -> ltag e_bind_lst rtag                           : visit_rcd( '$1', '$2' ).
-e               -> lparen e bar id rparen                         : visit_proj( '$2', '$4' ).
-e               -> lparen e plus e rparen                         : visit_append( '$2', '$3', '$4' ).
-e               -> lsquarebr colon t rsquarebr                    : visit_lst( [], '$2', '$3' ).
-e               -> lparen e doublertag e rparen                   : visit_cons( '$3', '$2', '$4' ).
-e               -> lsquarebr e_lst colon t rsquarebr              : visit_lst( '$2', '$3', '$4' ).
-e               -> isnil e                                        : visit_isnil( '$1', '$2' ).
-e               -> for from_lst do e colon t halt                 : visit_for( '$1', '$2', [], '$4', '$6' ).
-e               -> for from_lst do define_lst e colon t halt      : visit_for( '$1', '$2', '$4', '$5', '$7' ).
-e               -> fold e_bind comma from do e halt               : visit_fold( '$1', '$2', '$4', [], '$6' ).
-e               -> fold e_bind comma from do define_lst e halt    : visit_fold( '$1', '$2', '$4', '$6', '$7' ).
-e               -> err strlit colon t                             : visit_err( '$1', '$2', '$4' ).
+e               -> id                                                   : visit_var( '$1' ).
+e               -> strlit                                               : visit_str( '$1' ).
+e               -> intlit                                               : visit_str( '$1' ).
+e               -> filelit                                              : visit_file( '$1' ).
+e               -> true                                                 : visit_true( '$1' ).
+e               -> false                                                : visit_false( '$1' ).
+e               -> lparen e cmp e rparen                                : visit_cmp( '$2', '$3', '$4' ).
+e               -> cnd e then e else e halt                             : visit_cnd( '$1', '$2', [], '$4', [], '$6' ).
+
+%                  1   2 3    4          5 6    7 8
+e               -> cnd e then define_lst e else e halt                  : visit_cnd( '$1', '$2', '$4', '$5', [], '$7' ).
+e               -> cnd e then e else define_lst e halt                  : visit_cnd( '$1', '$2', [], '$4', '$6', '$7' ).
+e               -> cnd e then define_lst e else define_lst e halt       : visit_cnd( '$1', '$2', '$4', '$5', '$7', '$8' ).
+e               -> neg e                                                : visit_neg( '$1', '$2' ).
+e               -> lparen e wedge e rparen                              : visit_conj( '$2', '$3', '$4' ).
+e               -> lparen e vee e rparen                                : visit_disj( '$2', '$3', '$4' ).
+e               -> id lparen rparen                                     : visit_app( '$1', [] ).
+e               -> id lparen e_bind_lst rparen                          : visit_app( '$1', '$3' ).
+e               -> ltag e_bind_lst rtag                                 : visit_rcd( '$1', '$2' ).
+e               -> lparen e bar id rparen                               : visit_proj( '$2', '$4' ).
+e               -> lparen e plus e rparen                               : visit_append( '$2', '$3', '$4' ).
+e               -> lsquarebr colon t rsquarebr                          : visit_lst( [], '$2', '$3' ).
+e               -> lparen e doublertag e rparen                         : visit_cons( '$3', '$2', '$4' ).
+e               -> lsquarebr e_lst colon t rsquarebr                    : visit_lst( '$2', '$3', '$4' ).
+e               -> isnil e                                              : visit_isnil( '$1', '$2' ).
+e               -> for from_lst do e colon t halt                       : visit_for( '$1', '$2', [], '$4', '$6' ).
+e               -> for from_lst do define_lst e colon t halt            : visit_for( '$1', '$2', '$4', '$5', '$7' ).
+e               -> fold id colon t eq e comma from do e halt            : visit_fold( '$1', '$2', '$4', '$6', '$8', [], '$10' ).
+e               -> fold id colon t eq e comma from do define_lst e halt : visit_fold( '$1', '$2', '$4', '$6', '$8', '$10', '$11' ).
+e               -> err strlit colon t                                   : visit_err( '$1', '$2', '$4' ).
 
 from_lst        -> from                       : ['$1'].
 from_lst        -> from comma from_lst        : ['$1'|'$3'].
 
-from            -> id larrow e                : visit_from( '$1', '$3' ).
+from            -> id colon t larrow e        : visit_from( '$1', '$3', '$5' ).
 
 e_lst           -> e                          : ['$1'].
 e_lst           -> e comma e_lst              : ['$1'|'$3'].
@@ -170,8 +172,7 @@ Erlang code.
                          ] ).
 
 -import( cuneiform_lang, [
-                          r_var/2, lam_ntv_arg/2, t_arg/2, e_bind/2,
-                          r_bind/2, r_rcd/1
+                          r_var/2, t_arg/2, e_bind/2, r_bind/2, r_rcd/1
                          ] ).
 
 -import( cuneiform_lang, [
@@ -181,6 +182,9 @@ Erlang code.
                           rcd/2, proj/3, append/3, lst/3, isnil/2, for/4,
                           fold/4, cons/3, err/3
                          ] ).
+
+-import( cuneiform_preproc, [visit_from/3, visit_fold/7, visit_cnd/6,
+                             visit_for/5] ).
 
 
 -spec string( S :: string() ) -> {ok, e()} | {error, _}.
@@ -283,34 +287,6 @@ visit_neg( {neg, L, _}, E ) ->
   neg( L, E ).
 
 
--spec visit_cnd( {cnd, L, _}, EIf, DefLstThen, EThen, DefLstElse, EElse ) -> e()
-when L          :: _,
-     EIf        :: e(),
-     DefLstThen :: [{r(), e()}],
-     EThen      :: e(),
-     DefLstElse :: [{r(), e()}],
-     EElse      :: e().
-
-visit_cnd( {cnd, L, _}, EIf, DefLstThen, EThen, DefLstElse, EElse ) ->
-  case create_closure( DefLstThen, EThen ) of
-
-    {error, R2} ->
-      throw( R2 );
-
-    {ok, E2} ->
-      case create_closure( DefLstElse, EElse ) of
-
-        {error, R3} ->
-          throw( R3 );
-
-        {ok, E3} ->
-          cnd( L, EIf, E2, E3 )
-
-      end
-
-  end.
-
-
 -spec visit_def_frn( Def, Id, ArgLst, UArgLst, Lang, Body ) -> assign()
 when Def     :: {def, _, _},
      Id      :: {id, _, string()},
@@ -357,7 +333,7 @@ when is_integer( L ),
               L,
               lam_ntv(
                 L,
-                [lam_ntv_arg( FName, TFn )|[{X, X, T} || {X, T} <- ArgLst]],
+                [t_arg( FName, TFn )|ArgLst],
                 C ) ),
       R = r_var( FName, TFn ),
       assign( L, R, Lam );
@@ -426,39 +402,6 @@ visit_lst( ELst, {colon, L, _}, T ) ->
 
 visit_isnil( {isnil, L, _}, E ) ->
   isnil( L, E ).
-
-
--spec visit_for( {for, L, _}, FromLst, DefLst, E, TRet ) -> e()
-when L       :: _,
-     FromLst :: [e_bind()],
-     DefLst  :: [{r(), e()}],
-     E       :: e(),
-     TRet    :: t().
-
-visit_for( {for, L, _}, FromLst, DefLst, E, TRet ) ->
-  case create_closure( DefLst, E ) of
-    {ok, C} ->
-      for( L, TRet, FromLst, C );
-    {error, Reason} ->
-      throw( Reason )
-  end.
-
-
--spec visit_from( {id, _, S :: string()}, E :: e() ) -> e_bind().
-
-visit_from( {id, _, S}, E ) ->
-  e_bind( list_to_atom( S ), E ).
-
-
--spec visit_fold( {fold, L :: _, _}, AccBind :: e_bind(), LstBind :: e_bind(), DefLst :: [{r(), e()}], EBody :: e() ) -> e().
-
-visit_fold( {fold, L, _}, AccBind, LstBind, DefLst, EBody ) ->
-  case create_closure( DefLst, EBody ) of
-    {ok, C} ->
-      fold( L, AccBind, LstBind, C );
-    {error, Reason} ->
-      throw( Reason )
-  end.
 
 
 -spec visit_assign( {assign, L :: _, _}, R :: r(), E :: e() ) -> assign().

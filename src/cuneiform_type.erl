@@ -103,19 +103,18 @@ type( Gamma, {lam_ntv, _Info, [], EBody} ) ->
 
   end;
 
-type( Gamma, {lam_ntv, Info, [{XIn, XOut, TX}|LamNtvArgLst], EBody} ) ->
+type( Gamma, {lam_ntv, Info, [{X1, T1}|ArgLst], EBody} ) ->
 
-  case find_ambiguous( [XOut|[X || {_, X, _} <- LamNtvArgLst]] ) of
+  case find_ambiguous( [X1|[X || {X, _} <- ArgLst]] ) of
 
     {ambiguous, X} ->
       {error, {ambiguous_name, Info, X}};
 
     unambiguous ->
-      case type( Gamma#{ XIn => TX }, lam_ntv( Info, LamNtvArgLst, EBody ) ) of
+      case type( Gamma#{ X1 => T1 }, lam_ntv( Info, ArgLst, EBody ) ) of
 
-        {ok, {'Fn', ntv, TArgLst, TRet}} ->
-          TArgLst1 = [t_arg( XOut, TX )|TArgLst],
-          {ok, t_fn( ntv, TArgLst1, TRet )};
+        {ok, {'Fn', ntv, _, TRet}} ->
+          {ok, t_fn( ntv, [{X1, T1}|ArgLst], TRet )};
         
         {error, Reason} ->
           {error, Reason}
@@ -356,24 +355,27 @@ type( Gamma, {for, Info, TRet, [], EBody} ) ->
     {error, Reason}    -> {error, Reason}
   end;
 
-type( Gamma, {for, Info, TRet, [{X1, E1}|EBindLst], EBody} ) ->
+type( Gamma, {for, Info, TRet, [{X1, T1, E1}|TypedBindLst], EBody} ) ->
   case type( Gamma, E1 ) of
 
     {error, Reason} ->
       {error, Reason};
 
     {ok, {'Lst', T1}} ->
-      type( Gamma#{ X1 => T1 }, for( Info, TRet, EBindLst, EBody ) );
+      type( Gamma#{ X1 => T1 }, for( Info, TRet, TypedBindLst, EBody ) );
 
-    {ok, T1} ->
-      {error, {no_list_type, Info, T1}}
+    {ok, {'Lst', T2}} ->
+      {error, {type_mismatch, Info, {{'Lst', T1}, {'Lst', T2}}}};
+
+    {ok, T3} ->
+      {error, {no_list_type, Info, T3}}
 
   end;
 
-type( _Gamma, {fold, Info, {X, _EAcc}, {X, _ELst}, _EBody} ) ->
+type( _Gamma, {fold, Info, {X, _T, _EAcc}, {X, _T, _ELst}, _EBody} ) ->
   {error, {ambiguous_name, Info, X}};
 
-type( Gamma, {fold, Info, {X1, E1}, {X2, E2}, EBody} ) ->
+type( Gamma, {fold, Info, {X1, T1, E1}, {X2, T2, E2}, EBody} ) ->
   case type( Gamma, E1 ) of
 
     {error, Reason1} ->
@@ -389,13 +391,19 @@ type( Gamma, {fold, Info, {X1, E1}, {X2, E2}, EBody} ) ->
             {error, ReasonBody} -> {error, ReasonBody}
           end;
 
+        {ok, {'Lst', T4}} ->
+          {error, {type_mismatch, Info, {{'Lst', T2}, {'Lst', T4}}}};
+
         {ok, T2} ->
           {error, {no_list_type, Info, T2}};
         
         {error, Reason2} ->
           {error, Reason2}
 
-      end
+      end;
+
+    {ok, T3} ->
+      {error, {type_mismatch, Info, {T1, T3}}}
 
   end;
 

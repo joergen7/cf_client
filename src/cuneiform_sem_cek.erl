@@ -160,17 +160,17 @@ try_descend( {{{proj, Info, X, E1}, Env}, K, Outbox} ) ->
 try_descend( {{{fix, Info, E1}, Env}, K, Outbox} ) ->
   {{E1, Env}, [{fix_op, Info}|K], Outbox};
 
-try_descend( {{{for, Info, Type, [{X1, E1}|EBindLst], EBody}, Env},
+try_descend( {{{for, Info, Type, [{X1, T1, E1}|TypedBindLst], EBody}, Env},
               K,
               Outbox} ) ->
   {{E1, Env},
-   [{for_arg, Info, Type, [], X1, EBindLst, EBody, Env}|K],
+   [{for_arg, Info, Type, [], X1, T1, TypedBindLst, EBody, Env}|K],
    Outbox};
 
-try_descend( {{{fold, Info, {XAcc, EAcc}, {XArg, EArg}, EBody}, Env},
+try_descend( {{{fold, Info, {XAcc, TAcc, EAcc}, {XArg, TArg, EArg}, EBody}, Env},
               K,
               Outbox} ) ->
-  {{EAcc, Env}, [{fold_acc, Info, XAcc, {XArg, EArg}, EBody, Env}|K], Outbox};
+  {{EAcc, Env}, [{fold_acc, Info, XAcc, TAcc, {XArg, TArg, EArg}, EBody, Env}|K], Outbox};
 
 try_descend( _ ) ->
   norule.
@@ -690,12 +690,12 @@ try_ascend( {{_, _}, [{proj_op, _, _}|_], _} ) ->
 try_ascend( {{{stalled, E1}, _}, [{fix_op, Info}|K], Outbox} ) ->
   {{{stalled, {fix, Info, E1}}, #{}}, K, Outbox};
 
-try_ascend( {{E = {lam_ntv, LamInfo, [FArg = {_, ExtName, _}|ArgLst], EBody}, _},
+try_ascend( {{E = {lam_ntv, LamInfo, [FArg = {X, _}|ArgLst], EBody}, _},
             [{fix_op, Info}|K],
             Outbox} ) ->
   EBody1 = {app, Info,
                  {lam_ntv, Info, [FArg], EBody},
-                 [{ExtName, {fix, Info, E}}]},
+                 [{X, {fix, Info, E}}]},
   {{{lam_ntv, LamInfo, ArgLst, EBody1}, #{}}, K, Outbox};
 
 try_ascend( {{_, _}, [{fix_op, _}|_], _} ) ->
@@ -705,10 +705,12 @@ try_ascend( {{_, _}, [{fix_op, _}|_], _} ) ->
 % for argument
 
 try_ascend( {{E1, _},
-            [{for_arg, Info, Type, PreLst, X1, [], EBody, Env}|K],
+            [{for_arg, Info, Type, PreLst, X1, T1, [], EBody, Env}|K],
             Outbox} ) ->
-  EBindLst1 = lists:reverse( [{X1, E1}|PreLst] ),
-  case split_zip( EBindLst1 ) of
+
+  TypedBindLst1 = lists:reverse( [{X1, T1, E1}|PreLst] ),
+
+  case split_zip( TypedBindLst1 ) of
     stuck    -> error( "stuck: bad state" );
     null     -> {{{null, Info, Type}, #{}}, K, Outbox};
     {L1, L2} ->
@@ -716,25 +718,53 @@ try_ascend( {{E1, _},
       EFor1 = {for, Info, Type, L2, EBody},
       {{EBody1, Env}, [{cons_hd, Info, EFor1, Env}|K], Outbox};
     stalled  ->
-      EBindLst2 = unstall( EBindLst1 ),
-      {{{stalled, {for, Info, Type, EBindLst2, EBody}}, #{}}, K, Outbox}
+      TypedBindLst2 = unstall_typed( TypedBindLst1 ),
+      {{{stalled, {for, Info, Type, TypedBindLst2, EBody}}, #{}}, K, Outbox}
   end;
 
 try_ascend( {{{stalled, E1}, _},
-             [{for_arg, Info, Type, PreLst, X1, [{X2, E2}|PostLst], EBody, Env}|K],
+             [{for_arg, Info,
+                        Type,
+                        PreLst,
+                        X1,
+                        T1,
+                        [{X2, T2, E2}|PostLst],
+                        EBody,
+                        Env}|K],
              Outbox} ) ->
   {{E2, Env},
-   [{for_arg, Info, Type, [{X1, {stalled, E1}}|PreLst], X2, PostLst, EBody, Env}|K],
+   [{for_arg, Info,
+              Type,
+              [{X1, T1, {stalled, E1}}|PreLst],
+              X2,
+              T2,
+              PostLst,
+              EBody,
+              Env}|K],
    Outbox};
 
 try_ascend( {{E1, _},
-            [{for_arg, Info, Type, PreLst, X1, [{X2, E2}|PostLst], EBody, Env}|K],
+            [{for_arg, Info,
+                       Type,
+                       PreLst,
+                       X1,
+                       T1,
+                       [{X2, T2, E2}|PostLst],
+                       EBody,
+                       Env}|K],
             Outbox} ) ->
   case is_value( E1 ) of
     false -> error( "stuck: bad state" );
     true  ->
       {{E2, Env},
-       [{for_arg, Info, Type, [{X1, E1}|PreLst], X2, PostLst, EBody, Env}|K],
+       [{for_arg, Info,
+                  Type,
+                  [{X1, T1, E1}|PreLst],
+                  X2,
+                  T2,
+                  PostLst,
+                  EBody,
+                  Env}|K],
        Outbox}
   end;
 
@@ -742,18 +772,18 @@ try_ascend( {{E1, _},
 % fold accumulator
 
 try_ascend( {{{stalled, EAcc}, _},
-             [{fold_acc, Info, XAcc, {XArg, EArg}, EBody, Env}|K],
+             [{fold_acc, Info, XAcc, TAcc, {XArg, TArg, EArg}, EBody, Env}|K],
              Outbox} ) ->
-  {{EArg, Env}, [{fold_arg, Info, {XAcc, EAcc}, XArg, EBody, Env}|K], Outbox};
+  {{EArg, Env}, [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K], Outbox};
 
 try_ascend( {{EAcc, _},
-             [{fold_acc, Info, XAcc, {XArg, EArg}, EBody, Env}|K],
+             [{fold_acc, Info, XAcc, TAcc, {XArg, TArg, EArg}, EBody, Env}|K],
              Outbox} ) ->
   case is_value( EAcc ) of
     false -> error( "stuck: bad state" );
     true  -> 
       {{EArg, Env},
-       [{fold_arg, Info, {XAcc, EAcc}, XArg, EBody, Env}|K],
+       [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
        Outbox}
   end;
 
@@ -761,7 +791,7 @@ try_ascend( {{EAcc, _},
 % fold argument
 
 try_ascend( {{{stalled, {cons, _, EHd, ETl}}, _},
-             [{fold_arg, Info, {XAcc, EAcc}, XLst, EBody, Env}|K],
+             [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
              Outbox} ) ->
   EHd1 =
     case is_value( EHd ) of
@@ -775,29 +805,31 @@ try_ascend( {{{stalled, {cons, _, EHd, ETl}}, _},
       false -> {stalled, ETl}
     end,
 
-  EAcc1 = bind_all( Info, [{XAcc, EAcc}, {XLst, EHd1}], EBody ),
+  EAcc1 = bind_all( Info, [{XAcc, TAcc, EAcc}, {XArg, TArg, EHd1}], EBody ),
 
   {{ETl1, Env},
-   [{fold_arg, Info, {XAcc, EAcc1}, XLst, EBody, Env}|K],
+   [{fold_arg, Info, {XAcc, TAcc, EAcc1}, XArg, TArg, EBody, Env}|K],
    Outbox};
 
-try_ascend( {{{stalled, ELst}, _},
-             [{fold_arg, Info, {XAcc, EAcc}, XLst, EBody, _}|K],
+try_ascend( {{{stalled, EArg}, _},
+             [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, _}|K],
              Outbox} ) ->
-  {{{stalled, {fold, Info, {XAcc, EAcc}, {XLst, ELst}, EBody}}, #{}},
+  {{{stalled, {fold, Info, {XAcc, TAcc, EAcc}, {XArg, TArg, EArg}, EBody}}, #{}},
    K,
    Outbox};
 
 try_ascend( {{{cons, _, EHd, ETl}, _},
-             [{fold_arg, Info, {XAcc, EAcc}, XLst, EBody, Env}|K],
+             [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
              Outbox} ) ->
-  EAcc1 = bind_all( Info, [{XAcc, EAcc}, {XLst, EHd}], EBody ),
+
+  EAcc1 = bind_all( Info, [{XAcc, TAcc, EAcc}, {XArg, TArg, EHd}], EBody ),
+
   {{ETl, Env},
-   [{fold_arg, Info, {XAcc, EAcc1}, XLst, EBody, Env}|K],
+   [{fold_arg, Info, {XAcc, TAcc, EAcc1}, XArg, TArg, EBody, Env}|K],
    Outbox};
 
 try_ascend( {{{null, _, _}, _},
-             [{fold_arg, _, {_, EAcc}, _, _, Env}|K],
+             [{fold_arg, _, {_, _, EAcc}, _, _, _, Env}|K],
              Outbox} ) ->
   {{EAcc, Env}, K, Outbox};
 
@@ -820,18 +852,18 @@ try_ascend( _ ) ->
 
 
 
--spec split_zip( EBindLst ) -> Result
-when EBindLst :: [{x(), e()}],
-     Result   :: {[{x(), e()}], []}
-               | stalled
-               | null
-               | stuck.
+-spec split_zip( TypedBindLst ) -> Result
+when TypedBindLst :: [typed_bind()],
+     Result       :: {[typed_bind()], [typed_bind()]}
+                   | stalled
+                   | null
+                   | stuck.
 
-split_zip( EBindLst ) ->
+split_zip( TypedBindLst ) ->
 
   F =
     fun
-      ( {X, {stalled, {cons, _, Hd, Tl}}}, {L1, L2} ) ->
+      ( {X, T, {stalled, {cons, _, Hd, Tl}}}, {L1, L2} ) ->
         Hd1 =
           case is_value( Hd ) of
             true  -> Hd;
@@ -842,18 +874,22 @@ split_zip( EBindLst ) ->
             true  -> Tl;
             false -> {stalled, Tl}
           end,
-        {[{X, Hd1}|L1], [{X, Tl1}|L2]};
-      ( {_, {stalled, _}}, _ ) ->
+        {[{X, T, Hd1}|L1], [{X, T, Tl1}|L2]};
+
+      ( {_, _, {stalled, _}}, _ ) ->
         throw( stalled );
-      ( {X, {cons, _, Hd, Tl}}, {L1, L2} ) ->
-        {[{X, Hd}|L1], [{X, Tl}|L2]};
-      ( {_, {null, _, _}}, _ ) ->
+
+      ( {X, T, {cons, _, Hd, Tl}}, {L1, L2} ) ->
+        {[{X, T, Hd}|L1], [{X, T, Tl}|L2]};
+
+      ( {_, _, {null, _, _}}, _ ) ->
         throw( null );
+
       ( _, _ ) ->
         throw( stuck )
     end,
 
-  try lists:foldr( F, {[], []}, EBindLst ) of
+  try lists:foldr( F, {[], []}, TypedBindLst ) of
     {L1, L2} -> {L1, L2}
   catch
     throw:stalled -> stalled;
@@ -861,16 +897,17 @@ split_zip( EBindLst ) ->
     throw:stuck   -> stuck
   end.
 
--spec bind_all( Info, EBindLst, EBody ) -> e()
-when Info     :: info(),
-     EBindLst :: [e_bind()],
-     EBody    :: e().
+
+-spec bind_all( Info, TypedBindLst, EBody ) -> e()
+when Info         :: info(),
+     TypedBindLst :: [typed_bind()],
+     EBody        :: e().
 
 bind_all( _, [], EBody ) ->
   EBody;
 
-bind_all( Info, [{X1, E1}|EBindLst], EBody ) ->
-  Lam = {lam_ntv, Info, [{X1, X1, undefined_type}], EBody},
+bind_all( Info, [{X1, T1, E1}|EBindLst], EBody ) ->
+  Lam = {lam_ntv, Info, [{X1, T1}], EBody},
   EBody1 = {app, Info, Lam, [{X1, E1}]},
   bind_all( Info, EBindLst, EBody1 ).
 
@@ -897,6 +934,19 @@ unstall( EBindLst ) when is_list( EBindLst ) ->
     fun
       ( {X, {stalled, E}} ) -> {X, E};
       ( {X, E} )            -> {X, E}
+    end,
+
+  lists:map( F, EBindLst ).
+
+
+-spec unstall_typed( [typed_bind()] ) -> [typed_bind()].
+
+unstall_typed( EBindLst ) when is_list( EBindLst ) ->
+
+  F =
+    fun
+      ( {X, T, {stalled, E}} ) -> {X, T, E};
+      ( {X, T, E} )            -> {X, T, E}
     end,
 
   lists:map( F, EBindLst ).

@@ -40,7 +40,7 @@
 -export( [t_str/0, t_file/0, t_bool/0, t_fn/3, t_rcd/1, t_lst/1] ).
 
 %% Expression constructors
--export( [lam_ntv_arg/2, e_bind/2, r_bind/2] ).
+-export( [typed_bind/3, e_bind/2, r_bind/2] ).
 -export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, lam_frn/5,
           app/2, cmp/2, conj/2, disj/2, neg/1, lst/2, append/2, isnil/1,
           for/3, fold/3, rcd/1, proj/2, fix/1, cons/2, null/1, err/2] ).
@@ -121,8 +121,8 @@ when Tau =:= ntv orelse Tau =:= frn,
 %% Expression constructors
 %%====================================================================
 
--spec lam_ntv_arg( X :: x(), T :: t() )     -> lam_ntv_arg().
-      lam_ntv_arg( X, T ) when is_atom( X ) -> {X, X, T}.
+-spec typed_bind( X :: x(), T :: t(), E :: e() ) -> typed_bind().
+      typed_bind( X, T, E ) when is_atom( X )    -> {X, T, E}.
 
 -spec e_bind( X :: x(), E :: e() )     -> e_bind().
       e_bind( X, E ) when is_atom( X ) -> {X, E}.
@@ -172,10 +172,10 @@ when Tau =:= ntv orelse Tau =:= frn,
       var( Info, X ) when is_atom( X ) -> {var, Info, X}.
 
 
--spec lam_ntv( ArgLst :: [lam_ntv_arg()], EBody :: e() ) -> e().
+-spec lam_ntv( ArgLst :: [t_arg()], EBody :: e() ) -> e().
       lam_ntv( ArgLst, EBody ) -> lam_ntv( na, ArgLst, EBody ).
 
--spec lam_ntv( Info :: info(), ArgLst :: [lam_ntv_arg()], EBody :: e() ) -> e().
+-spec lam_ntv( Info :: info(), ArgLst :: [t_arg()], EBody :: e() ) -> e().
 lam_ntv( Info, ArgLst, EBody ) when is_list( ArgLst ) ->
   {lam_ntv, Info, ArgLst, EBody}.
 
@@ -268,26 +268,36 @@ when is_atom( FName ),
 -spec isnil( Info :: info(), E :: e() ) -> e().
       isnil( Info, E )                  -> {isnil, Info, E}.
 
--spec for( TRet :: t(), ArgLst :: [e_bind()], E :: e() ) -> e().
-      for( TRet, ArgLst, E )                             -> for( na, TRet, ArgLst, E ).
+-spec for( TRet :: t(), ArgLst :: [typed_bind()], E :: e() ) -> e().
 
--spec for( Info :: info(), TRet :: t(), ArgLst :: [e_bind()], E :: e() ) -> e().
-      for( Info, TRet, ArgLst, E ) when is_list( ArgLst ) -> {for, Info, TRet, ArgLst, E}.
+for( TRet, ArgLst, E ) ->
+  for( na, TRet, ArgLst, E ).
 
--spec fold( InitBind :: e_bind(), LstBind :: e_bind(), E :: e() ) -> e().
-      fold( InitBind, LstBind, E ) -> fold( na, InitBind, LstBind, E ).
+-spec for( Info, TRet, ArgLst, E ) -> e()
+when Info   :: info(),
+     TRet   :: t(),
+     ArgLst :: [typed_bind()],
+     E      :: e().
+
+for( Info, TRet, ArgLst, E ) when is_list( ArgLst ) ->
+  {for, Info, TRet, ArgLst, E}.
 
 
--spec fold( Info, InitBind, LstBind, E ) -> e()
+-spec fold( AccBind :: typed_bind(), ArgBind :: typed_bind(), E :: e() ) -> e().
+
+fold( AccBind, ArgBind, E ) ->
+  fold( na, AccBind, ArgBind, E ).
+
+
+-spec fold( Info, AccBind, ArgBind, E ) -> e()
 when Info    :: info(),
-     InitBind :: e_bind(),
-     LstBind :: e_bind(),
+     AccBind :: typed_bind(),
+     ArgBind :: typed_bind(),
      E       :: e().
 
-fold( Info, InitBind, LstBind, E )
-when is_tuple( InitBind ),
-     is_tuple( LstBind ) ->
-  {fold, Info, InitBind, LstBind, E}.
+fold( Info, {XAcc, TAcc, EAcc}, {XArg, TArg, EArg}, E )
+when is_atom( XAcc ), is_atom( XArg ) ->
+  {fold, Info, {XAcc, TAcc, EAcc}, {XArg, TArg, EArg}, E}.
 
 
 -spec rcd( ArgLst :: [e_bind()] ) -> e().
@@ -335,7 +345,7 @@ create_closure( AssignLst, EBody ) ->
 
       F( {assign, Info, {r_var, X, T}, E}, EAcc ) ->
         app( Info,
-             lam_ntv( Info, [lam_ntv_arg( X, T )], EAcc ),
+             lam_ntv( Info, [t_arg( X, T )], EAcc ),
              [e_bind( X, E )] );
 
       F( {assign, _Info, {r_rcd, []}, _E}, EAcc ) ->

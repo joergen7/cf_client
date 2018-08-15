@@ -73,10 +73,9 @@
                      | 'R'
                      | 'Racket'.
 
--type lam_ntv_arg() :: {InternalName :: x(), ExternalName :: x(), t()}.
-
 -type e_bind()      :: {x(), e()}.
 -type r_bind()      :: {x(), r()}.
+-type typed_bind()  :: {x(), t(), e()}.
 
 -type e()           :: {str, info(), s()}
                      | {cmp, info(), e(), e()}
@@ -88,7 +87,7 @@
                      | {conj, info(), e(), e()}
                      | {disj, info(), e(), e()}
                      | {var, info(), x()}
-                     | {lam_ntv, info(), [lam_ntv_arg()], e()} % binding form
+                     | {lam_ntv, info(), [t_arg()], e()}         % binding form
                      | {lam_frn, info(), x(), [t_arg()], t(), l(), s()}
                      | {app, info(), e(), [e_bind()]}
                      | {fut, info(), t(), hash()}
@@ -96,8 +95,8 @@
                      | {cons, info(), e(), e()}
                      | {append, info(), e, e}
                      | {isnil, info(), e}
-                     | {for, info(), t(), [e_bind()], e()}     % binding form
-                     | {fold, info(), e_bind(), e_bind(), e()} % binding form
+                     | {for, info(), t(), [typed_bind()], e()}         % binding form
+                     | {fold, info(), typed_bind(), typed_bind(), e()} % binding form
                      | {rcd, info(), [e_bind()]}
                      | {proj, info(), x(), e()}
                      | {fix, info(), e()}

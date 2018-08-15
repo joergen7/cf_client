@@ -51,13 +51,14 @@
 -import( ?CUNEIFORM_SEM, [step/1, split_zip/1, bind_all/3] ).
 
 -import( cuneiform_lang, [t_str/0, t_bool/0, t_fn/3, t_rcd/1, t_lst/1] ).
--import( cuneiform_lang, [lam_ntv_arg/2, e_bind/2, t_arg/2] ).
+-import( cuneiform_lang, [e_bind/2, t_arg/2] ).
 -import( cuneiform_lang, [l_bash/0] ).
 -import( cuneiform_lang, [
                           str/1, true/0, false/0, cnd/3, var/1, lam_frn/5,
                           lam_ntv/2, app/2, cmp/2, neg/1, conj/2, disj/2,
                           lst/2, append/2, isnil/1, for/3, fold/3, err/2,
-                          rcd/1, proj/2, fix/1, null/1, cons/2, file/1
+                          rcd/1, proj/2, fix/1, null/1, cons/2, file/1,
+                          typed_bind/3
                          ] ).
 
  
@@ -69,7 +70,7 @@ e_lam_const() ->
   lam_ntv( [], str( <<"blub">> ) ).
 
 e_lam_id() ->
-  lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ).
+  lam_ntv( [t_arg( x, t_str() )], var( x ) ).
 
 e_app_id() ->
   app( e_lam_id(), [e_bind( x, str( <<"blub">> ) )] ).
@@ -403,10 +404,10 @@ nat_lambda_shadows_bound_occurrences() ->
   E1 =
     app(
       lam_ntv(
-        [lam_ntv_arg( x, t_str() )],
+        [t_arg( x, t_str() )],
         app(
           lam_ntv(
-            [lam_ntv_arg( x, t_str() )],
+            [t_arg( x, t_str() )],
             var( x ) ),
           [e_bind( x, str( <<"5">> ) )]) ),
       [e_bind( x, str( <<"4">> ) )] ),
@@ -419,9 +420,9 @@ nat_lambda_with_function_expression_reduces() ->
   E1 =
     app(
       lam_ntv(
-        [lam_ntv_arg( f, t_fn( ntv, [t_arg( x, t_str() )], t_str() ) )],
+        [t_arg( f, t_fn( ntv, [t_arg( x, t_str() )], t_str() ) )],
         app( var( f ), [e_bind( x, str( <<"5">> ) )] ) ),
-      [e_bind( f, lam_ntv( [lam_ntv_arg( x, t_str() )], var( x ) ) )] ),
+      [e_bind( f, lam_ntv( [t_arg( x, t_str() )], var( x ) ) )] ),
   ?assertEqual(
     {ok, str( <<"5">> ), []},
     step( E1 ) ).
@@ -429,7 +430,7 @@ nat_lambda_with_function_expression_reduces() ->
 nat_lambda_with_argument_expression_reduces() ->
   E1 =
     app(
-      lam_ntv( [lam_ntv_arg( x, t_bool() )], var( x ) ),
+      lam_ntv( [t_arg( x, t_bool() )], var( x ) ),
       [e_bind( x, cmp( str( <<"bla">> ), str( <<"blub">> ) ) )] ),
   ?assertEqual(
     {ok, false(), []},
@@ -459,7 +460,7 @@ foreign_function_application_reduces_function_expression() ->
   E1 =
     app(
       lam_ntv(
-        [lam_ntv_arg( f, t_fn( frn, [], t_rcd( [t_arg( out, t_str() )] ) ) )],
+        [t_arg( f, t_fn( frn, [], t_rcd( [t_arg( out, t_str() )] ) ) )],
         app( var( f ), [] ) ),
       [e_bind(
         f,
@@ -580,7 +581,7 @@ projection_with_expression_operand_reduces() ->
     step( E1 ) ).
 
 fixpoint_operator_reduces() ->
-  E2 = fix( lam_ntv( [lam_ntv_arg( f, t_fn( ntv, [], t_str() ) )],
+  E2 = fix( lam_ntv( [t_arg( f, t_fn( ntv, [], t_str() ) )],
                      str( <<"blub">> ) ) ),
   E1 = app( E2, [] ),
   ?assertEqual(
@@ -588,7 +589,9 @@ fixpoint_operator_reduces() ->
     step( E1 ) ).
 
 map_reduces_to_list() ->
-  E1 = for( t_bool(), [e_bind( x, lst( t_bool(), [true(), false()] ) )], neg( var( x ) ) ),
+  E1 = for( t_bool(),
+            [typed_bind( x, t_bool(), lst( t_bool(), [true(), false()] ) )],
+            neg( var( x ) ) ),
   E2 = cons( false(), cons( true(), null( t_bool() ) ) ),
   ?assertEqual(
     {ok, E2, []},
@@ -596,8 +599,8 @@ map_reduces_to_list() ->
 
 zip_reduces_to_list() ->
   E1 = for( t_bool(),
-            [e_bind( x, lst( t_bool(), [true(), false()] ) ),
-             e_bind( y, lst( t_bool(), [false(), false()] ) )],
+            [typed_bind( x, t_bool(), lst( t_bool(), [true(), false()] ) ),
+             typed_bind( y, t_bool(), lst( t_bool(), [false(), false()] ) )],
             disj( var( x ), var( y ) ) ),
   E2 = cons( true(), cons( false(), null( t_bool() ) ) ),
   ?assertEqual(
@@ -605,22 +608,23 @@ zip_reduces_to_list() ->
     step( E1 ) ).
 
 fold_reduces() ->
-  E1 = fold( e_bind( x_acc, str( <<"0">> ) ),
-             e_bind( x, lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
+  E1 = fold( typed_bind( x_acc, t_str(), str( <<"0">> ) ),
+             typed_bind( x, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] ) ),
              var( x ) ),
   ?assertEqual(
     {ok, str( <<"2">> ), []},
     step( E1 ) ).
 
 for_over_empty_list_reduces_to_empty_list() ->
-  E1 = for( t_str(), [e_bind( x, null( t_str() ) )], var( x ) ),
+  E1 = for( t_str(), [typed_bind( x, t_str(), null( t_str() ) )], var( x ) ),
   E2 = null( t_str() ),
   ?assertEqual(
     {ok, E2, []},
     step( E1 ) ).
 
 folding_over_empty_list_reduces_to_initial_accumulator() ->
-  E1 = fold( e_bind( acc, str( <<"bla">> ) ), e_bind( x, null( t_str() ) ), var( x ) ),
+  E1 = fold( typed_bind( acc, t_str(), str( <<"bla">> ) ),
+             typed_bind( x, t_str(), null( t_str() ) ), var( x ) ),
   E2 = str( <<"bla">> ),
   ?assertEqual(
     {ok, E2, []},
@@ -656,27 +660,27 @@ split_zip_test_() ->
    ]}.
 
 all_lists_empty_returns_null() ->
-  EBindLst = [e_bind( a, null( t_str() ) ),
-              e_bind( b, null( t_str() ) )],
+  EBindLst = [typed_bind( a, t_str(), null( t_str() ) ),
+              typed_bind( b, t_str(), null( t_str() ) )],
   ?assertEqual( null, split_zip( EBindLst ) ).
 
 some_list_empty_returns_null() ->
-  EBindLst = [e_bind( a, null( t_str() ) ),
-              e_bind( b, cons( str( <<"bla">> ), null( t_str() ) ) )],
+  EBindLst = [typed_bind( a, t_str(), null( t_str() ) ),
+              typed_bind( b, t_str(), cons( str( <<"bla">> ), null( t_str() ) ) )],
   ?assertEqual( null, split_zip( EBindLst ) ).
 
 some_list_unevaluated_returns_norule() ->
-  EBindLst = [e_bind( a, cons( str( <<"bla">> ), null( t_str() ) ) ),
-              e_bind( b, {fut, na, t_lst( t_str() )} )],
+  EBindLst = [typed_bind( a, t_str(), cons( str( <<"bla">> ), null( t_str() ) ) ),
+              typed_bind( b, t_str(), {fut, na, t_lst( t_str() )} )],
   ?assertEqual( stuck, split_zip( EBindLst ) ).
 
 all_lists_nonempty_splits_head() ->
-  EBindLst = [e_bind( a, cons( str( <<"bla">> ), null( t_str() ) ) ),
-              e_bind( b, cons( str( <<"blub">> ), null( t_str() ) ) )],
-  ?assertEqual( {[e_bind( a, str( <<"bla">> ) ),
-                  e_bind( b, str( <<"blub">> ) )],
-                 [e_bind( a, null( t_str() ) ),
-                  e_bind( b, null( t_str() ) )]},
+  EBindLst = [typed_bind( a, t_str(), cons( str( <<"bla">> ), null( t_str() ) ) ),
+              typed_bind( b, t_str(), cons( str( <<"blub">> ), null( t_str() ) ) )],
+  ?assertEqual( {[typed_bind( a, t_str(), str( <<"bla">> ) ),
+                  typed_bind( b, t_str(), str( <<"blub">> ) )],
+                 [typed_bind( a, t_str(), null( t_str() ) ),
+                  typed_bind( b, t_str(), null( t_str() ) )]},
                 split_zip( EBindLst ) ).
 
 
@@ -701,9 +705,9 @@ empty_binding_list_returns_body() ->
 
 nonempty_binding_produces_application() ->
   EBody = str( <<"bla">> ),
-  E2 = app( lam_ntv( [lam_ntv_arg( x, undefined_type )], EBody ),
+  E2 = app( lam_ntv( [t_arg( x, t_str() )], EBody ),
             [e_bind( x, str( <<"x">> ) )] ),
-  ?assertEqual( E2, bind_all( na, [e_bind( x, str( <<"x">> ) )], EBody ) ).
+  ?assertEqual( E2, bind_all( na, [typed_bind( x, t_str(), str( <<"x">> ) )], EBody ) ).
 
 
 
