@@ -108,8 +108,6 @@ e               -> true                                                 : visit_
 e               -> false                                                : visit_false( '$1' ).
 e               -> lparen e cmp e rparen                                : visit_cmp( '$2', '$3', '$4' ).
 e               -> cnd e then e else e halt                             : visit_cnd( '$1', '$2', [], '$4', [], '$6' ).
-
-%                  1   2 3    4          5 6    7 8
 e               -> cnd e then define_lst e else e halt                  : visit_cnd( '$1', '$2', '$4', '$5', [], '$7' ).
 e               -> cnd e then e else define_lst e halt                  : visit_cnd( '$1', '$2', [], '$4', '$6', '$7' ).
 e               -> cnd e then define_lst e else define_lst e halt       : visit_cnd( '$1', '$2', '$4', '$5', '$7', '$8' ).
