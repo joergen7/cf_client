@@ -205,6 +205,12 @@ shell_repl( ClientName, ShellState = #shell_state{ def_lst = DefLst } ) ->
   
   case io:get_line( Prompt ) of
 
+    eof ->
+      ok;
+
+    {error, Reason} ->
+      error( Reason );
+
     "quit\n" ->
       ok;
 
@@ -227,6 +233,7 @@ shell_repl( ClientName, ShellState = #shell_state{ def_lst = DefLst } ) ->
       {ReplyLst, ShellState1} = shell_eval( Input, ShellState ),
       process_reply_lst( ReplyLst, ClientName, verbose ),
       shell_repl( ClientName, ShellState1 )
+      
   end.
 
 
