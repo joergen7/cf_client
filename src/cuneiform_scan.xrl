@@ -44,6 +44,7 @@ LPERL      = Perl
 LPYTHON    = Python
 LR         = R
 LRACKET    = Racket
+LAWK       = Awk
 
 TSTR       = Str
 TFILE      = File
@@ -113,6 +114,7 @@ Rules.
 {LPYTHON}    : {token, {l_python, TokenLine, TokenChars}}.
 {LR}         : {token, {l_r, TokenLine, TokenChars}}.
 {LRACKET}    : {token, {l_racket, TokenLine, TokenChars}}.
+{LAWK}       : {token, {l_awk, TokenLine, TokenChars}}.
 
 {TSTR}       : {token, {t_str, TokenLine, TokenChars}}.
 {TFILE}      : {token, {t_file, TokenLine, TokenChars}}.

@@ -71,7 +71,8 @@
                      | 'Perl'
                      | 'Python'
                      | 'R'
-                     | 'Racket'.
+                     | 'Racket'
+                     | 'Awk'.
 
 -type e_bind()      :: {x(), e()}.
 -type r_bind()      :: {x(), r()}.
@@ -117,7 +118,8 @@
                      | {no_native_function_type, info(), t()}
                      | {no_argument, info(), t()}
                      | {no_list_type, info(), t()}
-                     | {no_comparable_type, info(), t()}.
+                     | {no_comparable_type, info(), t()}
+                     | {argument_mismatch, info(), x(), x()}.
 
 -type stage() :: load
                | scan

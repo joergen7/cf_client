@@ -257,7 +257,7 @@ try_ascend( {{_, _}, [{neg_op, _}|_], _} ) ->
 
 
 
-% conjugation lhs
+% conjunction lhs
 
 try_ascend( {{{stalled, E1}, _}, [{conj_lhs, Info, E2, Env}|K], Outbox} ) ->
   {{E2, Env}, [{conj_rhs, Info, {stalled, E1}}|K], Outbox};
@@ -270,7 +270,7 @@ try_ascend( {{_, _}, [{conj_lhs, _, _, _}|_], _} ) ->
   error( "stuck: bad state" );
 
 
-% conjugation rhs
+% conjunction rhs
 
 % both operands are stalled
 try_ascend( {{{stalled, E2}, _},
@@ -807,7 +807,7 @@ try_ascend( {{{stalled, {cons, _, EHd, ETl}}, _},
 
   EAcc1 = bind_all( Info, [{XAcc, TAcc, EAcc}, {XArg, TArg, EHd1}], EBody ),
 
-  {{ETl1, Env},
+  {{ETl1, #{}},
    [{fold_arg, Info, {XAcc, TAcc, EAcc1}, XArg, TArg, EBody, Env}|K],
    Outbox};
 
@@ -824,7 +824,7 @@ try_ascend( {{{cons, _, EHd, ETl}, _},
 
   EAcc1 = bind_all( Info, [{XAcc, TAcc, EAcc}, {XArg, TArg, EHd}], EBody ),
 
-  {{ETl, Env},
+  {{ETl, #{}},
    [{fold_arg, Info, {XAcc, TAcc, EAcc1}, XArg, TArg, EBody, Env}|K],
    Outbox};
 

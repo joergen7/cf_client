@@ -234,14 +234,38 @@ type( Gamma, {rcd, Info, [{X, E}|EBindLst]} ) ->
 
   end;
 
-type( _Gamma, {lam_frn, Info, _FName, TArgLst, TRet, _Lang, _SBody} ) ->
+type( _Gamma, T={lam_frn, Info, _FName, TArgLst, TRet, Lang, _SBody} ) ->
 
   {'Rcd', RetFieldLst} = TRet,
-  NameLst = [X || {X, _} <- TArgLst]++[X || {X, _} <- RetFieldLst],
 
-  case find_ambiguous( NameLst ) of
-    {ambiguous, Y} -> {error, {ambiguous_name, Info, Y}};
-    unambiguous    -> {ok, t_fn( frn, TArgLst, TRet )}
+  try
+
+    case Lang of
+      'Awk' ->
+        case TArgLst of
+          []                  -> throw( {error, {no_argument, Info, T}} );
+          [{input, 'File'}|_] -> ok;
+          [{input, T1}|_]     -> throw( {error, {type_mismatch, Info, 'File', T1}} );
+          [{ArgName, _}|_]    -> throw( {error, {argument_mismatch, Info, 'input', ArgName}} )
+        end,
+        case RetFieldLst of
+          [{output, 'File'}]  -> ok;
+          [{output, T2}]      -> throw( {error, {type_mismatch, Info, 'File', T2}} );
+          [{KeyName, _}]      -> throw( {error, {key_mismatch, Info, output, KeyName}} );
+          [_, {KeyName, _}|_] -> throw( {error, {superfluous_key, Info, KeyName}} )
+        end;
+      _ -> ok
+    end,
+
+    NameLst = [X || {X, _} <- TArgLst]++[X || {X, _} <- RetFieldLst],
+
+    case find_ambiguous( NameLst ) of
+      {ambiguous, Y} -> {error, {ambiguous_name, Info, Y}};
+      unambiguous    -> {ok, t_fn( frn, TArgLst, TRet )}
+    end
+
+  catch
+    throw:{error, Reason} -> {error, Reason}
   end;
 
 type( Gamma, {app, Info, F, EBindLst} ) ->

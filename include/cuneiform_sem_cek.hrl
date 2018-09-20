@@ -68,7 +68,7 @@
            | {proj_op, info(), x()}
            | {fix_op, info()}
            | {for_arg, info(), t(), [typed_bind()], x(), t(), [typed_bind()], e(), env()}
-           | {for_acc, info(), x(), t(), typed_bind(), e(), env()}
+           | {fold_acc, info(), x(), t(), typed_bind(), e(), env()}
            | {fold_arg, info(), typed_bind(), x(), t(), e(), env()}.
 
 

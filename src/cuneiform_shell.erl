@@ -31,10 +31,26 @@
 
 -module( cuneiform_shell ).
 
+%%====================================================================
+%% Exports
+%%====================================================================
+
+-export( [brace_level/2,
+          process_reply_lst/3,
+          shell/1,
+          shell_eval_oneshot/1] ).
+
+
+%%====================================================================
+%% Includes
+%%====================================================================
+
 -include_lib( "cf_client/include/cuneiform.hrl" ).
 
--export( [shell/1, shell_eval_oneshot/1, process_reply_lst/3] ).
 
+%%====================================================================
+%% Constant definitions
+%%====================================================================
 
 -define( RED( Str ), "\e[31m" ++ Str ++ "\e[0m" ).
 -define( BRED( Str ), "\e[1;31m" ++ Str ++ "\e[0m" ).
@@ -43,6 +59,11 @@
 -define( BYLW( Str ), "\e[1;33m" ++ Str ++ "\e[0m" ).
 -define( BLU( Str ), "\e[34m" ++ Str ++ "\e[0m" ).
 -define( BBLU( Str ), "\e[1;34m" ++ Str ++ "\e[0m" ).
+
+
+%%====================================================================
+%% Record definitions
+%%====================================================================
 
 -record( shell_state, {line       = 1,
                        string_buf = "",
@@ -56,55 +77,34 @@
                        reply_lst  = []} ).
 
 
+%%====================================================================
+%% Type definitions
+%%====================================================================
+
 -type reply() :: {query, e()}
                | {error, stage(), _}
                | {parrot, e(), t()}.
 
 
 
+%%====================================================================
+%% API functions
+%%====================================================================
+
+-spec brace_level( TokenLst, L ) -> integer()
+when TokenLst :: [{atom(), info(), string()}],
+     L        :: integer().
+
+brace_level( [], L )                 -> L;
+brace_level( [{lbrace, _, _}|R], L ) -> brace_level( R, L+1 );
+brace_level( [{rbrace, _, _}|R], L ) -> brace_level( R, L-1 );
+brace_level( [{then, _, _}|R], L )   -> brace_level( R, L+1 );
+brace_level( [{do, _, _}|R], L )     -> brace_level( R, L+1 );
+brace_level( [{halt, _, _}|R], L )   -> brace_level( R, L-1 );
+brace_level( [_|R], L )              -> brace_level( R, L ).
 
 
 
--spec shell( ClientName :: _ ) -> ok.
-
-shell( ClientName ) ->
-
-
-  io:format( "~s~n~n~n", [get_banner()] ),
-  shell_repl( ClientName, #shell_state{} ).
-
-
--spec shell_repl( ClientName :: _, ShellState :: #shell_state{} ) -> ok.
-
-shell_repl( ClientName, ShellState = #shell_state{ def_lst = DefLst } ) ->
-
-  Prompt = get_prompt( ShellState ),
-  
-  case io:get_line( Prompt ) of
-
-    "quit\n" ->
-      ok;
-
-    "help\n" ->
-      io:format( "~s~n", [get_help()] ),
-      shell_repl( ClientName, ShellState );
-
-    "hist\n" ->
-      G =
-        fun( {assign, _, R, E} ) ->
-          SR = cuneiform_format:format_pattern( R ),
-          SE = cuneiform_format:format_expr( E ),
-          io:format( "let ~s =~n  ~s;~n~n", [SR, SE] )
-        end,
-      lists:foreach( G,
-                     DefLst ),
-      shell_repl( ClientName, ShellState );
-
-    Input    ->
-      {ReplyLst, ShellState1} = shell_eval( Input, ShellState ),
-      process_reply_lst( ReplyLst, ClientName, verbose ),
-      shell_repl( ClientName, ShellState1 )
-  end.
 
 
 -spec process_reply_lst( ReplyLst, ClientName, Verbosity ) -> ok
@@ -152,6 +152,26 @@ when is_list( ReplyLst ),
   ok = lists:foreach( F, ReplyLst ).
 
 
+%% @doc Starts an interactive shell by connecting to a Cuneiform client process.
+%%
+%%      Given a Cuneiform client process running under the process id
+%%      `ClientName' this function starts an interactive shell, printing the
+%%      Cuneiform banner on the screen and interacting with the user via the
+%%      standard input and standard output channels. When the user types `quit'
+%%      the function returns `ok' no matter how many commands were executed or
+%%      whether they were successful.
+%%
+-spec shell( ClientName :: _ ) -> ok.
+
+shell( ClientName ) ->
+
+  % print banner
+  io:format( "~s~n~n~n", [get_banner()] ),
+
+  % start repl
+  shell_repl( ClientName, #shell_state{} ).
+
+
 -spec shell_eval_oneshot( Input ) -> [reply()]
 when Input :: string().
 
@@ -171,6 +191,49 @@ shell_eval_oneshot( Input ) ->
       ReplyLst
       
   end.
+
+
+%%====================================================================
+%% Internal functions
+%%====================================================================
+
+-spec shell_repl( ClientName :: _, ShellState :: #shell_state{} ) -> ok.
+
+shell_repl( ClientName, ShellState = #shell_state{ def_lst = DefLst } ) ->
+
+  Prompt = get_prompt( ShellState ),
+  
+  case io:get_line( Prompt ) of
+
+    "quit\n" ->
+      ok;
+
+    "help\n" ->
+      io:format( "~s~n", [get_help()] ),
+      shell_repl( ClientName, ShellState );
+
+    "hist\n" ->
+      G =
+        fun( {assign, _, R, E} ) ->
+          SR = cuneiform_format:format_pattern( R ),
+          SE = cuneiform_format:format_expr( E ),
+          io:format( "let ~s =~n  ~s;~n~n", [SR, SE] )
+        end,
+      lists:foreach( G,
+                     DefLst ),
+      shell_repl( ClientName, ShellState );
+
+    Input    ->
+      {ReplyLst, ShellState1} = shell_eval( Input, ShellState ),
+      process_reply_lst( ReplyLst, ClientName, verbose ),
+      shell_repl( ClientName, ShellState1 )
+  end.
+
+
+
+
+
+
 
 
 -spec shell_eval( Input, ShellState ) -> {[reply()], #shell_state{}}
@@ -451,15 +514,5 @@ get_prompt( ShellState ) ->
       ""
 
   end.
-
-
--spec brace_level( TokenLst, L ) -> integer()
-when TokenLst :: [{atom(), info(), string()}],
-     L        :: integer().
-
-brace_level( [], L )                 -> L;
-brace_level( [{lbrace, _, _}|R], L ) -> brace_level( R, L+1 );
-brace_level( [{rbrace, _, _}|R], L ) -> brace_level( R, L-1 );
-brace_level( [_|R], L )              -> brace_level( R, L ).
 
 
