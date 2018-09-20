@@ -711,3 +711,66 @@ nonempty_binding_produces_application() ->
 
 
 
+error_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"error and true returns error",
+     fun error_and_true_returns_error/0},
+    {"error and false returns error",
+     fun error_and_false_returns_error/0},
+    {"error or true returns error",
+     fun error_or_true_returns_error/0},
+    {"error or false returns error",
+     fun error_or_false_returns_error/0},
+    {"comparing errors returns error",
+     fun comparing_errors_returns_error/0},
+    {"consing error to list returns error",
+     fun consing_error_to_list_returns_error/0},
+    {"consing string to error returns error",
+     fun consing_string_to_error_returns_error/0}
+   ]
+  }.
+
+error_and_true_returns_error() ->
+  E11 = err( t_str(), <<"bla">> ),
+  E12 = true(),
+  E1 = conj( E11, E12 ),
+  ?assertEqual( {ok, E11, []}, step( E1 ) ).
+
+error_and_false_returns_error() ->
+  E11 = err( t_str(), <<"bla">> ),
+  E12 = false(),
+  E1 = conj( E11, E12 ),
+  ?assertEqual( {ok, E11, []}, step( E1 ) ).
+
+error_or_true_returns_error() ->
+  E11 = err( t_str(), <<"bla">> ),
+  E12 = true(),
+  E1 = disj( E11, E12 ),
+  ?assertEqual( {ok, E11, []}, step( E1 ) ).
+
+error_or_false_returns_error() ->
+  E11 = err( t_str(), <<"bla">> ),
+  E12 = false(),
+  E1 = disj( E11, E12 ),
+  ?assertEqual( {ok, E11, []}, step( E1 ) ).
+
+comparing_errors_returns_error() ->
+  E11 = err( t_str(), <<"bla">> ),
+  E12 = err( t_str(), <<"blub">> ),
+  E1 = cmp( E11, E12 ),
+  ?assertEqual( {ok, E11, []}, step( E1 ) ).
+
+consing_error_to_list_returns_error() ->
+  E11 = err( t_str(), <<"bla">> ),
+  E1 = cons( E11, null( t_str() ) ),
+  ?assertEqual( {ok, E11, []}, step( E1 ) ).
+
+consing_string_to_error_returns_error() ->
+  E11 = err( t_lst( t_str() ), <<"bla">> ),
+  E1 = cons( str( <<"blub">> ), E11 ),
+  ?assertEqual( {ok, E11, []}, step( E1 ) ).
