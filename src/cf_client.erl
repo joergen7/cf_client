@@ -180,6 +180,7 @@ main( Args ) ->
       print_help();
 
     throw:shell ->
+      link( whereis( cf_client ) ),
       cuneiform_shell:shell( cf_client );
 
     throw:{load, FileLst} ->
