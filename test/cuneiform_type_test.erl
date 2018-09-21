@@ -285,7 +285,10 @@ type_test_() ->
      fun error_is_typable/0},
 
     {"for with ambiguous name untypable",
-     fun for_with_ambiguous_name_untypable/0}
+     fun for_with_ambiguous_name_untypable/0},
+
+    {"fixpoint with wrong first argument type untypable",
+     fun fixpoint_with_wrong_first_argument_type_untypable/0}
    ]
   }.
 
@@ -614,7 +617,7 @@ fixpoint_typable() ->
   
 
 fixpoint_with_argument_typable() ->
-  E = fix( lam_ntv( [t_arg( f, t_fn( ntv, [], t_file() ) ),
+  E = fix( lam_ntv( [t_arg( f, t_fn( ntv, [t_arg( x, t_str() )], t_str() ) ),
                       t_arg( x, t_str() )],
                     var( x ) ) ),
   ?assertEqual( {ok, t_fn( ntv, [t_arg( x, t_str() )], t_str() )}, type( E ) ).
@@ -896,3 +899,9 @@ for_with_ambiguous_name_untypable() ->
                      typed_bind( x, t_str(), null( t_str() ) )],
            var( x ) ),
   ?assertEqual( {error, {ambiguous_name, na, x}}, type( E ) ).
+
+fixpoint_with_wrong_first_argument_type_untypable() ->
+  E = fix( lam_ntv( [t_arg( f, t_str() )], str( <<"5">> ) ) ),
+  ?assertEqual( {error, {type_mismatch, na, {t_fn( ntv, [], t_str() ),
+                                             t_str()}}},
+                type( E ) ).

@@ -310,8 +310,12 @@ type( Gamma, {fix, Info, E} ) ->
     {ok, T={'Fn', ntv, [], _}} ->
       {error, {no_argument, Info, T}};
 
-    {ok, {'Fn', ntv, [_|LamNtvArgLst], TRet}} ->
-      {ok, t_fn( ntv, LamNtvArgLst, TRet )};
+    {ok, {'Fn', ntv, [TArg1|TArgLst], TRet}} ->
+      TFix = t_fn( ntv, TArgLst, TRet ),
+      case TArg1 of
+        {_, TFix} -> {ok, TFix};
+        {_, T1}   -> {error, {type_mismatch, Info, {TFix, T1}}}
+      end;
 
     {ok, T} ->
       {error, {no_native_function_type, Info, T}}
@@ -403,7 +407,7 @@ type( Gamma, {for, Info, TRet, [{X1, T1, E1}|TypedBindLst], EBody} ) ->
           {error, {no_list_type, Info, T3}}
 
       end
-      
+
   end;
 
 type( _Gamma, {fold, Info, {X, _T, _EAcc}, {X, _T, _ELst}, _EBody} ) ->
