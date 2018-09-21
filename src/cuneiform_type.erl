@@ -380,20 +380,30 @@ type( Gamma, {for, Info, TRet, [], EBody} ) ->
   end;
 
 type( Gamma, {for, Info, TRet, [{X1, T1, E1}|TypedBindLst], EBody} ) ->
-  case type( Gamma, E1 ) of
 
-    {error, Reason} ->
-      {error, Reason};
+  NameLst = [X1|[X || {X, _, _} <- TypedBindLst]],
+  case cuneiform_lang:find_ambiguous( NameLst ) of
 
-    {ok, {'Lst', T1}} ->
-      type( Gamma#{ X1 => T1 }, for( Info, TRet, TypedBindLst, EBody ) );
+    {ambiguous, Xa} ->
+      {error, {ambiguous_name, Info, Xa}};
 
-    {ok, {'Lst', T2}} ->
-      {error, {type_mismatch, Info, {{'Lst', T1}, {'Lst', T2}}}};
+    unambiguous ->
+      case type( Gamma, E1 ) of
 
-    {ok, T3} ->
-      {error, {no_list_type, Info, T3}}
+        {error, Reason} ->
+          {error, Reason};
 
+        {ok, {'Lst', T1}} ->
+          type( Gamma#{ X1 => T1 }, for( Info, TRet, TypedBindLst, EBody ) );
+
+        {ok, {'Lst', T2}} ->
+          {error, {type_mismatch, Info, {{'Lst', T1}, {'Lst', T2}}}};
+
+        {ok, T3} ->
+          {error, {no_list_type, Info, T3}}
+
+      end
+      
   end;
 
 type( _Gamma, {fold, Info, {X, _T, _EAcc}, {X, _T, _ELst}, _EBody} ) ->

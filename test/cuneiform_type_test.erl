@@ -277,11 +277,15 @@ type_test_() ->
 
     {"fold with nonmatching list argument type untypable",
      fun fold_with_nonmatching_list_argument_type_untypable/0},
+
     {"future is typable",
      fun future_is_typable/0},
 
     {"error is typable",
-     fun error_is_typable/0}
+     fun error_is_typable/0},
+
+    {"for with ambiguous name untypable",
+     fun for_with_ambiguous_name_untypable/0}
    ]
   }.
 
@@ -880,11 +884,15 @@ fold_with_nonmatching_list_argument_type_untypable() ->
             str( <<"bla">> ) ),
   ?assertEqual( {error, {type_mismatch, na, {t_lst( t_str() ), t_lst( t_bool() )}}}, type( E ) ).
 
-
 future_is_typable() ->
   E = {fut, na, t_str(), na},
   ?assertEqual( {ok, t_str()}, type( E ) ).
 
-
 error_is_typable() ->
   ?assertEqual( {ok, t_str()}, type( err( t_str(), <<"blub">> ) ) ).
+
+for_with_ambiguous_name_untypable() ->
+  E = for( t_str(), [typed_bind( x, t_str(), null( t_str() ) ),
+                     typed_bind( x, t_str(), null( t_str() ) )],
+           var( x ) ),
+  ?assertEqual( {error, {ambiguous_name, na, x}}, type( E ) ).
