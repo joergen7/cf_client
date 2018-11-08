@@ -88,6 +88,7 @@ step( E ) ->
 eval_cek( P ) ->
   case step_cek( P ) of
     norule -> P;
+    P      -> error( no_change );
     P1     -> eval_cek( P1 )
   end.
 
@@ -189,7 +190,7 @@ try_ascend( {{{stalled, E1}, _}, [{cmp_lhs, Info, E2, Env}|K], Outbox} ) ->
 
 try_ascend( {{E1, _}, [{cmp_lhs, Info, E2, Env}|K], Outbox} ) ->
   case is_value( E1 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  -> {{E2, Env}, [{cmp_rhs, Info, E1}|K], Outbox}
   end;
 
@@ -200,7 +201,7 @@ try_ascend( {{E1, _}, [{cmp_lhs, Info, E2, Env}|K], Outbox} ) ->
 try_ascend( {{{stalled, E2}, _},
              [{cmp_rhs, Info, {stalled, E1}}|K],
              Outbox} ) ->
-  {{{stalled, {cmp, Info, E1, E2}}, #{}}, K, Outbox};
+    {{{stalled, {cmp, Info, E1, E2}}, #{}}, K, Outbox};
 
 % only rhs stalled
 try_ascend( {{{stalled, E2}, _}, [{cmp_rhs, Info, E1}|K], Outbox} ) ->
@@ -209,7 +210,7 @@ try_ascend( {{{stalled, E2}, _}, [{cmp_rhs, Info, E1}|K], Outbox} ) ->
 % only lhs stalled
 try_ascend( {{E2, _}, [{cmp_rhs, Info, {stalled, E1}}|K], Outbox} ) ->
   case is_value( E2 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  -> {{{stalled, {cmp, Info, E1, E2}}, #{}}, K, Outbox}
   end;
 
@@ -222,7 +223,7 @@ try_ascend( {{{B2, _}, _}, [{cmp_rhs, Info, {B1, _}}|K], Outbox} ) ->
   {{{B1 =:= B2, Info}, #{}}, K, Outbox};
 
 try_ascend( {{_, _}, [{cmp_rhs, _, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 % condition predicate
@@ -240,20 +241,20 @@ try_ascend( {{{false, _}, _}, [{cnd_pred, _, _, E3, Env}|K], Outbox} ) ->
   {{E3, Env}, K, Outbox};
 
 try_ascend( {{_, _}, [{cnd_pred, _, _, _, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 % negation operand
 
 try_ascend( {{{stalled, E1}, _}, [{neg_op, Info}|K], Outbox} ) ->
-  {{{stalled, {neg, Info, E1}}, #{}}, K, Outbox};
+    {{{stalled, {neg, Info, E1}}, #{}}, K, Outbox};
 
 try_ascend( {{{B1, _}, _}, [{neg_op, Info}|K], Outbox} )
 when is_boolean( B1 ) ->
   {{{not B1, Info}, #{}}, K, Outbox};
 
 try_ascend( {{_, _}, [{neg_op, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 
@@ -267,7 +268,7 @@ when is_boolean( B1 ) ->
   {{E2, Env}, [{conj_rhs, Info, {B1, Info1}}|K], Outbox};
 
 try_ascend( {{_, _}, [{conj_lhs, _, _, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 % conjunction rhs
@@ -282,13 +283,13 @@ try_ascend( {{{stalled, E2}, _},
 try_ascend( {{{stalled, E2}, _},
              [{conj_rhs, _, {true, _}}|K],
              Outbox} ) ->
-  {{{stalled, E2}, #{}}, K, Outbox};
+    {{{stalled, E2}, #{}}, K, Outbox};
 
 % lhs is false and rhs operand is stalled
 try_ascend( {{{stalled, _}, _},
              [{conj_rhs, _, E1 = {false, _}}|K],
              Outbox} ) ->
-  {{E1, #{}}, K, Outbox};
+    {{E1, #{}}, K, Outbox};
 
 % lhs operand is stalled and rhs operand is true
 try_ascend( {{{true, _}, _},
@@ -300,7 +301,7 @@ try_ascend( {{{true, _}, _},
 try_ascend( {{E2 = {false, _}, _},
              [{conj_rhs, _, {stalled, _}}|K],
              Outbox} ) ->
-  {{E2, #{}}, K, Outbox};
+    {{E2, #{}}, K, Outbox};
 
 % neither operand is stalled and lhs is true
 try_ascend( {{E2 = {B2, _}, _}, [{conj_rhs, _, {true, _}}|K], Outbox} )
@@ -313,7 +314,7 @@ when is_boolean( B2 ) ->
   {{E1, #{}}, K, Outbox};
 
 try_ascend( {{_, _}, [{conj_rhs, _, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 % disjunction lhs
@@ -326,7 +327,7 @@ when is_boolean( B1 ) ->
   {{E2, Env}, [{disj_rhs, Info, {B1, Info1}}|K], Outbox};
 
 try_ascend( {{_, _}, [{disj_lhs, _, _, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 % disjunction rhs
@@ -341,19 +342,19 @@ try_ascend( {{{stalled, E2}, _},
 try_ascend( {{{stalled, _}, _},
              [{disj_rhs, _, E1 = {true, _}}|K],
              Outbox} ) ->
-  {{E1, #{}}, K, Outbox};
+    {{E1, #{}}, K, Outbox};
 
 % lhs is false and rhs operand is stalled
 try_ascend( {{{stalled, E2}, _},
              [{disj_rhs, _, {false, _}}|K],
              Outbox} ) ->
-  {{{stalled, E2}, #{}}, K, Outbox};
+    {{{stalled, E2}, #{}}, K, Outbox};
 
 % lhs operand is stalled and rhs is true
 try_ascend( {{E2 = {true, _}, _},
              [{disj_rhs, _, {stalled, _}}|K],
              Outbox} ) ->
-  {{E2, #{}}, K, Outbox};
+    {{E2, #{}}, K, Outbox};
 
 % lhs operand is stalled and rhs is false
 try_ascend( {{{false, _}, _},
@@ -372,13 +373,13 @@ when is_boolean( B2 ) ->
   {{E2, #{}}, K, Outbox};
 
 try_ascend( {{_, _}, [{disj_rhs, _, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 % application function argument
 
 try_ascend( {{{stalled, E1}, _}, [{app_fn, Info, EBindLst, _}|K], Outbox} ) ->
-  {{{stalled, {app, Info, E1, EBindLst}}, #{}}, K, Outbox};
+    {{{stalled, {app, Info, E1, EBindLst}}, #{}}, K, Outbox};
 
 try_ascend( {{E1 = {lam_ntv, _, _, EBody}, _},
           [{app_fn, Info, EBindLst, Env}|K],
@@ -404,7 +405,7 @@ try_ascend( {{Lam = {lam_frn, _, _, _, _, _, _}, _},
   {{E1, Env}, [{app_arg, Info, Lam, [], X1, EBindLst, Env}|K], Outbox};
 
 try_ascend( {{_, _}, [{app_fn, _, _, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 % application function body
@@ -418,7 +419,7 @@ try_ascend( {{{stalled, EBody}, _},
 
 try_ascend( {{EBody, _}, [{app_body, _, _, _}|K], Outbox} ) ->
   case is_value( EBody ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  -> {{EBody, #{}}, K, Outbox}
   end;
 
@@ -442,13 +443,13 @@ try_ascend( {{E1, _},
            Outbox} ) ->
 
   case is_value( E1 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  ->
       EBindLst1 = lists:reverse( [{X1, E1}|PreBindLst] ),
       case is_stalled( EBindLst1 ) of
 
         true ->
-          EBindLst2 = unstall( EBindLst1 ),
+                    EBindLst2 = unstall( EBindLst1 ),
           {{{stalled, {app, Info, Lam, EBindLst2}}, #{}},
            K,
            Outbox};
@@ -475,7 +476,7 @@ try_ascend( {{{stalled, E1}, _},
                         [{X2, E2}|PostBindLst],
                         Env}|K],
              Outbox} ) ->
-  {{E2, Env},
+    {{E2, Env},
    [{app_arg, Info,
               Lam,
               [{X1, {stalled, E1}}|PreBindLst],
@@ -494,7 +495,7 @@ try_ascend( {{E1, _},
                       Env}|K],
            Outbox} ) ->
   case is_value( E1 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  ->
       {{E2, Env},
        [{app_arg, Info,
@@ -514,7 +515,7 @@ try_ascend( {{{stalled, E1}, _}, [{cons_hd, Info, E2, Env}|K], Outbox} ) ->
 
 try_ascend( {{E1, _}, [{cons_hd, Info, E2, Env}|K], Outbox} ) ->
   case is_value( E1 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  -> {{E2, Env}, [{cons_tl, Info, E1}|K], Outbox}
   end;
 
@@ -530,20 +531,20 @@ try_ascend( {{{stalled, E2}, _},
 % only cons rhs stalled
 try_ascend( {{{stalled, E2}, _}, [{cons_tl, Info, E1}|K], Outbox} ) ->
   case is_value( E1 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  -> {{{stalled, {cons, Info, E1, E2}}, #{}}, K, Outbox}
   end;
 
 % only cons lhs stalled
 try_ascend( {{E2, _}, [{cons_tl, Info, {stalled, E1}}|K], Outbox} ) ->
   case is_value( E2 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  -> {{{stalled, {cons, Info, E1, E2}}, #{}}, K, Outbox}
   end;
 
 try_ascend( {{E2, _}, [{cons_tl, Info, E1}|K], Outbox} ) ->
   case is_value( E1 ) andalso is_value( E2 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  -> {{{cons, Info, E1, E2}, #{}}, K, Outbox}
   end;
 
@@ -554,6 +555,7 @@ try_ascend( {{{stalled, {cons, ConsInfo, E11, E12}}, _},
              [{append_lhs, Info, E2, Env}|K],
              Outbox} ) ->
 
+  
   F11 =
     case is_value( E11 ) of
       true  -> E11;
@@ -576,7 +578,7 @@ try_ascend( {{{stalled, E1}, _}, [{append_lhs, Info, E2, Env}|K], Outbox} ) ->
 try_ascend( {{{cons, ConsInfo, E11, E12}, _},
              [{append_lhs, Info, E2, Env}|K], Outbox} ) ->
   case is_value( E11 ) andalso is_value( E12 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  ->
       {{E12, #{}},
        [{append_lhs, Info, E2, Env}, {cons_tl, ConsInfo, E11}|K],
@@ -600,10 +602,10 @@ try_ascend( {{E2, _}, [{append_rhs, Info, {stalled, E1}}|K], Outbox} ) ->
 % isnil operand
 
 try_ascend( {{{stalled, {cons, _, _, _}}, _}, [{isnil_op, Info}|K], Outbox} ) ->
-  {{{false, Info}, #{}}, K, Outbox};
+    {{{false, Info}, #{}}, K, Outbox};
 
 try_ascend( {{{stalled, E1}, _}, [{isnil_op, Info}|K], Outbox} ) ->
-  {{{stalled, {isnil, Info, E1}}, #{}}, K, Outbox};
+    {{{stalled, {isnil, Info, E1}}, #{}}, K, Outbox};
 
 try_ascend( {{{null, _, _}, _}, [{isnil_op, Info}|K], Outbox} ) ->
   {{{true, Info}, #{}}, K, Outbox};
@@ -612,7 +614,7 @@ try_ascend( {{{cons, _, _, _}, _}, [{isnil_op, Info}|K], Outbox} ) ->
   {{{false, Info}, #{}}, K, Outbox};
 
 try_ascend( {{_, _}, [{isnil_op, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 % record field
@@ -626,7 +628,7 @@ try_ascend( {{{stalled, E1}, _},
 
 try_ascend( {{E1, _}, [{rcd_field, Info, PreLst, X1, [], _}|K], Outbox} ) ->
   case is_value( E1 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  ->
       EBindLst1 = lists:reverse( [{X1, E1}|PreLst] ),
       case is_stalled( EBindLst1 ) of
@@ -652,7 +654,7 @@ try_ascend( {{E1, _},
             [{rcd_field, Info, PreLst, X1, [{X2, E2}|PostLst], Env}|K],
             Outbox} ) ->
   case is_value( E1 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  ->
       {{E2, Env},
        [{rcd_field, Info, [{X1, E1}|PreLst], X2, PostLst, Env}|K],
@@ -665,7 +667,7 @@ try_ascend( {{E1, _},
 try_ascend( {{{stalled, {rcd, _, EBindLst}}, _},
              [{proj_op, _, X}|K],
              Outbox} ) ->
-  {_, EX} = lists:keyfind( X, 1, EBindLst ),
+    {_, EX} = lists:keyfind( X, 1, EBindLst ),
   EX1 =
     case is_value( EX ) of
       true  -> EX;
@@ -682,13 +684,13 @@ try_ascend( {{{rcd, _, EBindLst}, _}, [{proj_op, _, X}|K], Outbox} ) ->
   {{EX, #{}}, K, Outbox};
 
 try_ascend( {{_, _}, [{proj_op, _, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 % fixpoint operator
 
 try_ascend( {{{stalled, E1}, _}, [{fix_op, Info}|K], Outbox} ) ->
-  {{{stalled, {fix, Info, E1}}, #{}}, K, Outbox};
+    {{{stalled, {fix, Info, E1}}, #{}}, K, Outbox};
 
 try_ascend( {{E = {lam_ntv, LamInfo, [FArg = {X, _}|ArgLst], EBody}, _},
             [{fix_op, Info}|K],
@@ -699,7 +701,7 @@ try_ascend( {{E = {lam_ntv, LamInfo, [FArg = {X, _}|ArgLst], EBody}, _},
   {{{lam_ntv, LamInfo, ArgLst, EBody1}, #{}}, K, Outbox};
 
 try_ascend( {{_, _}, [{fix_op, _}|_], _} ) ->
-  error( "stuck: bad state" );
+  error( stuck );
 
 
 % for argument
@@ -708,10 +710,11 @@ try_ascend( {{E1, _},
             [{for_arg, Info, Type, PreLst, X1, T1, [], EBody, Env}|K],
             Outbox} ) ->
 
+
   TypedBindLst1 = lists:reverse( [{X1, T1, E1}|PreLst] ),
 
   case split_zip( TypedBindLst1 ) of
-    stuck    -> error( "stuck: bad state" );
+    stuck    -> error( stuck );
     null     -> {{{null, Info, Type}, #{}}, K, Outbox};
     {L1, L2} ->
       EBody1 = bind_all( Info, L1, EBody ),
@@ -732,7 +735,7 @@ try_ascend( {{{stalled, E1}, _},
                         EBody,
                         Env}|K],
              Outbox} ) ->
-  {{E2, Env},
+    {{E2, Env},
    [{for_arg, Info,
               Type,
               [{X1, T1, {stalled, E1}}|PreLst],
@@ -754,7 +757,7 @@ try_ascend( {{E1, _},
                        Env}|K],
             Outbox} ) ->
   case is_value( E1 ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  ->
       {{E2, Env},
        [{for_arg, Info,
@@ -774,13 +777,13 @@ try_ascend( {{E1, _},
 try_ascend( {{{stalled, EAcc}, _},
              [{fold_acc, Info, XAcc, TAcc, {XArg, TArg, EArg}, EBody, Env}|K],
              Outbox} ) ->
-  {{EArg, Env}, [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K], Outbox};
+    {{EArg, Env}, [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K], Outbox};
 
 try_ascend( {{EAcc, _},
              [{fold_acc, Info, XAcc, TAcc, {XArg, TArg, EArg}, EBody, Env}|K],
              Outbox} ) ->
   case is_value( EAcc ) of
-    false -> error( "stuck: bad state" );
+    false -> error( stuck );
     true  -> 
       {{EArg, Env},
        [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
@@ -793,7 +796,7 @@ try_ascend( {{EAcc, _},
 try_ascend( {{{stalled, {cons, _, EHd, ETl}}, _},
              [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
              Outbox} ) ->
-  EHd1 =
+    EHd1 =
     case is_value( EHd ) of
       true  -> EHd;
       false -> {stalled, EHd}
@@ -821,6 +824,7 @@ try_ascend( {{{stalled, EArg}, _},
 try_ascend( {{{cons, _, EHd, ETl}, _},
              [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
              Outbox} ) ->
+
 
   EAcc1 = bind_all( Info, [{XAcc, TAcc, EAcc}, {XArg, TArg, EHd}], EBody ),
 

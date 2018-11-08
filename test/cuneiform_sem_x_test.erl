@@ -61,6 +61,8 @@
                           typed_bind/3
                          ] ).
 
+-import( cf_client_effi, [app_to_effi_request/1] ).
+
  
 %%====================================================================
 %% Expression definitions
@@ -74,6 +76,17 @@ e_lam_id() ->
 
 e_app_id() ->
   app( e_lam_id(), [e_bind( x, str( <<"blub">> ) )] ).
+
+
+e_app_frn_str() ->
+  TRet = t_rcd( [t_arg( a, t_str() )] ),
+  Lam = lam_frn( f, [], TRet, l_bash(), <<"shalala">> ),
+  app( Lam, [] ).
+
+e_app_frn_bool() ->
+  TRet = t_rcd( [t_arg( a, t_bool() )] ),
+  Lam = lam_frn( f, [], TRet, l_bash(), <<"shalala">> ),
+  app( Lam, [] ).
 
 
 %%====================================================================
@@ -242,8 +255,67 @@ step_test_() ->
      fun folding_over_empty_list_reduces_to_initial_accumulator/0},
 
     {"nested error reduces to error",
-     fun nested_error_reduces_to_error/0}
+     fun nested_error_reduces_to_error/0},
 
+    {"project foreign app stalls",
+     fun project_foreign_app_stalls/0},
+
+    {"comparison with foreign app lhs stalls",
+     fun comparison_with_foreign_app_lhs_stalls/0},
+
+    {"comparison with foreign app lhs stalls",
+     fun comparison_with_foreign_app_rhs_stalls/0},
+
+    {"disjunction with foreign app or false leaves foreign app",
+     fun disjunction_with_foreign_app_or_false_leaves_foreign_app/0},
+
+    {"disjunction with two foreign apps stalls",
+     fun disjunction_with_two_foreign_apps_stalls/0},
+
+    {"condition with foreign app stalls",
+     fun condition_with_foreign_app_stalls/0},
+
+    {"chaining two foreign apps stalls",
+     fun chaining_two_foreign_apps_stalls/0},
+
+    {"foreign app with two args",
+     fun foreign_app_with_two_args/0},
+
+    {"foreign app as for argument",
+     fun foreign_app_as_for_argument/0},
+
+    {"conjunction with foreign app and true leaves foreign app",
+     fun conjunction_with_foreign_app_and_true_leaves_foreign_app/0},
+
+    {"conjunction with two foreign apps stalls",
+     fun conjunction_with_two_foreign_apps_stalls/0},
+
+    {"list with foreign app car stalls",
+     fun list_with_foreign_app_car_stalls/0},
+
+    {"list with both car and cdr foreign app stalls",
+     fun list_with_both_car_and_cdr_foreign_app_stalls/0},
+
+    {"list with foreign app cdr stalls",
+     fun list_with_foreign_app_cdr_stalls/0},
+
+    {"append with foreign app lhs stalls",
+     fun append_with_foreign_app_lhs_stalls/0},
+
+    {"append with foreign apps as both operands stalls",
+     fun append_with_foreign_apps_as_both_operands_stalls/0},
+
+    {"foreign app in only record field stalls",
+     fun foreign_app_in_only_record_field_stalls/0},
+
+    {"foreign app in first record field stalls",
+     fun foreign_app_in_first_record_field_stalls/0},
+
+    {"evaluation descends records with two fields",
+     fun evaluation_descends_records_with_two_fields/0},
+
+    {"foreign app as fold argument stalls",
+     fun foreign_app_as_fold_argument_stalls/0}
    ]
   }.
 
@@ -637,6 +709,252 @@ nested_error_reduces_to_error() ->
     {ok, Err, []},
     step( E1 ) ).
 
+project_foreign_app_stalls() ->
+  App = e_app_frn_str(),
+  E1 = proj( a, App ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  E2 = proj( a, {fut, na, t_rcd( [t_arg( a, t_str() )] ), AppId} ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+comparison_with_foreign_app_lhs_stalls() ->
+  App = e_app_frn_str(),
+  E1 = cmp( proj( a, App ), str( <<"blub">> ) ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  E2 =
+    cmp(
+      proj( a, {fut, na, t_rcd( [t_arg( a, t_str() )] ), AppId} ),
+      str( <<"blub">> ) ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+comparison_with_foreign_app_rhs_stalls() ->
+  App = e_app_frn_str(),
+  E1 = cmp( str( <<"blub">> ), proj( a, App ) ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  E2 =
+    cmp(
+      str( <<"blub">> ),
+      proj( a, {fut, na, t_rcd( [t_arg( a, t_str() )] ), AppId} ) ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+disjunction_with_foreign_app_or_false_leaves_foreign_app() ->
+  App = e_app_frn_bool(),
+  P = proj( a, App ),
+  E1 = disj( P, false() ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  E2 =
+    proj( a, {fut, na, t_rcd( [t_arg( a, t_bool() )] ), AppId} ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+disjunction_with_two_foreign_apps_stalls() ->
+  App = e_app_frn_bool(),
+  P = proj( a, App ),
+  E1 = disj( P, P ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  E2 =
+    disj(
+      proj( a, {fut, na, t_rcd( [t_arg( a, t_bool() )] ), AppId} ),
+      proj( a, {fut, na, t_rcd( [t_arg( a, t_bool() )] ), AppId} ) ),
+  ?assertEqual( {ok, E2, [Request, Request]}, step( E1 ) ).
+
+condition_with_foreign_app_stalls() ->
+  App = e_app_frn_bool(),
+  E1 = cnd( proj( a, App ), str( <<"bla">> ), str( <<"blub">> ) ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  E2 =
+    cnd( proj( a, {fut, na, t_rcd( [t_arg( a, t_bool() )] ), AppId} ),
+         str( <<"bla">> ),
+         str( <<"blub">> ) ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+chaining_two_foreign_apps_stalls() ->
+
+  App1 = e_app_frn_str(),
+  Lam2 = lam_frn( g,
+                  [t_arg( x, t_str() )],
+                  t_rcd( [t_arg( x, t_str() )] ),
+                  l_bash(),
+                  <<"shala">> ),
+  E1 = app( Lam2, [e_bind( x, proj( a, App1 ) )] ),
+  Request = app_to_effi_request( App1 ),
+  #{ app_id := AppId } = Request,
+  E2 = app( Lam2, [e_bind( x, proj( a, {fut, na, t_rcd( [t_arg( a, t_str() )] ), AppId} ) )] ),
+
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+foreign_app_with_two_args() ->
+
+  Lam = lam_frn( f,
+                 [t_arg( x, t_str() ), t_arg( y, t_bool() )],
+                 t_rcd( [t_arg( a, t_bool() )] ),
+                 l_bash(),
+                 <<"shalala">> ),
+
+  E1 = app( Lam, [e_bind( x, str( <<"bla">> ) ),
+                  e_bind( y, true() )] ),
+
+  Request = app_to_effi_request( E1 ),
+  #{ app_id := AppId } = Request,
+
+  E2 = {fut, na, t_rcd( [t_arg( a, t_bool() )] ), AppId},
+
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+foreign_app_as_for_argument() ->
+
+  TRet = t_rcd( [t_arg( a, t_lst( t_str() ) )] ),
+
+  Lam = lam_frn( f,
+                 [],
+                 TRet,
+                 l_bash(),
+                 <<"shalala">> ),
+
+  App = app( Lam, [] ),
+
+  ForArg = proj( a, App ),
+
+  E1 = for( t_str(),
+            [typed_bind( x, t_str(), ForArg )],
+            var( x ) ),
+
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+
+  E2 = for( t_str(),
+            [typed_bind( x,
+                         t_str(),
+                         proj( a, {fut, na, TRet, AppId} ) )],
+            var( x ) ),
+
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+conjunction_with_foreign_app_and_true_leaves_foreign_app() ->
+  App = e_app_frn_bool(),
+  P = proj( a, App ),
+  E1 = conj( P, true() ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  E2 =
+    proj( a, {fut, na, t_rcd( [t_arg( a, t_bool() )] ), AppId} ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+conjunction_with_two_foreign_apps_stalls() ->
+  App = e_app_frn_bool(),
+  P = proj( a, App ),
+  E1 = conj( P, P ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  E2 =
+    conj(
+      proj( a, {fut, na, t_rcd( [t_arg( a, t_bool() )] ), AppId} ),
+      proj( a, {fut, na, t_rcd( [t_arg( a, t_bool() )] ), AppId} ) ),
+  ?assertEqual( {ok, E2, [Request, Request]}, step( E1 ) ).
+
+list_with_foreign_app_car_stalls() ->
+  App = e_app_frn_bool(),
+  P = proj( a, App ),
+  E1 = cons( P, null( t_bool() ) ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  TRet = t_rcd( [t_arg( a, t_bool() )] ),
+  E2 = cons( proj( a, {fut, na, TRet, AppId} ), null( t_bool() ) ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+list_with_both_car_and_cdr_foreign_app_stalls() ->
+  App = e_app_frn_bool(),
+  P = proj( a, App ),
+  E1 = cons( P, cons( P, null( t_bool() ) ) ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  TRet = t_rcd( [t_arg( a, t_bool() )] ),
+  E2 = cons( proj( a, {fut, na, TRet, AppId} ), 
+             cons( proj( a, {fut, na, TRet, AppId} ),
+                   null( t_bool() ) ) ),
+  ?assertEqual( {ok, E2, [Request, Request]}, step( E1 ) ).
+
+list_with_foreign_app_cdr_stalls() ->
+  App = e_app_frn_bool(),
+  P = proj( a, App ),
+  E1 = cons( true(), cons( P, null( t_bool() ) ) ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  TRet = t_rcd( [t_arg( a, t_bool() )] ),
+  E2 = cons( true(), 
+             cons( proj( a, {fut, na, TRet, AppId} ),
+                   null( t_bool() ) ) ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+append_with_foreign_app_lhs_stalls() ->
+  App = e_app_frn_str(),
+  P = proj( a, App ),
+  E1 = append( P, str( <<"blub">> ) ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  TRet = t_rcd( [t_arg( a, t_str() )] ),
+  E2 = append( proj( a, {fut, na, TRet, AppId} ), str( <<"blub">> ) ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+append_with_foreign_apps_as_both_operands_stalls() ->
+  App = e_app_frn_str(),
+  P = proj( a, App ),
+  E1 = append( P, P ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  TRet = t_rcd( [t_arg( a, t_str() )] ),
+  E2 = append( proj( a, {fut, na, TRet, AppId} ),
+               proj( a, {fut, na, TRet, AppId} ) ),
+  ?assertEqual( {ok, E2, [Request, Request]}, step( E1 ) ).
+
+foreign_app_in_only_record_field_stalls() ->
+  App = e_app_frn_str(),
+  P = proj( a, App ),
+  E1 = rcd( [e_bind( b, P )] ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  TRet = t_rcd( [t_arg( a, t_str() )] ),
+  E2 = rcd( [e_bind( b, proj( a, {fut, na, TRet, AppId} ) )] ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+foreign_app_in_first_record_field_stalls() ->
+  App = e_app_frn_str(),
+  P = proj( a, App ),
+  E1 = rcd( [e_bind( b, P ), e_bind( c, str( <<"blub">> ) )] ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  TRet = t_rcd( [t_arg( a, t_str() )] ),
+  E2 = rcd( [e_bind( b, proj( a, {fut, na, TRet, AppId} ) ),
+             e_bind( c, str( <<"blub">> ) )] ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+evaluation_descends_records_with_two_fields() ->
+  Prop = conj( true(), false() ),
+  E1 = rcd( [e_bind( a, Prop ), e_bind( b, Prop )] ),
+  E2 = rcd( [e_bind( a, false() ), e_bind( b, false() )] ),
+  ?assertEqual( {ok, E2, []}, step( E1 ) ).
+
+foreign_app_as_fold_argument_stalls() ->
+  TRet = t_rcd( [t_arg( a, t_lst( t_str() ) )] ),
+  Lam = lam_frn( f, [], TRet, l_bash(), <<"shala">> ),
+  App = app( Lam, [] ),
+  Request = app_to_effi_request( App ),
+  #{ app_id := AppId } = Request,
+  FoldArg = proj( a, App ),
+  E1 = fold( typed_bind( acc, t_str(), str( <<"blub">> ) ),
+             typed_bind( x, t_str(), FoldArg ),
+             var( x ) ),
+  E2 = fold( typed_bind( acc, t_str(), str( <<"blub">> ) ),
+             typed_bind( x, t_str(), proj( a, {fut, na, TRet, AppId} ) ),
+             var( x ) ),
+  ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+
+
 
 
 split_zip_test_() ->
@@ -682,6 +1000,7 @@ all_lists_nonempty_splits_head() ->
                  [typed_bind( a, t_str(), null( t_str() ) ),
                   typed_bind( b, t_str(), null( t_str() ) )]},
                 split_zip( EBindLst ) ).
+
 
 
 bind_all_test_() ->

@@ -81,7 +81,6 @@ start_link( Clientname, CreName ) ->
 
 init( _ClientArg ) -> [].
 
-
 -spec is_value( E :: e(), UsrInfo :: _ ) -> boolean().
 
 is_value( {err, _, _, _}, _ ) -> true;
