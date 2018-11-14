@@ -66,13 +66,13 @@
 -type l()           :: 'Bash'
                      | 'Erlang'
                      | 'Java'
+                     | 'Javascript'
                      | 'Matlab'
                      | 'Octave'
                      | 'Perl'
                      | 'Python'
                      | 'R'
-                     | 'Racket'
-                     | 'Awk'.
+                     | 'Racket'.
 
 -type e_bind()      :: {x(), e()}.
 -type r_bind()      :: {x(), r()}.

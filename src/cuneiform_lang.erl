@@ -55,8 +55,8 @@
 -export( [r_var/2, r_rcd/1] ).
 
 %% Language constructors
--export( [l_bash/0, l_erlang/0, l_java/0, l_matlab/0, l_octave/0, l_perl/0,
-          l_python/0, l_r/0, l_racket/0, l_awk/0] ).
+-export( [l_bash/0, l_erlang/0, l_java/0, l_javascript/0, l_matlab/0,
+          l_octave/0, l_perl/0, l_python/0, l_r/0, l_racket/0] ).
 
 -export( [find_ambiguous/1] ).
 -export( [is_lst_literal/1] ).
@@ -65,16 +65,16 @@
 %% Language constructors
 %%====================================================================
 
--spec l_bash()   -> l(). l_bash()   -> 'Bash'.
--spec l_erlang() -> l(). l_erlang() -> 'Erlang'.
--spec l_java()   -> l(). l_java()   -> 'Java'.
--spec l_matlab() -> l(). l_matlab() -> 'Matlab'.
--spec l_octave() -> l(). l_octave() -> 'Octave'.
--spec l_perl()   -> l(). l_perl()   -> 'Perl'.
--spec l_python() -> l(). l_python() -> 'Python'.
--spec l_r()      -> l(). l_r()      -> 'R'.
--spec l_racket() -> l(). l_racket() -> 'Racket'.
--spec l_awk()    -> l(). l_awk()    -> 'Awk'.
+-spec l_bash()       -> l(). l_bash()       -> 'Bash'.
+-spec l_erlang()     -> l(). l_erlang()     -> 'Erlang'.
+-spec l_java()       -> l(). l_java()       -> 'Java'.
+-spec l_javascript() -> l(). l_javascript() -> 'Javascript'.
+-spec l_matlab()     -> l(). l_matlab()     -> 'Matlab'.
+-spec l_octave()     -> l(). l_octave()     -> 'Octave'.
+-spec l_perl()       -> l(). l_perl()       -> 'Perl'.
+-spec l_python()     -> l(). l_python()     -> 'Python'.
+-spec l_r()          -> l(). l_r()          -> 'R'.
+-spec l_racket()     -> l(). l_racket()     -> 'Racket'.
 
 %%====================================================================
 %% Pattern constructors
