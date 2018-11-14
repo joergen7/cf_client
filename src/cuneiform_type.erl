@@ -234,7 +234,7 @@ type( Gamma, {rcd, Info, [{X, E}|EBindLst]} ) ->
 
   end;
 
-type( _Gamma, T={lam_frn, Info, _FName, TArgLst, TRet, Lang, _SBody} ) ->
+type( _Gamma, {lam_frn, Info, _FName, TArgLst, TRet, _Lang, _SBody} ) ->
 
   {'Rcd', RetFieldLst} = TRet,
 
