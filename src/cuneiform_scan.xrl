@@ -36,6 +36,7 @@
 Definitions.
 
 LBASH       = Bash
+LELIXIR     = Elixir
 LERLANG     = Erlang
 LJAVA       = Java
 LJAVASCRIPT = Javascript
@@ -106,6 +107,7 @@ WS          = [\000-\s]
 Rules.
 
 {LBASH}       : {token, {l_bash, TokenLine, TokenChars}}.
+{LELIXIR}     : {token, {l_elixir, TokenLine, TokenChars}}.
 {LERLANG}     : {token, {l_erlang, TokenLine, TokenChars}}.
 {LJAVA}       : {token, {l_java, TokenLine, TokenChars}}.
 {LJAVASCRIPT} : {token, {l_javascript, TokenLine, TokenChars}}.

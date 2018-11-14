@@ -64,6 +64,7 @@
                      | {'Lst', t()}.
 
 -type l()           :: 'Bash'
+                     | 'Elixir'
                      | 'Erlang'
                      | 'Java'
                      | 'Javascript'
