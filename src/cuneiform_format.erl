@@ -254,52 +254,58 @@ format_error( {error,
                runtime,
                {err, Info,
                      RetType,
-                     {run, AppId, LamName, ExtendedScript, Output}}} ) ->
+                     {run, Node, AppId, LamName, ExtendedScript, Output}}} ) ->
 
   S =   "~n~s~n"
       ++"~s~n"
       ++"runtime error ~s: executing foreign function ~s~n"
-      ++"  app id:      ~s~n"
-      ++"  return type: ~s~n",
+      ++"  return type: ~s~n"
+      ++"  node:        ~s~n"
+      ++"  app id:      ~s~n",
 
   io_lib:format( S, [Output,
                      format_extended_script( ExtendedScript ),
                      format_info( Info ),
                      LamName,
-                     AppId,
-                     format_type( RetType )] );
+                     format_type( RetType ),
+                     Node,
+                     AppId] );
 
 format_error( {error, runtime,
                       {err, Info,
                             RetType,
-                            {stagein, AppId, LamName, FileLst}}} ) ->
+                            {stagein, Node, AppId, LamName, FileLst}}} ) ->
 
   S =   "runtime error ~s: staging in data designated for foreign function ~s~n"
-      ++"  app id:              ~s~n"
       ++"  return type:         ~s~n"
+      ++"  node:                ~s~n"
+      ++"  app id:              ~s~n"
       ++"  missing input files: ~s~n",
 
   io_lib:format( S, [format_info( Info ),
                      LamName,
-                     AppId,
                      format_type( RetType ),
+                     Node,
+                     AppId,
                      string:join( lists:map( fun binary_to_list/1, FileLst ),
                                   ", " )] );
 
 format_error( {error, runtime,
                       {err, Info,
                             RetType,
-                            {stageout, AppId, LamName, FileLst}}} ) ->
+                            {stageout, Node, AppId, LamName, FileLst}}} ) ->
 
   S =   "runtime error ~s: staging out data produced by foreign function ~s~n"
-      ++"  app id:               ~s~n"
       ++"  return type:          ~s~n"
+      ++"  node:                 ~s~n"
+      ++"  app id:               ~s~n"
       ++"  missing output files: ~s~n",
 
   io_lib:format( S, [format_info( Info ),
                      LamName,
-                     AppId,
                      format_type( RetType ),
+                     Node,
+                     AppId,
                      string:join( lists:map( fun binary_to_list/1, FileLst ),
                                   ", " )] );
 

@@ -179,20 +179,23 @@ effi_reply_to_expr( Request, Reply ) ->
       rcd( [Convert( RetBind ) || RetBind <- RetBindLst] );
 
     #{ status          := <<"error">>,
+       node            := Node,
        stage           := <<"run">>,
        extended_script := ExtendedScript,
        output          := Output } ->
-      {err, na, T, {run, AppId, LamName, ExtendedScript, Output}};
+      {err, na, T, {run, Node, AppId, LamName, ExtendedScript, Output}};
 
     #{ status   := <<"error">>,
+       node     := Node,
        stage    := <<"stagein">>,
        file_lst := FileLst } ->
-      {err, na, T, {stagein, AppId, LamName, FileLst}};
+      {err, na, T, {stagein, Node, AppId, LamName, FileLst}};
 
     #{ status   := <<"error">>,
+       node     := Node,
        stage    := <<"stageout">>,
        file_lst := FileLst } ->
-      {err, na, T, {stageout, AppId, LamName, FileLst}}
+      {err, na, T, {stageout, Node, AppId, LamName, FileLst}}
 
   end.
 

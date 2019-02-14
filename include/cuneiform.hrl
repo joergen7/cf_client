@@ -39,12 +39,13 @@
 -type hash()        :: na
                      | binary().
 
--type reason()      :: {run, AppId :: binary(), LamName :: binary(),
-                             ExtendedScript :: binary(), Output :: binary()}
-                     | {stagein, AppId :: binary(), LamName :: binary(),
-                                 FileLst :: [binary()]}
-                     | {stageout, AppId :: binary(), LamName :: binary(),
-                                  FileLst :: [binary()]}
+-type reason()      :: {run, Node :: binary(), AppId :: binary(),
+                             LamName :: binary(), ExtendedScript :: binary(),
+                             Output :: binary()}
+                     | {stagein, Node :: binary(), AppId :: binary(),
+                                 LamName :: binary(), FileLst :: [binary()]}
+                     | {stageout, Node :: binary(), AppId :: binary(),
+                                  LamName :: binary(), FileLst :: [binary()]}
                      | {user, Msg :: binary()}.
 
 -type x()           :: atom().
