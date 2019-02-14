@@ -70,12 +70,12 @@ format_expr( {lam_frn, _, _, _, _, _, _} ) ->
   ?CLOSURE;
 
 format_expr( {app, _, {var, _, X}, EBindLst} ) ->
-  L = [io_lib:format( "~p = ~s", [X1, format_expr( E1 )] ) ||{X1, E1} <- EBindLst],
+  L = [io_lib:format( "~s = ~s", [X1, format_expr( E1 )] ) ||{X1, E1} <- EBindLst],
   S = string:join( L, ", " ),
-  io_lib:format( "~p (~s)", [X, S] );
+  io_lib:format( "~s (~s)", [X, S] );
 
 format_expr( {app, _, {lam_ntv, _, [{X, _, T}], EBody}, [{X, E}]} ) ->
-  io_lib:format( "let ~p : ~s = ~s; ~s",
+  io_lib:format( "let ~s : ~s = ~s; ~s",
                  [X,
                   format_type( T ),
                   format_expr( E ),
@@ -119,7 +119,7 @@ format_expr( {err, _, T, {user, Msg}} ) ->
   io_lib:format( "error ~s : ~s", [Msg, format_type( T )] );
 
 format_expr( {proj, _, X, E} ) ->
-  io_lib:format( "(~s | ~p)", [format_expr( E ), X] );
+  io_lib:format( "(~s | ~s)", [format_expr( E ), X] );
 
 format_expr( {rcd, _, EBindLst} ) ->
   L = [io_lib:format( "~s = ~s", [X, format_expr( E )] ) || {X, E} <- EBindLst],
@@ -127,7 +127,7 @@ format_expr( {rcd, _, EBindLst} ) ->
   io_lib:format( "<~s>", [S] );
 
 format_expr( {for, _, T, EBindLst, EBody} ) ->
-  L = [io_lib:format( "~p <- ~s", [X, format_expr( E )] ) || {X, E} <- EBindLst],
+  L = [io_lib:format( "~s <- ~s", [X, format_expr( E )] ) || {X, E} <- EBindLst],
   S = string:join( L, ", " ),
   io_lib:format( "for ~s do ~s : ~s end",
                  [S,
@@ -135,7 +135,7 @@ format_expr( {for, _, T, EBindLst, EBody} ) ->
                   format_type( T )] );
 
 format_expr( {fold, _, {XAcc, EAcc}, {XLst, ELst}, EBody} ) ->
-  io_lib:format( "fold ~p = ~s, ~p <- ~s do ~s end",
+  io_lib:format( "fold ~s = ~s, ~s <- ~s do ~s end",
                  [XAcc,
                   format_expr( EAcc ),
                   XLst,
@@ -150,7 +150,7 @@ format_type( 'File' ) -> "File";
 format_type( 'Bool' ) -> "Bool";
 
 format_type( {'Fn', Tau, TBindLst, RetType} ) ->
-  L = [io_lib:format( "~p : ~s", [X, format_type( T )] ) || {X, T} <- TBindLst],
+  L = [io_lib:format( "~s : ~s", [X, format_type( T )] ) || {X, T} <- TBindLst],
   S = string:join( L, ", " ),
 
   Z =
@@ -165,7 +165,7 @@ format_type( {'Lst', T} ) ->
   io_lib:format( "[~s]", [format_type( T )] );
 
 format_type( {'Rcd', TBindLst} ) ->
-  L = [io_lib:format( "~p : ~s", [X, format_type( T )] ) || {X, T} <- TBindLst],
+  L = [io_lib:format( "~s : ~s", [X, format_type( T )] ) || {X, T} <- TBindLst],
   S = string:join( L, ", " ),
   io_lib:format( "<~s>", [S] ).
 
@@ -175,10 +175,10 @@ format_type( {'Rcd', TBindLst} ) ->
 -spec format_pattern( R :: r() ) -> string().
 
 format_pattern( {r_var, X, T} ) ->
-  io_lib:format( "~p : ~s", [X, format_type( T )] );
+  io_lib:format( "~s : ~s", [X, format_type( T )] );
 
 format_pattern( {r_rcd, RBindLst} ) ->
-  SLst = [io_lib:format( "~p = ~s", [X, format_pattern( R )] )
+  SLst = [io_lib:format( "~s = ~s", [X, format_pattern( R )] )
           || {X, R} <- RBindLst],
   S = string:join( SLst, ", " ),
   io_lib:format( "<~s>", [S] ).
