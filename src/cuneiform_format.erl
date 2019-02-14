@@ -122,7 +122,7 @@ format_expr( {proj, _, X, E} ) ->
   io_lib:format( "(~s | ~p)", [format_expr( E ), X] );
 
 format_expr( {rcd, _, EBindLst} ) ->
-  L = [io_lib:format( "~p = ~s", [X, format_expr( E )] ) || {X, E} <- EBindLst],
+  L = [io_lib:format( "~s = ~s", [X, format_expr( E )] ) || {X, E} <- EBindLst],
   S = string:join( L, ", " ),
   io_lib:format( "<~s>", [S] );
 
