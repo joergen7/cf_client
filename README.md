@@ -1,5 +1,5 @@
 # cf_client
-###### A Cuneiform client implementation.
+###### Cuneiform client implementation
 
 [![hex.pm](https://img.shields.io/hexpm/v/cf_client.svg?style=flat-square)](https://hex.pm/packages/cf_client) [![Build Status](https://travis-ci.org/joergen7/cf_client.svg?branch=master)](https://travis-ci.org/joergen7/cf_client)
 
@@ -16,17 +16,17 @@ Although the Cuneiform client application can be imported also directly from Git
 
 #### rebar3
 
-To integrate the Cuneiform client application into a rebar3-managed project change the `deps` entry in your application's `rebar.config` file to include the tuple `{cf_client, "0.1.6"}`.
+To integrate the Cuneiform client application into a rebar3-managed project change the `deps` entry in your application's `rebar.config` file to include the tuple `{cf_client, "0.1.7"}`.
 
 ```erlang
-{deps, [{cf_client, "0.1.6"}]}.
+{deps, [{cf_client, "0.1.7"}]}.
 ```
 
 
 #### mix
 
 ```elixir
-{:cf_client, "~> 0.1.6"}
+{:cf_client, "~> 0.1.7"}
 ```
 
 ### Compiling
