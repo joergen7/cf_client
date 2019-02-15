@@ -315,7 +315,10 @@ step_test_() ->
      fun evaluation_descends_records_with_two_fields/0},
 
     {"foreign app as fold argument stalls",
-     fun foreign_app_as_fold_argument_stalls/0}
+     fun foreign_app_as_fold_argument_stalls/0},
+
+    {"unused fold accumulator does not appear in evaluation context",
+     fun unused_fold_accumulator_does_not_appear_in_evaluation_context/0}
    ]
   }.
 
@@ -952,6 +955,16 @@ foreign_app_as_fold_argument_stalls() ->
              typed_bind( x, t_str(), proj( a, {fut, na, TRet, AppId} ) ),
              var( x ) ),
   ?assertEqual( {ok, E2, [Request]}, step( E1 ) ).
+
+unused_fold_accumulator_does_not_appear_in_evaluation_context() ->
+  E2 = str( <<"blub">> ),
+  Acc0 = err( t_str(), <<"never evaluate">> ),
+  L = lst( t_str(), [E2] ),
+  E1 = fold( typed_bind( acc, t_str(), Acc0 ),
+             typed_bind( x, t_str(), L ),
+             var( x ) ),
+  ?assertEqual( {ok, E2, []}, step( E1 ) ).
+
 
 
 

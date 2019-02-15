@@ -171,7 +171,7 @@ try_descend( {{{for, Info, Type, [{X1, T1, E1}|TypedBindLst], EBody}, Env},
 try_descend( {{{fold, Info, {XAcc, TAcc, EAcc}, {XArg, TArg, EArg}, EBody}, Env},
               K,
               Outbox} ) ->
-  {{EAcc, Env}, [{fold_acc, Info, XAcc, TAcc, {XArg, TArg, EArg}, EBody, Env}|K], Outbox};
+  {{EArg, Env}, [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K], Outbox};
 
 try_descend( _ ) ->
   norule.
@@ -768,25 +768,6 @@ try_ascend( {{E1, _},
                   PostLst,
                   EBody,
                   Env}|K],
-       Outbox}
-  end;
-
-
-% fold accumulator
-
-try_ascend( {{{stalled, EAcc}, _},
-             [{fold_acc, Info, XAcc, TAcc, {XArg, TArg, EArg}, EBody, Env}|K],
-             Outbox} ) ->
-    {{EArg, Env}, [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K], Outbox};
-
-try_ascend( {{EAcc, _},
-             [{fold_acc, Info, XAcc, TAcc, {XArg, TArg, EArg}, EBody, Env}|K],
-             Outbox} ) ->
-  case is_value( EAcc ) of
-    false -> error( stuck );
-    true  -> 
-      {{EArg, Env},
-       [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
        Outbox}
   end;
 
