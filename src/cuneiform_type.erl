@@ -238,17 +238,11 @@ type( _Gamma, {lam_frn, Info, _FName, TArgLst, TRet, _Lang, _SBody} ) ->
 
   {'Rcd', RetFieldLst} = TRet,
 
-  try
+  NameLst = [X || {X, _} <- TArgLst]++[X || {X, _} <- RetFieldLst],
 
-    NameLst = [X || {X, _} <- TArgLst]++[X || {X, _} <- RetFieldLst],
-
-    case find_ambiguous( NameLst ) of
-      {ambiguous, Y} -> {error, {ambiguous_name, Info, Y}};
-      unambiguous    -> {ok, t_fn( frn, TArgLst, TRet )}
-    end
-
-  catch
-    throw:{error, Reason} -> {error, Reason}
+  case find_ambiguous( NameLst ) of
+    {ambiguous, Y} -> {error, {ambiguous_name, Info, Y}};
+    unambiguous    -> {ok, t_fn( frn, TArgLst, TRet )}
   end;
 
 type( Gamma, {app, Info, F, EBindLst} ) ->
@@ -315,7 +309,6 @@ type( Gamma, {cons, Info, E1, E2} ) ->
     {ok, T1} ->
       case type( Gamma, E2 ) of
         {ok, {'Lst', T1}} -> {ok, {'Lst', T1}};
-        {ok, {'Lst', T2}} -> {error, {type_mismatch, Info, {T2, T1}}};
         {ok, T2}          -> {error, {type_mismatch, Info, {T2, {'Lst', T1}}}};
         {error, Reason1}  -> {error, Reason1}
       end;

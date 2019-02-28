@@ -51,53 +51,52 @@ type_test_() ->
    [
     {"not well formed expression produces error",
      fun not_well_formed_expression_produces_error/0},
-
-    {"string literal typable",     fun string_literal_typable/0},
-    {"file literal typable",       fun file_literal_typable/0},
-    {"true typable",               fun true_typable/0},
-    {"false typable",              fun false_typable/0},
-    {"string comparison typable",  fun string_comparison_typable/0},
-    {"boolean comparison typable", fun boolean_comparison_typable/0},
-    {"native lambda typable",      fun native_lambda_typable/0},
-
+    {"string literal typable",
+     fun string_literal_typable/0},
+    {"file literal typable",
+     fun file_literal_typable/0},
+    {"true typable",
+     fun true_typable/0},
+    {"false typable",
+     fun false_typable/0},
+    {"string comparison typable",
+     fun string_comparison_typable/0},
+    {"boolean comparison typable",
+     fun boolean_comparison_typable/0},
+    {"native lambda typable",
+     fun native_lambda_typable/0},
     {"native lambda with invalid body expression untypable",
      fun native_lambda_with_invalid_body_expression_untypable/0},
-
     {"native lambda with ambiguous argument name untypable",
      fun native_lambda_with_ambiguous_argument_name_untypable/0},
-
     {"native lambda body expression can access closure",
      fun native_lambda_body_expression_can_access_closure/0},
-
-    {"bound variable typable",     fun bound_variable_typable/0},
-    {"unbound variable untypable", fun unbound_variable_untypable/0},
-
+    {"bound variable typable",
+     fun bound_variable_typable/0},
+    {"unbound variable untypable",
+     fun unbound_variable_untypable/0},
     {"comparison with invalid lhs untypable",
      fun comparison_with_invalid_lhs_untypable/0},
-
     {"comparison with invalid rhs untypable",
      fun comparison_with_invalid_rhs_untypable/0},
-
     {"comparison with file operands untypable",
      fun comparison_with_file_operands_untypable/0},
-
     {"comparison with non-matching operands untypable",
      fun comparison_with_nonmatching_operands_untypable/0},
-
     {"comparison with lhs variable typable",
      fun comparison_with_lhs_variable_typable/0},
-
     {"comparison with rhs variable typable",
      fun comparison_with_rhs_variable_typable/0},
-
-    {"negation typable",           fun negation_typable/0},
+    {"negation typable",
+     fun negation_typable/0},
     {"negation of non-Boolean untypable",
      fun negation_of_nonbool_untypable/0},
     {"negation with invalid expression untypable",
      fun negation_with_invalid_expression_untypable/0},
     {"negation with variable typable",
      fun negation_with_variable_typable/0},
-    {"condition typable",          fun condition_typable/0},
+    {"condition typable",
+     fun condition_typable/0},
     {"condition with invalid predicate untypable",
      fun condition_with_invalid_predicate_untypable/0},
     {"condition with nonbool predicate untypable",
@@ -114,7 +113,8 @@ type_test_() ->
      fun condition_with_variable_then_expression_typable/0},
     {"condition with variable else expression typable",
      fun condition_with_variable_else_expression_typable/0},
-    {"conjunction typable",        fun conjunction_typable/0},
+    {"conjunction typable",
+     fun conjunction_typable/0},
     {"conjunction with invalid lhs untypable",
      fun conjunction_with_invalid_lhs_untypable/0},
     {"conjunction with invalid rhs untypable",
@@ -127,7 +127,8 @@ type_test_() ->
      fun conjunction_with_variable_lhs_typable/0},
     {"conjunction with variable rhs typable",
      fun conjunction_with_variable_rhs_typable/0},
-    {"disjunction typable",        fun disjunction_typable/0},
+    {"disjunction typable",
+     fun disjunction_typable/0},
     {"disjunction with invalid lhs untypable",
      fun disjunction_with_invalid_lhs_untypable/0},
     {"disjunction with invalid rhs untypable",
@@ -140,7 +141,8 @@ type_test_() ->
      fun disjunction_with_variable_lhs_typable/0},
     {"disjunction with variable rhs typable",
      fun disjunction_with_variable_rhs_typable/0},
-    {"record_typable",             fun record_typable/0},
+    {"record_typable",
+     fun record_typable/0},
     {"record with invalid field untypable",
      fun record_with_invalid_field_untypable/0},
     {"record with variable field typable",
@@ -196,15 +198,28 @@ type_test_() ->
      fun fixpoint_with_variable_function_expression_typable/0},
     {"fixpoint with constant function expression untypable",
      fun fixpoint_with_constant_function_expression_untypable/0},
-    {"recursive fixpoint typable", fun recursive_fixpoint_typable/0},
-    {"list typable",               fun list_typable/0},
+    {"recursive fixpoint typable",
+     fun recursive_fixpoint_typable/0},
+    {"future is typable",
+     fun future_is_typable/0},
+    {"error is typable",
+     fun error_is_typable/0},
+    {"fixpoint with wrong first argument type untypable",
+     fun fixpoint_with_wrong_first_argument_type_untypable/0},
+
+
+%% lists -------------------------------------------------------------
+
+    {"list typable",
+     fun list_typable/0},
     {"list with invalid element untypable",
      fun list_with_invalid_element_untypable/0},
     {"list with non-matching element untypable",
      fun list_with_nonmatching_element_untypable/0},
     {"list with variable element typable",
      fun list_with_variable_element_typable/0},
-    {"list append typable",        fun list_append_typable/0},
+    {"list append typable",
+     fun list_append_typable/0},
     {"list append with invalid lhs untypable",
      fun list_append_with_invalid_lhs_untypable/0},
     {"list append with invalid rhs untypable",
@@ -219,14 +234,20 @@ type_test_() ->
      fun list_append_with_variable_rhs_typable/0},
     {"list append with non-matching operands untypable",
      fun list_append_with_nonmatching_operands_untypable/0},
-    {"isnil typable",              fun isnil_typable/0},
+    {"isnil typable",
+     fun isnil_typable/0},
     {"isnil with invalid list expression untypable",
      fun isnil_with_invalid_list_expression_untypable/0},
     {"isnil with non-list list expression untypable",
      fun isnil_with_nonlist_list_expression_untypable/0},
     {"isnil with variable list expression typable",
      fun isnil_with_variable_list_expression_typable/0},
-    {"for typable",                fun for_typable/0},
+
+
+%% for ---------------------------------------------------------------
+
+    {"for typable",
+     fun for_typable/0},
     {"for with invalid list expression untypable",
      fun for_with_invalid_list_expression_untypable/0},
     {"for with non-list list expression untypable",
@@ -237,14 +258,18 @@ type_test_() ->
      fun for_with_invalid_body_expression_untypable/0},
     {"for variable body expression typable",
      fun for_variable_body_expression_typable/0},
-
     {"for with non-matching body expression untypable",
      fun for_with_nonmatching_body_expression_untypable/0},
-
     {"for argument mismatch untypable",
      fun for_argument_mismatch_untypable/0},
-      
-    {"fold typable",               fun fold_typable/0},
+    {"for with ambiguous name untypable",
+     fun for_with_ambiguous_name_untypable/0},
+
+
+%% fold --------------------------------------------------------------
+
+    {"fold typable",
+     fun fold_typable/0},
     {"fold with invalid accumulator expression untypable",
      fun fold_with_invalid_accumulator_expression_untypable/0},
     {"fold with variable accumulator expression typable",
@@ -259,36 +284,18 @@ type_test_() ->
      fun fold_with_invalid_body_expression_untypable/0},
     {"fold with variable body expression typable",
      fun fold_with_variable_body_expression_typable/0},
-
     {"fold with non-matching accumulator and body expression untypable",
      fun fold_with_nonmatching_accumulator_and_body_expression_untypable/0},
-
     {"fold with non-matching accumulator and list expression untypable",
      fun fold_with_nonmatching_accumulator_and_list_expression_untypable/0},
-      
     {"fold with ambiguous accumulator and list expression name untypable",
      fun fold_with_ambiguous_accumulator_and_list_expression_name_untypable/0},
-
     {"fold with independent accumulator and list types typable",
      fun fold_with_independent_accumulator_and_list_types_typable/0},
-
     {"fold with nonmatching accumulator type untypable",
      fun fold_with_nonmatching_accumulator_type_untypable/0},
-
     {"fold with nonmatching list argument type untypable",
-     fun fold_with_nonmatching_list_argument_type_untypable/0},
-
-    {"future is typable",
-     fun future_is_typable/0},
-
-    {"error is typable",
-     fun error_is_typable/0},
-
-    {"for with ambiguous name untypable",
-     fun for_with_ambiguous_name_untypable/0},
-
-    {"fixpoint with wrong first argument type untypable",
-     fun fixpoint_with_wrong_first_argument_type_untypable/0}
+     fun fold_with_nonmatching_list_argument_type_untypable/0}
    ]
   }.
 
@@ -669,7 +676,9 @@ list_with_invalid_element_untypable() ->
 
 list_with_nonmatching_element_untypable() ->
   E = lst( t_str(), [file( <<"blub.txt">> )] ),
-  ?assertEqual( {error, {type_mismatch, na, {t_str(), t_file()}}}, type( E ) ).
+  ?assertEqual( {error, {type_mismatch, na, {t_lst( t_str() ),
+                                             t_lst( t_file() )}}},
+                type( E ) ).
 
 list_with_variable_element_typable() ->
   E = lam_ntv( [t_arg( x, t_str() )], lst( t_str(), [var( x )] ) ),
