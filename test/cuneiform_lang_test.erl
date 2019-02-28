@@ -37,6 +37,9 @@
 -import( cuneiform_lang, [assign/2, create_closure/2] ).
 -import( cuneiform_lang, [e_bind/2, t_arg/2] ).
 -import( cuneiform_lang, [var/1, app/2, lam_ntv/2, proj/2] ).
+-import( cuneiform_lang, [l_bash/0, l_elixir/0, l_erlang/0, l_java/0,
+                          l_javascript/0, l_matlab/0, l_octave/0, l_perl/0,
+                          l_python/0, l_r/0, l_racket/0] ).
 
 create_closure_test_() ->
   {foreach,
@@ -45,11 +48,16 @@ create_closure_test_() ->
    fun( _ ) -> ok end,
 
    [
-    {"assign variable pattern",         fun assign_variable_pattern/0},
-    {"last assignment binds innermost", fun last_assignment_binds_innermost/0},
-    {"empty record pattern is neutral", fun empty_record_pattern_is_neutral/0},
+    {"assign variable pattern",
+     fun assign_variable_pattern/0},
+    {"last assignment binds innermost",
+     fun last_assignment_binds_innermost/0},
+    {"empty record pattern is neutral",
+     fun empty_record_pattern_is_neutral/0},
     {"assignment resolution propagates to record fields",
-     fun assignment_resolution_propagates_to_record_fields/0}
+     fun assignment_resolution_propagates_to_record_fields/0},
+    {"ambiguous variable binding returns error",
+     fun ambiguous_variable_binding_returns_error/0}
    ]
   }.
 
@@ -85,3 +93,78 @@ assignment_resolution_propagates_to_record_fields() ->
                           var( z ) ),
                  [e_bind( x, proj( a, var( y ) ) )] ),
   ?assertEqual( {ok, Closure}, create_closure( AssignLst, EBody ) ).
+
+ambiguous_variable_binding_returns_error() ->
+  AssignLst = [assign( r_rcd( [r_bind( a, r_var( x, t_str() ) ),
+                               r_bind( b, r_var( x, t_str() ) )] ),
+                       var( m ) )],
+  EBody = var( x ),
+  ?assertEqual( {error, {ambiguous_name, na, x}},
+                create_closure( AssignLst, EBody ) ).
+
+
+
+lang_test_() ->
+  {foreach,
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"l_bash returns atom",
+     fun l_bash_returns_atom/0},
+    {"l_elixir returns atom",
+     fun l_elixir_returns_atom/0},
+    {"l_erlang returns atom",
+     fun l_erlang_returns_atom/0},
+    {"l_java returns atom",
+     fun l_java_returns_atom/0},
+    {"l_javascript returns atom",
+     fun l_javascript_returns_atom/0},
+    {"l_matlab returns atom",
+     fun l_matlab_returns_atom/0},
+    {"l_octave returns atom",
+     fun l_octave_returns_atom/0},
+    {"l_perl returns atom",
+     fun l_perl_returns_atom/0},
+    {"l_python returns atom",
+     fun l_python_returns_atom/0},
+    {"l_r returns atom",
+     fun l_r_returns_atom/0},
+    {"l_racket returns atom",
+     fun l_racket_returns_atom/0}
+   ]
+  }.
+
+l_bash_returns_atom() ->
+  ?assertEqual( 'Bash', l_bash() ).
+
+l_elixir_returns_atom() ->
+  ?assertEqual( 'Elixir', l_elixir() ).
+
+l_erlang_returns_atom() ->
+  ?assertEqual( 'Erlang', l_erlang() ).
+
+l_java_returns_atom() ->
+  ?assertEqual( 'Java', l_java() ).
+
+l_javascript_returns_atom() ->
+  ?assertEqual( 'Javascript', l_javascript() ).
+
+l_matlab_returns_atom() ->
+  ?assertEqual( 'Matlab', l_matlab() ).
+
+l_octave_returns_atom() ->
+  ?assertEqual( 'Octave', l_octave() ).
+
+l_perl_returns_atom() ->
+  ?assertEqual( 'Perl', l_perl() ).
+
+l_python_returns_atom() ->
+  ?assertEqual( 'Python', l_python() ).
+
+l_r_returns_atom() ->
+  ?assertEqual( 'R', l_r() ).
+
+l_racket_returns_atom() ->
+  ?assertEqual( 'Racket', l_racket() ).
+

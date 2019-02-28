@@ -60,7 +60,6 @@
           l_racket/0] ).
 
 -export( [find_ambiguous/1] ).
--export( [is_lst_literal/1] ).
 
 %%====================================================================
 %% Language constructors
@@ -411,12 +410,4 @@ pattern_names( {r_rcd, RBindLst} ) ->
     end,
 
   lists:flatmap( F, RBindLst ).
-
-
--spec is_lst_literal( E :: e() ) -> boolean().
-
-is_lst_literal( {cons, _, _, _} ) -> true;
-is_lst_literal( {null, _, _} )    -> true;
-is_lst_literal( _ )               -> false.
-
 
