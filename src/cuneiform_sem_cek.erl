@@ -450,7 +450,7 @@ try_ascend( {{E1, _},
       case is_stalled( EBindLst1 ) of
 
         true ->
-                    EBindLst2 = unstall( EBindLst1 ),
+          EBindLst2 = unstall( EBindLst1 ),
           {{{stalled, {app, Info, Lam, EBindLst2}}, #{}},
            K,
            Outbox};
@@ -706,6 +706,11 @@ try_ascend( {{_, _}, [{fix_op, _}|_], _} ) ->
 
 
 % for argument
+
+try_ascend( {{{stalled, E1}, _},
+            [{for_arg, Info, Type, PreLst, X1, T1, [], EBody, Env}|K],
+            Outbox} ) ->
+  error( gotcha );
 
 try_ascend( {{E1, _},
             [{for_arg, Info, Type, PreLst, X1, T1, [], EBody, Env}|K],
