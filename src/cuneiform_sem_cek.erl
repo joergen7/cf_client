@@ -1114,8 +1114,8 @@ assert_clean( E = {fix, _, E1} ) ->
     error:_ -> error( E )
   end;
 
-assert_clean( {stalled, E} ) ->
-  error( {unclean, E} ).
+assert_clean( E = {stalled, _} ) ->
+  error( E ).
 
 
 -spec assert_clean_bind( EBindLst :: [{x(), tuple()}] ) -> [e_bind()].
