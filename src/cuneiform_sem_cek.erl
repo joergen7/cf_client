@@ -379,7 +379,8 @@ try_ascend( {{_, _}, [{disj_rhs, _, _}|_], _} ) ->
 % application function argument
 
 try_ascend( {{{stalled, E1}, _}, [{app_fn, Info, EBindLst, _}|K], Outbox} ) ->
-    {{{stalled, {app, Info, E1, EBindLst}}, #{}}, K, Outbox};
+  EBindLst1 = unstall( EBindLst ),
+  {{{stalled, {app, Info, E1, EBindLst1}}, #{}}, K, Outbox};
 
 try_ascend( {{E1 = {lam_ntv, _, _, EBody}, _},
           [{app_fn, Info, EBindLst, Env}|K],
@@ -777,7 +778,8 @@ try_ascend( {{E1, _},
 try_ascend( {{{stalled, {cons, _, EHd, ETl}}, _},
              [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
              Outbox} ) ->
-    EHd1 =
+
+  EHd1 =
     case is_value( EHd ) of
       true  -> EHd;
       false -> {stalled, EHd}
