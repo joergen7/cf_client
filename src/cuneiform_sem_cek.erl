@@ -707,11 +707,6 @@ try_ascend( {{_, _}, [{fix_op, _}|_], _} ) ->
 
 % for argument
 
-try_ascend( {{{stalled, E1}, _},
-            [{for_arg, Info, Type, PreLst, X1, T1, [], EBody, Env}|K],
-            Outbox} ) ->
-  error( gotcha );
-
 try_ascend( {{E1, _},
             [{for_arg, Info, Type, PreLst, X1, T1, [], EBody, Env}|K],
             Outbox} ) ->
@@ -724,8 +719,15 @@ try_ascend( {{E1, _},
     null     -> {{{null, Info, Type}, #{}}, K, Outbox};
     {L1, L2} ->
       EBody1 = bind_all( Info, L1, EBody ),
-      EFor1 = {for, Info, Type, L2, EBody},
+      EFor1 =
+        case is_stalled_typed( L2 ) of
+          false ->
+            {for, Info, Type, L2, EBody};
+          true ->
+            {stalled, {for, Info, Type, unstall_typed( L2 ), EBody}}
+        end,
       {{EBody1, Env}, [{cons_hd, Info, EFor1, Env}|K], Outbox};
+
     stalled  ->
       TypedBindLst2 = unstall_typed( TypedBindLst1 ),
       {{{stalled, {for, Info, Type, TypedBindLst2, EBody}}, #{}}, K, Outbox}
@@ -916,6 +918,19 @@ is_stalled( EBindLst ) when is_list( EBindLst ) ->
     end,
 
   lists:any( F, EBindLst ).
+
+
+-spec is_stalled_typed( [typed_bind()] ) -> boolean().
+
+is_stalled_typed( TBindLst ) when is_list( TBindLst ) ->
+
+  F =
+    fun
+      ( {_, _, {stalled, _}} ) -> true;
+      ( {_, _, _} )            -> false
+    end,
+
+  lists:any( F, TBindLst ).
 
 
 -spec unstall( [e_bind()] ) -> [e_bind()].
