@@ -186,7 +186,7 @@ try_descend( _ ) ->
 % comparison lhs
 
 try_ascend( {{{stalled, E1}, _}, [{cmp_lhs, Info, E2, Env}|K], Outbox} ) ->
-  {{E2, Env}, [{cmp_rhs, Info, {stalled, E1}}|K], Outbox};
+  {{E2, Env}, [{cmp_rhs, Info, {stalled, assert_clean( E1 )}}|K], Outbox};
 
 try_ascend( {{E1, _}, [{cmp_lhs, Info, E2, Env}|K], Outbox} ) ->
   case is_value( E1 ) of
@@ -268,7 +268,7 @@ try_ascend( {{_, _}, [{neg_op, _}|_], _} ) ->
 % conjunction lhs
 
 try_ascend( {{{stalled, E1}, _}, [{conj_lhs, Info, E2, Env}|K], Outbox} ) ->
-  {{E2, Env}, [{conj_rhs, Info, {stalled, E1}}|K], Outbox};
+  {{E2, Env}, [{conj_rhs, Info, {stalled, assert_clean( E1 )}}|K], Outbox};
 
 try_ascend( {{{B1, Info1}, _}, [{conj_lhs, Info, E2, Env}|K], Outbox} )
 when is_boolean( B1 ) ->
@@ -328,7 +328,7 @@ try_ascend( {{_, _}, [{conj_rhs, _, _}|_], _} ) ->
 % disjunction lhs
 
 try_ascend( {{{stalled, E1}, _}, [{disj_lhs, Info, E2, Env}|K], Outbox} ) ->
-  {{E2, Env}, [{disj_rhs, Info, {stalled, E1}}|K], Outbox};
+  {{E2, Env}, [{disj_rhs, Info, {stalled, assert_clean( E1 )}}|K], Outbox};
 
 try_ascend( {{{B1, Info1}, _}, [{disj_lhs, Info, E2, Env}|K], Outbox} )
 when is_boolean( B1 ) ->
@@ -395,13 +395,13 @@ try_ascend( {{{stalled, E1}, _}, [{app_fn, Info, EBindLst, _}|K], Outbox} ) ->
 try_ascend( {{E1 = {lam_ntv, _, _, EBody}, _},
           [{app_fn, Info, EBindLst, Env}|K],
           Outbox} ) ->
-  Env1 = maps:from_list( [{X, {E, Env}} || {X, E} <- EBindLst] ),
+  Env1 = maps:from_list( [{X, {E, Env}} || {X, E} <- assert_clean_bind( EBindLst )] ),
   Env2 = maps:merge( Env, Env1 ),
-  {{EBody, Env2}, [{app_body, Info, E1, EBindLst}|K], Outbox};
+  {{EBody, Env2}, [{app_body, Info, assert_clean( E1 ), EBindLst}|K], Outbox};
 
 try_ascend( {{{lam_frn, LamInfo, FName, ArgLst, RetType, Lang, Body}, _},
-          [{app_fn, Info, [], _}|K],
-          Outbox} ) ->
+             [{app_fn, Info, [], _}|K],
+             Outbox} ) ->
   E1 = {app,
          Info,
          {lam_frn, LamInfo, FName, ArgLst, RetType, Lang, Body},
@@ -492,7 +492,7 @@ try_ascend( {{{stalled, E1}, _},
     {{E2, Env},
    [{app_arg, Info,
               Lam,
-              [{X1, {stalled, E1}}|PreBindLst],
+              [{X1, {stalled, assert_clean( E1 )}}|PreBindLst],
               X2,
               PostBindLst,
               Env}|K],
@@ -500,13 +500,13 @@ try_ascend( {{{stalled, E1}, _},
 
 
 try_ascend( {{E1, _},
-           [{app_arg, Info,
-                      Lam,
-                      PreBindLst,
-                      X1,
-                      [{X2, E2}|PostBindLst],
-                      Env}|K],
-           Outbox} ) ->
+             [{app_arg, Info,
+                        Lam,
+                        PreBindLst,
+                        X1,
+                        [{X2, E2}|PostBindLst],
+                        Env}|K],
+             Outbox} ) ->
   case is_value( E1 ) of
     false -> error( stuck );
     true  ->
@@ -524,12 +524,12 @@ try_ascend( {{E1, _},
 % cons head
 
 try_ascend( {{{stalled, E1}, _}, [{cons_hd, Info, E2, Env}|K], Outbox} ) ->
-  {{E2, Env}, [{cons_tl, Info, {stalled, E1}}|K], Outbox};
+  {{E2, Env}, [{cons_tl, Info, {stalled, assert_clean( E1 )}}|K], Outbox};
 
 try_ascend( {{E1, _}, [{cons_hd, Info, E2, Env}|K], Outbox} ) ->
   case is_value( E1 ) of
     false -> error( stuck );
-    true  -> {{E2, Env}, [{cons_tl, Info, E1}|K], Outbox}
+    true  -> {{E2, Env}, [{cons_tl, Info, assert_clean( E1 )}|K], Outbox}
   end;
 
 
@@ -587,11 +587,11 @@ try_ascend( {{{stalled, {cons, ConsInfo, E11, E12}}, _},
     end,
 
   {{F12, #{}},
-   [{append_lhs, Info, E2, Env}, {cons_tl, ConsInfo, F11}|K],
+   [{append_lhs, Info, assert_clean( E2 ), Env}, {cons_tl, ConsInfo, F11}|K],
    Outbox};
 
 try_ascend( {{{stalled, E1}, _}, [{append_lhs, Info, E2, Env}|K], Outbox} ) ->
-  {{E2, Env}, [{append_rhs, Info, {stalled, E1}}|K], Outbox};
+  {{E2, Env}, [{append_rhs, Info, {stalled, assert_clean( E1 )}}|K], Outbox};
 
 try_ascend( {{{cons, ConsInfo, E11, E12}, _},
              [{append_lhs, Info, E2, Env}|K], Outbox} ) ->
@@ -599,7 +599,7 @@ try_ascend( {{{cons, ConsInfo, E11, E12}, _},
     false -> error( stuck );
     true  ->
       {{E12, #{}},
-       [{append_lhs, Info, E2, Env}, {cons_tl, ConsInfo, E11}|K],
+       [{append_lhs, Info, assert_clean( E2 ), Env}, {cons_tl, ConsInfo, E11}|K],
        Outbox}
   end;
 
@@ -665,7 +665,7 @@ try_ascend( {{{stalled, E1}, _},
              [{rcd_field, Info, PreLst, X1, [{X2, E2}|PostLst], Env}|K],
              Outbox} ) ->
   {{E2, Env},
-   [{rcd_field, Info, [{X1, {stalled, E1}}|PreLst], X2, PostLst, Env}|K],
+   [{rcd_field, Info, [{X1, {stalled, assert_clean( E1 )}}|PreLst], X2, PostLst, Env}|K],
    Outbox};
 
 try_ascend( {{E1, _},
@@ -685,7 +685,7 @@ try_ascend( {{E1, _},
 try_ascend( {{{stalled, {rcd, _, EBindLst}}, _},
              [{proj_op, _, X}|K],
              Outbox} ) ->
-    {_, EX} = lists:keyfind( X, 1, EBindLst ),
+  {_, EX} = lists:keyfind( X, 1, EBindLst ),
   EX1 =
     case is_value( EX ) of
       true  -> EX;
@@ -739,7 +739,7 @@ try_ascend( {{E1, _},
       EFor1 =
         case is_stalled_typed( L2 ) of
           false ->
-            {for, Info, Type, L2, EBody};
+            assert_clean( {for, Info, Type, L2, EBody} );
           true ->
             {stalled, assert_clean( {for, Info, Type, unstall_typed( L2 ), EBody} )}
         end,
@@ -764,11 +764,11 @@ try_ascend( {{{stalled, E1}, _},
     {{E2, Env},
    [{for_arg, Info,
               Type,
-              [{X1, T1, {stalled, E1}}|PreLst],
+              [{X1, T1, {stalled, assert_clean( E1 )}}|PreLst],
               X2,
               T2,
               PostLst,
-              EBody,
+              assert_clean( EBody ),
               Env}|K],
    Outbox};
 
@@ -792,7 +792,7 @@ try_ascend( {{E1, _},
                   X2,
                   T2,
                   PostLst,
-                  EBody,
+                  assert_clean( EBody ),
                   Env}|K],
        Outbox}
   end;
@@ -804,22 +804,16 @@ try_ascend( {{{stalled, {cons, _, EHd, ETl}}, _},
              [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
              Outbox} ) ->
 
-  EHd1 =
-    case is_value( EHd ) of
-      true  -> EHd;
-      false -> {stalled, EHd}
-    end,
-
   ETl1 =
     case is_value( ETl ) of
       true  -> ETl;
-      false -> {stalled, ETl}
+      false -> {stalled, assert_clean( ETl )}
     end,
 
-  EAcc1 = bind_all( Info, [{XAcc, TAcc, EAcc}, {XArg, TArg, EHd1}], EBody ),
+  EAcc1 = bind_all( Info, [{XAcc, TAcc, assert_clean( EAcc )}, {XArg, TArg, assert_clean( EHd )}], EBody ),
 
   {{ETl1, #{}},
-   [{fold_arg, Info, {XAcc, TAcc, EAcc1}, XArg, TArg, EBody, Env}|K],
+   [{fold_arg, Info, {XAcc, TAcc, assert_clean( EAcc1 )}, XArg, TArg, assert_clean( EBody ), Env}|K],
    Outbox};
 
 try_ascend( {{{stalled, EArg}, _},
@@ -837,7 +831,7 @@ try_ascend( {{{cons, _, EHd, ETl}, _},
   EAcc1 = bind_all( Info, [{XAcc, TAcc, EAcc}, {XArg, TArg, EHd}], EBody ),
 
   {{ETl, #{}},
-   [{fold_arg, Info, {XAcc, TAcc, EAcc1}, XArg, TArg, EBody, Env}|K],
+   [{fold_arg, Info, {XAcc, TAcc, assert_clean( EAcc1 )}, XArg, TArg, assert_clean( EBody ), Env}|K],
    Outbox};
 
 try_ascend( {{{null, _, _}, _},
