@@ -991,74 +991,134 @@ assert_clean( E = {false, _} )                  -> E;
 assert_clean( E = {null, _, _} )                -> E;
 
 assert_clean( E = {cmp, _, E1, E2} ) ->
-  assert_clean( E1 ),
-  assert_clean( E2 ),
-  E;
+  try
+    assert_clean( E1 ),
+    assert_clean( E2 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {cnd, _, E1, E2, E3} ) ->
-  assert_clean( E1 ),
-  assert_clean( E2 ),
-  assert_clean( E3 ),
-  E;
+  try
+    assert_clean( E1 ),
+    assert_clean( E2 ),
+    assert_clean( E3 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {neg, _, E1} ) ->
-  assert_clean( E1 ),
-  E;
+  try
+    assert_clean( E1 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {conj, _, E1, E2} ) ->
-  assert_clean( E1 ),
-  assert_clean( E2 ),
-  E;
+  try
+    assert_clean( E1 ),
+    assert_clean( E2 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {disj, _, E1, E2} ) ->
-  assert_clean( E1 ),
-  assert_clean( E2 ),
-  E;
+  try
+    assert_clean( E1 ),
+    assert_clean( E2 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {lam_ntv, _, _, E1} ) ->
-  assert_clean( E1 ),
-  E;
+  try
+    assert_clean( E1 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {app, _, E1, EBindLst} ) ->
-  assert_clean( E1 ),
-  assert_clean_bind( EBindLst ),
-  E;
+  try
+    assert_clean( E1 ),
+    assert_clean_bind( EBindLst ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {cons, _, E1, E2} ) ->
-  assert_clean( E1 ),
-  assert_clean( E2 ),
-  E;
+  try
+    assert_clean( E1 ),
+    assert_clean( E2 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {append, _, E1, E2} ) ->
-  assert_clean( E1 ),
-  assert_clean( E2 ),
-  E;
+  try
+    assert_clean( E1 ),
+    assert_clean( E2 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {isnil, _, E1} ) ->
-  assert_clean( E1 ),
-  E;
+  try
+    assert_clean( E1 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {for, _, _, TypedBindLst, E1} ) ->
-  assert_clean_typed( TypedBindLst ),
-  assert_clean( E1 ),
-  E;
+  try
+    assert_clean_typed( TypedBindLst ),
+    assert_clean( E1 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {fold, _, TypedBind1, TypedBind2, E1} ) ->
-  assert_clean_typed( [TypedBind1, TypedBind2] ),
-  assert_clean( E1 ),
-  E;
+  try
+    assert_clean_typed( [TypedBind1, TypedBind2] ),
+    assert_clean( E1 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {rcd, _, EBindLst} ) ->
-  assert_clean_bind( EBindLst ),
-  E;
+  try
+    assert_clean_bind( EBindLst ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {proj, _, _, E1} ) ->
-  assert_clean( E1 ),
-  E;
+  try
+    assert_clean( E1 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( E = {fix, _, E1} ) ->
-  assert_clean( E1 ),
-  E;
+  try
+    assert_clean( E1 ),
+    E
+  catch
+    error:_ -> error( E )
+  end;
 
 assert_clean( {stalled, E} ) ->
   error( {unclean, E} ).
@@ -1069,8 +1129,12 @@ assert_clean( {stalled, E} ) ->
 assert_clean_bind( EBindLst )
 when is_list( EBindLst ) ->
   F = fun( {_X, E} ) -> assert_clean( E ) end,
-  lists:foreach( F, EBindLst ),
-  EBindLst.
+  try
+    lists:foreach( F, EBindLst ),
+    EBindLst
+  catch
+    error:_ -> error( EBindLst )
+  end.
 
 
 -spec assert_clean_typed( TypedBindLst ) -> [typed_bind()]
@@ -1079,5 +1143,9 @@ when TypedBindLst :: [{x(), t(), tuple()}].
 assert_clean_typed( TypedBindLst )
 when is_list( TypedBindLst ) ->
   F = fun( {_X, _T, E} ) -> assert_clean( E ) end,
-  lists:foreach( F, TypedBindLst ),
-  TypedBindLst.
+  try
+    lists:foreach( F, TypedBindLst ),
+    TypedBindLst
+  catch
+    error:_ -> error( TypedBindLst )
+  end.
