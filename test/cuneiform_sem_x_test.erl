@@ -318,7 +318,13 @@ step_test_() ->
      fun foreign_app_as_fold_argument_stalls/0},
 
     {"unused fold accumulator does not appear in evaluation context",
-     fun unused_fold_accumulator_does_not_appear_in_evaluation_context/0}
+     fun unused_fold_accumulator_does_not_appear_in_evaluation_context/0},
+
+    {"fold iterator stalled cons tail reduces",
+     fun fold_iterator_stalled_cons_tail_reduces/0},
+
+    {"fold iterator stalled cons head reduces",
+     fun fold_iterator_stalled_cons_head_reduces/0}
    ]
   }.
 
@@ -965,9 +971,50 @@ unused_fold_accumulator_does_not_appear_in_evaluation_context() ->
              var( x ) ),
   ?assertEqual( {ok, E2, []}, step( E1 ) ).
 
+fold_iterator_stalled_cons_tail_reduces() ->
+  EAcc = str( <<"0">> ),
+  Fut = {fut, na, t_lst( t_str() ), <<"123">>},
+  EIt = cons( str( <<"1">> ), Fut ),
+  E1 = fold( typed_bind( acc, t_str(), EAcc ),
+             typed_bind( x, t_str(), EIt ),
+             var( x ) ),
 
+  E2 =
+    {fold,na,
+      {acc,'Str',
+        {app,na,
+          {lam_ntv,na,
+            [{x,'Str'}],
+            {app,na,
+              {lam_ntv,na,[{acc,'Str'}],
+                {var,na,x}},
+                [{acc,{str,na,<<"0">>}}]}},
+          [{x,{str,na,<<"1">>}}]}},
+      {x,'Str',Fut},
+      {var,na,x}},
 
+  ?assertEqual( {ok, E2, []}, step( E1 ) ).
 
+fold_iterator_stalled_cons_head_reduces() ->
+  EAcc = str( <<"0">> ),
+  Fut = {fut, na, t_str(), <<"123">>},
+  EIt = cons( Fut, null( t_str() ) ),
+  E1 = fold( typed_bind( acc, t_str(), EAcc ),
+             typed_bind( x, t_str(), EIt ),
+             var( x ) ),
+  
+  E2 =
+    {app,na,
+      {lam_ntv,na,
+        [{x,'Str'}],
+        {app,na,
+          {lam_ntv,na,
+            [{acc,'Str'}],
+            {fut,na,'Str',<<"123">>}},
+          [{acc,{str,na,<<"0">>}}]}},
+      [{x,{fut,na,'Str',<<"123">>}}]},
+
+  ?assertEqual( {ok, E2, []}, step( E1 ) ).
 
 
 

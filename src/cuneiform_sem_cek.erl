@@ -774,26 +774,26 @@ try_ascend( {{E1, _},
 
 % fold argument
 
-% try_ascend( {{{stalled, {cons, _, EHd, ETl}}, _},
-%              [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
-%              Outbox} ) ->
-%     EHd1 =
-%     case is_value( EHd ) of
-%       true  -> EHd;
-%       false -> {stalled, EHd}
-%     end,
+try_ascend( {{{stalled, {cons, _, EHd, ETl}}, _},
+             [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, Env}|K],
+             Outbox} ) ->
+    EHd1 =
+    case is_value( EHd ) of
+      true  -> EHd;
+      false -> {stalled, EHd}
+    end,
 
-%   ETl1 =
-%     case is_value( ETl ) of
-%       true  -> ETl;
-%       false -> {stalled, ETl}
-%     end,
+  ETl1 =
+    case is_value( ETl ) of
+      true  -> ETl;
+      false -> {stalled, ETl}
+    end,
 
-%   EAcc1 = bind_all( Info, [{XAcc, TAcc, EAcc}, {XArg, TArg, EHd1}], EBody ),
+  EAcc1 = bind_all( Info, [{XAcc, TAcc, EAcc}, {XArg, TArg, EHd1}], EBody ),
 
-%   {{ETl1, #{}},
-%    [{fold_arg, Info, {XAcc, TAcc, EAcc1}, XArg, TArg, EBody, Env}|K],
-%    Outbox};
+  {{ETl1, #{}},
+   [{fold_arg, Info, {XAcc, TAcc, EAcc1}, XArg, TArg, EBody, Env}|K],
+   Outbox};
 
 try_ascend( {{{stalled, EArg}, _},
              [{fold_arg, Info, {XAcc, TAcc, EAcc}, XArg, TArg, EBody, _}|K],
