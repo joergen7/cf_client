@@ -52,7 +52,7 @@ parse_test_() ->
 
    [
     {"one variable definition",      fun one_variable_definition/0},
-    {"two variable_definition",      fun two_variable_definition/0},
+    {"two variable definition",      fun two_variable_definition/0},
     {"one single import",            fun one_single_import/0},
     {"two single imports",           fun two_single_imports/0},
     {"import definition",            fun import_definition/0},
@@ -98,7 +98,11 @@ parse_test_() ->
     {"fold",                         fun fold/0},
     {"fold let",                     fun fold_let/0},
     {"cons",                         fun cons/0},
-    {"err",                          fun err/0}
+    {"err",                          fun err/0},
+
+    {"ambiguous field name in pattern fails",
+     fun ambiguous_field_name_in_pattern_fails/0}
+
    ]
   }.
 
@@ -1090,3 +1094,36 @@ cons() ->
     E = err( 1, t_str(), <<"blub">> ),
 
     ?assertEqual( {ok, {[], [], [E]}}, parse( TokenLst ) ).
+
+
+
+ambiguous_field_name_in_pattern_fails() ->
+  
+  TokenLst =
+    [{assign, 1, "let"},
+     {ltag, 1, "<"},
+     {id, 1, "a"},
+     {eq, 1, "="},
+     {id, 1, "x"},
+     {colon, 1, ":"},
+     {t_str, 1, "Str"},
+     {comma, 1, ","},
+     {id, 1, "a"},
+     {eq, 1, "="},
+     {id, 1, "y"},
+     {colon, 1, ":"},
+     {t_str, 1, "Str"},
+     {rtag, 1, ">"},
+     {eq, 1, "="},
+     {ltag, 2, "<"},
+     {id, 2, "a"},
+     {eq, 2, "="},
+     {strlit, 2, "bla"},
+     {comma, 2, ","},
+     {id, 2, "b"},
+     {eq, 2, "="},
+     {strlit, 2, "blub"},
+     {rtag, 2, ">"},
+     {semicolon, 2, ";"}],
+
+  ?assertError( {ambiguous, a}, parse( TokenLst ) ).

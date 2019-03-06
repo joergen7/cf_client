@@ -72,6 +72,7 @@
                          ] ).
 
 -import( cuneiform_lang, [typed_bind/3] ).
+-import( cuneiform_lang, [find_ambiguous/1] ).
 
 
 %%====================================================================
@@ -311,7 +312,10 @@ visit_r_bind( {id, _, S}, R ) ->
 -spec visit_r_rcd( RBindLst :: [r_bind()] ) -> r().
 
 visit_r_rcd( RBindLst ) ->
-  r_rcd( RBindLst ).
+  case find_ambiguous( [X || {X, _R} <- RBindLst] ) of
+    unambiguous    -> r_rcd( RBindLst );
+    {ambiguous, X} -> error( {ambiguous, X} )
+  end.
 
 
 -spec visit_rcd( {ltag, L :: _, _}, EBindLst :: [e_bind()] ) -> e().
