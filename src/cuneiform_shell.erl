@@ -364,23 +364,30 @@ shell_step( ShellState = #shell_state{ string_buf = "",
                 reply_lst  = ReplyLst } = ShellState,
 
   ShellState1 = 
-    case cuneiform_parse:parse( TokenLst ) of
+    try
+      case cuneiform_parse:parse( TokenLst ) of
 
-      {ok, {ILst, DLst, QLst}} ->
+        {ok, {ILst, DLst, QLst}} ->
 
-        ImportBuf1 = ImportBuf++ILst,
-        DefBuf1 = DefBuf++DLst,
-        QueryLst1 = QueryLst++QLst,
+          ImportBuf1 = ImportBuf++ILst,
+          DefBuf1 = DefBuf++DLst,
+          QueryLst1 = QueryLst++QLst,
 
-        ShellState#shell_state{ token_lst  = [],
-                                import_buf = ImportBuf1,
-                                def_buf    = DefBuf1,
-                                query_lst  = QueryLst1 };
+          ShellState#shell_state{ token_lst  = [],
+                                  import_buf = ImportBuf1,
+                                  def_buf    = DefBuf1,
+                                  query_lst  = QueryLst1 };
 
-      {error, Reason} ->
+        {error, R} ->
+          throw( R )
+
+      end
+    catch
+
+      throw:Reason ->
 
         ReplyLst1 = ReplyLst++[{error, parse, Reason}],
-
+      
         ShellState#shell_state{
           token_lst = [],
           reply_lst = ReplyLst1 }

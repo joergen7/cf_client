@@ -157,10 +157,6 @@ r_bind          -> id eq r                    : visit_r_bind( '$1', '$3' ).
 
 Erlang code.
 
--include_lib( "cf_client/include/cuneiform.hrl" ).
-
--export( [string/1, file/1] ).
-
 -import( cuneiform_lang, [
                           l_bash/0, l_elixir/0, l_erlang/0, l_java/0,
                           l_javascript/0, l_matlab/0, l_octave/0,
@@ -185,30 +181,5 @@ Erlang code.
                              visit_r_bind/2
                              ] ).
 
-
-
--spec string( S :: string() ) -> {ok, e()} | {error, _}.
-
-string( S ) ->
-  case cf_scan:string( S ) of
-    {error, ScanErrorInfo, _} -> {error, ScanErrorInfo};
-    {ok, TokenLst, _}         ->
-    try parse( TokenLst ) of
-      Ret -> {ok, Ret}
-    catch
-      throw:E -> {error, E}
-    end
-  end.
-
-
--spec file( Filename :: string() ) -> {ok, e()} | {error, _}.
-
-file( Filename ) ->
-  case file:read_file( Filename ) of
-    {error, Reason} -> {error, Reason};
-    {ok, B}         ->
-      S = binary_to_list( B ),
-      string( S )
-  end.
 
 
