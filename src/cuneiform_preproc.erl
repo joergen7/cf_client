@@ -37,7 +37,7 @@
 
 -export( [join_stat/2, visit_from/3, visit_fold/7, visit_cnd/6, visit_for/5,
           visit_import/1, visit_r_var/2, visit_var/1, visit_file/1, visit_str/1,
-          visit_assign/3, visit_def_frn/6, visit_def_ntv/6, visit_r_rcd/1,
+          visit_assign/3, visit_def_frn/6, visit_def_ntv/6, visit_r_rcd/2,
           visit_t_arg/2, visit_true/1, visit_false/1, visit_cmp/3, visit_conj/3,
           visit_disj/3, visit_neg/2, visit_app/2, visit_rcd/2, visit_proj/2,
           visit_append/3, visit_lst/3, visit_cons/3, visit_isnil/2, visit_err/3,
@@ -72,7 +72,7 @@
                          ] ).
 
 -import( cuneiform_lang, [typed_bind/3] ).
--import( cuneiform_lang, [find_ambiguous/1] ).
+-import( cuneiform_lang, [find_ambiguous/1, pattern_names/1] ).
 
 
 %%====================================================================
@@ -309,13 +309,25 @@ visit_r_bind( {id, _, S}, R ) ->
   r_bind( list_to_atom( S ), R ).
 
 
--spec visit_r_rcd( RBindLst :: [r_bind()] ) -> r().
+-spec visit_r_rcd( {ltag, Info :: _, _}, RBindLst :: [r_bind()] ) -> r().
 
-visit_r_rcd( RBindLst ) ->
-  case find_ambiguous( [X || {X, _R} <- RBindLst] ) of
-    unambiguous    -> r_rcd( RBindLst );
-    {ambiguous, X} -> throw( {ambiguous, X} )
-  end.
+visit_r_rcd( {ltag, Info, _}, RBindLst ) ->
+
+  R = r_rcd( RBindLst ),
+
+  ok = 
+    case find_ambiguous( pattern_names( R ) ) of
+      unambiguous    -> ok;
+      {ambiguous, X} -> throw( {ambiguous_variable, Info, X} )
+    end,
+
+  ok =
+    case find_ambiguous( [X || {X, _R} <- RBindLst] ) of
+      unambiguous    -> ok;
+      {ambiguous, Y} -> throw( {ambiguous_field, Info, Y} )
+    end,
+
+  R.
 
 
 -spec visit_rcd( {ltag, L :: _, _}, EBindLst :: [e_bind()] ) -> e().

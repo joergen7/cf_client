@@ -47,6 +47,11 @@
 
 -include_lib( "cf_client/include/cuneiform.hrl" ).
 
+%%====================================================================
+%% Imports
+%%====================================================================
+
+-import( cuneiform_lang, [create_closure/2] ).
 
 %%====================================================================
 %% Constant definitions
@@ -284,7 +289,7 @@ shell_step( ShellState = #shell_state{ string_buf = "",
                 reply_lst = ReplyLst } = ShellState,
 
   % TODO: catch error
-  {ok, C} = cuneiform_lang:create_closure( DefLst, Q1 ),
+  {ok, C} = create_closure( DefLst, Q1 ),
 
   ShellState1 = 
     case cuneiform_type:type( C ) of
@@ -325,7 +330,7 @@ shell_step( ShellState = #shell_state{ string_buf = "",
   {assign, _, _, E} = D1,
 
   % TODO: catch error
-  {ok, C} = cuneiform_lang:create_closure( DefLst++[D1], E ),
+  {ok, C} = create_closure( DefLst++[D1], E ),
 
   ShellState1 = 
     case cuneiform_type:type( C ) of

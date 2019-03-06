@@ -101,7 +101,10 @@ parse_test_() ->
     {"err",                          fun err/0},
 
     {"ambiguous field name in pattern fails",
-     fun ambiguous_field_name_in_pattern_fails/0}
+     fun ambiguous_field_name_in_pattern_fails/0},
+
+    {"ambiguous variable name in pattern fails",
+     fun ambiguous_variable_name_in_pattern_fails/0}
 
    ]
   }.
@@ -1126,4 +1129,36 @@ ambiguous_field_name_in_pattern_fails() ->
      {rtag, 2, ">"},
      {semicolon, 2, ";"}],
 
-  ?assertThrow( {ambiguous, a}, parse( TokenLst ) ).
+  ?assertThrow( {ambiguous_field, 1, a}, parse( TokenLst ) ).
+
+
+ambiguous_variable_name_in_pattern_fails() ->
+  
+  TokenLst =
+    [{assign, 1, "let"},
+     {ltag, 1, "<"},
+     {id, 1, "a"},
+     {eq, 1, "="},
+     {id, 1, "x"},
+     {colon, 1, ":"},
+     {t_str, 1, "Str"},
+     {comma, 1, ","},
+     {id, 1, "b"},
+     {eq, 1, "="},
+     {id, 1, "x"},
+     {colon, 1, ":"},
+     {t_str, 1, "Str"},
+     {rtag, 1, ">"},
+     {eq, 1, "="},
+     {ltag, 2, "<"},
+     {id, 2, "a"},
+     {eq, 2, "="},
+     {strlit, 2, "bla"},
+     {comma, 2, ","},
+     {id, 2, "b"},
+     {eq, 2, "="},
+     {strlit, 2, "blub"},
+     {rtag, 2, ">"},
+     {semicolon, 2, ";"}],
+
+  ?assertThrow( {ambiguous_variable, 1, x}, parse( TokenLst ) ).

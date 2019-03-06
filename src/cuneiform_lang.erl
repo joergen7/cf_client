@@ -59,7 +59,7 @@
           l_matlab/0, l_octave/0, l_perl/0, l_python/0, l_r/0,
           l_racket/0] ).
 
--export( [find_ambiguous/1] ).
+-export( [find_ambiguous/1, pattern_names/1] ).
 
 %%====================================================================
 %% Language constructors

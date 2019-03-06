@@ -73,7 +73,7 @@ define_lst      -> define                     : ['$1'].
 define_lst      -> define define_lst          : ['$1'|'$2'].
 
 r               -> id colon t                 : visit_r_var( '$1', '$3' ).
-r               -> ltag r_bind_lst rtag       : visit_r_rcd( '$2' ).
+r               -> ltag r_bind_lst rtag       : visit_r_rcd( '$1', '$2' ).
 
 l               -> l_bash                     : l_bash().
 l               -> l_elixir                   : l_elixir().
@@ -172,7 +172,7 @@ Erlang code.
                              visit_cnd/6, visit_for/5, visit_import/1,
                              visit_r_var/2, visit_var/1, visit_file/1,
                              visit_str/1, visit_assign/3, visit_def_frn/6,
-                             visit_def_ntv/6, visit_r_rcd/1, visit_t_arg/2,
+                             visit_def_ntv/6, visit_r_rcd/2, visit_t_arg/2,
                              visit_true/1, visit_false/1, visit_cmp/3,
                              visit_conj/3, visit_disj/3, visit_neg/2,
                              visit_app/2, visit_rcd/2, visit_proj/2,
