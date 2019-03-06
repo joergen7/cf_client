@@ -1126,4 +1126,4 @@ ambiguous_field_name_in_pattern_fails() ->
      {rtag, 2, ">"},
      {semicolon, 2, ";"}],
 
-  ?assertError( {ambiguous, a}, parse( TokenLst ) ).
+  ?assertThrow( {ambiguous, a}, parse( TokenLst ) ).

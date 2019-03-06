@@ -314,7 +314,7 @@ visit_r_bind( {id, _, S}, R ) ->
 visit_r_rcd( RBindLst ) ->
   case find_ambiguous( [X || {X, _R} <- RBindLst] ) of
     unambiguous    -> r_rcd( RBindLst );
-    {ambiguous, X} -> error( {ambiguous, X} )
+    {ambiguous, X} -> throw( {ambiguous, X} )
   end.
 
 
