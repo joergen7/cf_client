@@ -395,7 +395,7 @@ try_ascend( {{{stalled, E1}, _}, [{app_fn, Info, EBindLst, _}|K], Outbox} ) ->
 try_ascend( {{E1 = {lam_ntv, _, _, EBody}, _},
           [{app_fn, Info, EBindLst, Env}|K],
           Outbox} ) ->
-  Env1 = maps:from_list( [{X, {E, Env}} || {X, E} <- assert_clean_bind( EBindLst )] ),
+  Env1 = maps:from_list( [{X, {E, Env}} || {X, E} <- assert_clean_bind( unstall_bind( EBindLst ) )] ),
   Env2 = maps:merge( Env, Env1 ),
   {{EBody, Env2}, [{app_body, Info, assert_clean( E1 ), EBindLst}|K], Outbox};
 
