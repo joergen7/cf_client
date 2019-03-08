@@ -234,15 +234,47 @@ type( Gamma, {rcd, Info, [{X, E}|EBindLst]} ) ->
 
   end;
 
-type( _Gamma, {lam_frn, Info, _FName, TArgLst, TRet, _Lang, _SBody} ) ->
+type( _Gamma, {lam_frn, Info, _FName, TArgLst, TRet, Lang, _SBody} ) ->
 
   {'Rcd', RetFieldLst} = TRet,
 
   NameLst = [X || {X, _} <- TArgLst]++[X || {X, _} <- RetFieldLst],
 
-  case find_ambiguous( NameLst ) of
-    {ambiguous, Y} -> {error, {ambiguous_name, Info, Y}};
-    unambiguous    -> {ok, t_fn( frn, TArgLst, TRet )}
+  try
+
+    ok =
+      case find_ambiguous( NameLst ) of
+        unambiguous    -> ok;
+        {ambiguous, Y} -> throw( {ambiguous_name, Info, Y} )
+      end,
+
+    ok =
+      case Lang of
+
+        'Awk' ->
+
+          ok =
+            case TArgLst of
+              [{_, 'File'}|_] -> ok;
+              [{_, T1}|_]     -> throw( {type_mismatch, Info, {t_file(), T1}} );
+              []              -> throw( {no_argument, Info, t_fn( frn, TArgLst, TRet )} )
+            end,
+
+          case lists:keyfind( result, 1, RetFieldLst ) of
+            {result, 'File'} -> ok;
+            {result, T2}     -> throw( {type_mismatch, Info, {t_file(), T2}} );
+            false            -> throw( {key_missing, Info, result} )
+          end;
+            
+        _ ->
+          ok
+
+      end,
+
+    {ok, t_fn( frn, TArgLst, TRet )}
+
+  catch
+    throw:R -> {error, R}
   end;
 
 type( Gamma, {app, Info, F, EBindLst} ) ->

@@ -35,6 +35,7 @@
 
 Definitions.
 
+LAWK        = Awk
 LBASH       = Bash
 LELIXIR     = Elixir
 LERLANG     = Erlang
@@ -106,6 +107,7 @@ WS          = [\000-\s]
 
 Rules.
 
+{LAWK}        : {token, {l_awk, TokenLine, TokenChars}}.
 {LBASH}       : {token, {l_bash, TokenLine, TokenChars}}.
 {LELIXIR}     : {token, {l_elixir, TokenLine, TokenChars}}.
 {LERLANG}     : {token, {l_erlang, TokenLine, TokenChars}}.

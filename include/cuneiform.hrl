@@ -64,7 +64,8 @@
                      | {'Rcd', [t_arg()]}
                      | {'Lst', t()}.
 
--type l()           :: 'Bash'
+-type l()           :: 'Awk'
+                     | 'Bash'
                      | 'Elixir'
                      | 'Erlang'
                      | 'Java'
