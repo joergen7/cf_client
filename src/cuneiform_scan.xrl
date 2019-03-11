@@ -39,6 +39,7 @@ LAWK        = Awk
 LBASH       = Bash
 LELIXIR     = Elixir
 LERLANG     = Erlang
+LGNUPLOT    = Gnuplot
 LJAVA       = Java
 LJAVASCRIPT = Javascript
 LMATLAB     = Matlab
@@ -111,6 +112,7 @@ Rules.
 {LBASH}       : {token, {l_bash, TokenLine, TokenChars}}.
 {LELIXIR}     : {token, {l_elixir, TokenLine, TokenChars}}.
 {LERLANG}     : {token, {l_erlang, TokenLine, TokenChars}}.
+{LGNUPLOT}    : {token, {l_gnuplot, TokenLine, TokenChars}}.
 {LJAVA}       : {token, {l_java, TokenLine, TokenChars}}.
 {LJAVASCRIPT} : {token, {l_javascript, TokenLine, TokenChars}}.
 {LMATLAB}     : {token, {l_matlab, TokenLine, TokenChars}}.

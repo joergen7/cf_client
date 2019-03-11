@@ -68,6 +68,7 @@
                      | 'Bash'
                      | 'Elixir'
                      | 'Erlang'
+                     | 'Gnuplot'
                      | 'Java'
                      | 'Javascript'
                      | 'Matlab'
