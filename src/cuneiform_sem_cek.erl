@@ -743,7 +743,7 @@ try_ascend( {{E1, _},
           true ->
             {stalled, assert_clean( {for, Info, Type, unstall_typed( L2 ), EBody} )}
         end,
-      {{EBody1, Env}, [{cons_hd, Info, EFor1, Env}|K], Outbox};
+      {{assert_clean( EBody1 ), Env}, [{cons_hd, Info, EFor1, Env}|K], Outbox};
 
     stalled  ->
       TypedBindLst2 = unstall_typed( TypedBindLst1 ),
