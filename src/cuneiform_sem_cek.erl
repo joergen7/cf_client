@@ -735,7 +735,7 @@ try_ascend( {{E1, _},
     stuck    -> error( stuck );
     null     -> {{{null, Info, Type}, #{}}, K, Outbox};
     {L1, L2} ->
-      EBody1 = bind_all( Info, L1, EBody ),
+      EBody1 = bind_all( Info, unstall_typed( L1 ), EBody ),
       EFor1 =
         case is_stalled_typed( L2 ) of
           false ->
