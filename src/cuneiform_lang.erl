@@ -72,7 +72,8 @@
 
 %% Syntactic Sugar
 -export( [lst/2, lst/3,
-          alet/2, alet/3] ).
+          alet/2, alet/3,
+          asc/2, asc/3] ).
 
 %% Patterns, Assignments, and Expansion
 -export( [r_var/2, r_rcd/1, assign/2, assign/3, expand_closure/2] ).
@@ -409,6 +410,25 @@ alet( Info, XteLst, EBody ) ->
   app( validate_info( Info ),
        lam( Info, [{X, T} || {X, T, _} <- XteLst], {ntv, EBody} ),
        [{X, E} || {X, _, E} <- XteLst] ).
+
+-spec asc( E :: e(), T :: t() ) -> e().
+
+asc( E, T ) ->
+  asc( Info, E, T ).
+
+-spec asc( Info :: info(), E :: e(), T :: t() ) -> e().
+
+asc( Info, E, T, ) ->
+
+  BinaryToHexString =
+    fun( X ) when is_binary( X ) ->
+      list_to_binary( 
+        lists:flatten(
+          [io_lib:format( "~2.16.0b", [B] ) || <<B>> <= X] ) )
+    end,
+
+  X = BinaryToHexString( crypto:hash( sha224, E ) ),
+  alet( Info, [{X, T, E}], var( Info, X ) ).
 
 
 %%====================================================================
