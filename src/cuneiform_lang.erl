@@ -35,31 +35,56 @@
 %% Exports
 %%====================================================================
 
-%% Type constructors
--export( [t_arg/2] ).
--export( [t_str/0, t_file/0, t_bool/0, t_fn/3, t_rcd/1, t_lst/1] ).
-
-%% Expression constructors
--export( [typed_bind/3, e_bind/2, r_bind/2] ).
--export( [str/1, file/1, true/0, false/0, cnd/3, var/1, lam_ntv/2, lam_frn/5,
-          app/2, cmp/2, conj/2, disj/2, neg/1, lst/2, append/2, isnil/1,
-          for/3, fold/3, rcd/1, proj/2, fix/1, cons/2, null/1, err/2] ).
--export( [str/2, file/2, file/3, true/1, false/1, cnd/4, var/2, lam_ntv/3, lam_frn/6,
-          app/3, cmp/3, conj/3, disj/3, neg/2, lst/3, append/3, isnil/2,
-          for/4, fold/4, rcd/2, proj/3, fix/2, cons/3, null/2, err/3] ).
-
-%% Assignment
--export( [assign/2, assign/3, create_closure/2] ).
-
-%% Pattern constructors
--export( [r_var/2, r_rcd/1] ).
-
 %% Language constructors
 -export( [l_awk/0, l_bash/0, l_elixir/0, l_erlang/0, l_gnuplot/0, l_java/0,
           l_javascript/0, l_matlab/0, l_octave/0, l_perl/0, l_python/0, l_r/0,
           l_racket/0] ).
 
--export( [find_ambiguous/1, pattern_names/1] ).
+%% Type constructors
+-export( [t_str/0, t_file/0, t_bool/0, t_fn/2, t_lst/1, t_rcd/1] ).
+
+%% Expression constructors
+-export( [
+          var/1,    var/2,
+          lam/2,    lam/3,
+          app/2,    app/3,
+          fix/1,    fix/2,
+          str/1,    str/2,
+          file/1,   file/2,
+          true/0,   true/1,
+          false/0,  false/1,
+          cmp/2,    cmp/3,
+          conj/2,   conj/3,
+          disj/2,   disj/3,
+          neg/1,    neg/2,
+          isnil/1,  isnil/2,          
+          cnd/3,    cnd/4,
+          null/1,   null/2,
+          cons/2,   cons/3,
+          hd/2,     hd/3,
+          tl/2,     tl/3,
+          append/2, append/3,
+          for/3,    for/4,
+          fold/3,   fold/4,
+          rcd/1,    rcd/2,
+          proj/2,   proj/3,
+          err/2,    err/3] ).
+
+%% Syntactic Sugar
+-export( [lst/2, lst/3,
+          alet/2, alet/3] ).
+
+%% Patterns, Assignments, and Expansion
+-export( [r_var/2, r_rcd/1, assign/2, assign/3, expand_closure/2] ).
+
+%% Name Helpers
+-export( [ambiguous_names/1, pattern_names/1, argument_names/1, bind_names/1] ).
+
+%% Validators
+-export( [] ).
+
+%% Contract Predicates
+-export( [] ).
 
 %%====================================================================
 %% Language constructors
@@ -80,22 +105,8 @@
 -spec l_racket()     -> l(). l_racket()     -> 'Racket'.
 
 %%====================================================================
-%% Pattern constructors
-%%====================================================================
-
--spec r_var( X :: x(), T :: t() )     -> r().
-      r_var( X, T ) when is_atom( X ) -> {r_var, X, T}.
-
--spec r_rcd( RLst :: [r_bind()] )        -> r().
-      r_rcd( RLst ) when is_list( RLst ) -> {r_rcd, RLst}.
-
-
-%%====================================================================
 %% Type constructors
 %%====================================================================
-
--spec t_arg( X :: x(), T :: t() )     -> t_arg().
-      t_arg( X, T ) when is_atom( X ) -> {X, T}.
 
 -spec t_str() -> t().
       t_str() -> 'Str'.
@@ -106,173 +117,203 @@
 -spec t_bool() -> t().
       t_bool() -> 'Bool'.
 
--spec t_rcd( ArgLst :: [t_arg()] )           -> t().
-      t_rcd( ArgLst ) when is_list( ArgLst ) -> {'Rcd', ArgLst}.
+-spec t_rcd( ArgLst :: [{x(), t()}] )        -> t().
+
+t_rcd( ArgLst ) ->
+  {'Rcd', validate_xt_lst( ArgLst )}.
+
 
 -spec t_lst( T :: t() ) -> t().
-      t_lst( T )        -> {'Lst', T}.
+      t_lst( T )        -> {'Lst', validate_type( T )}.
 
+-spec t_fn( ArgLst :: [{x(), t()}], TRet :: t() ) -> t().
 
--spec t_fn( Tau :: tau(), ArgLst :: [t_arg()], TRet :: t() ) -> t().
-
-t_fn( Tau, ArgLst, TRet )
-when Tau =:= ntv orelse Tau =:= frn,
-     is_list( ArgLst ) ->
-  {'Fn', Tau, ArgLst, TRet}.
+t_fn( ArgLst, TRet ) ->
+  {'Fn', validate_xt_lst( ArgLst ),
+         validate_type( TRet )}.
 
 
 %%====================================================================
 %% Expression constructors
 %%====================================================================
 
--spec typed_bind( X :: x(), T :: t(), E :: e() ) -> typed_bind().
-      typed_bind( X, T, E ) when is_atom( X )    -> {X, T, E}.
+-spec var( X :: x() ) -> e().
+      var( X )        -> var( na, X ).
 
--spec e_bind( X :: x(), E :: e() )     -> e_bind().
-      e_bind( X, E ) when is_atom( X ) -> {X, E}.
+-spec var( Info :: info(), X :: x() ) -> e().
 
--spec r_bind( X :: x(), R :: r() )     -> r_bind().
-      r_bind( X, R ) when is_atom( X ) -> {X, R}.
+var( Info, X ) ->
+  {var, validate_info( Info ),
+        validate_x( X )}.
+
+-spec lam( ArgLst, Body ) -> e()
+when ArgLst :: [{x(), t()}],
+     Body   :: {ntv, e()}
+             | {frn, x(), t(), l(), s()}.
+
+lam( ArgLst, Body ) ->
+  lam( na, ArgLst, Body ).
+
+-spec lam( Info, ArgLst, Body ) -> e()
+when Info   :: info(),
+     ArgLst :: [{x(), t()}],
+     Body   :: {ntv, e()}
+             | {frn, x(), t(), l(), s()}.
+
+lam( Info, ArgLst, Body ) ->
+  {lam, validate_info( Info ),
+        validate_xt_lst( ArgLst ),
+        validate_body( Body )}.
+
+-spec app( F :: e(), ArgLst :: [{x(), e()}] ) -> e().
+      app( F, ArgLst )                        -> app( na, F, ArgLst ).
+
+-spec app( Info :: info(), F :: e(), ArgLst :: [{x(), e()}] ) -> e().
+
+app( Info, F, ArgLst ) ->
+  {app, validate_info( Info ),
+        validate_expr( F ),
+        validate_xe_lst( ArgLst )}.
+
+-spec fix( E :: e() ) -> e().
+      fix( E )        -> fix( na, E ).
+
+-spec fix( Info :: info(), E :: e() ) -> e().
+      fix( Info, E )                  -> {fix, Info, validate_expr( E )}.
 
 -spec str( S :: s() ) -> e().
       str( S )        -> str( na, S ).
 
 -spec str( Info :: info(), S :: s() )    -> e().
-      str( Info, S ) when is_binary( S ) -> {str, Info, S}.
-
+      str( Info, S ) when is_binary( S ) -> {str, validate_info( Info ), S}.
 
 -spec file( S :: s() ) -> e().
       file( S ) -> file( na, S ).
 
 -spec file( Info :: info(), S :: s() ) -> e().
-      file( Info, S )                  -> file( Info, S, na ).
-
--spec file( Info :: info(), S :: s(), H :: _ )  -> e().
-      file( Info, S, H ) when is_binary( S )    -> {file, Info, S, H}.
+file( Info, S ) when is_binary( S ) ->
+  {file, validate_info( Info ), S}.
 
 -spec true() -> e().
       true() -> true( na ).
 
 -spec true( Info :: info() ) -> e().
-      true( Info )           -> {true, Info}.
+      true( Info )           -> {true, validate_info( Info )}.
 
 -spec false() -> e().
       false() -> false( na ).
 
 -spec false( Info :: info() ) -> e().
-      false( Info )           -> {false, Info}.
-
--spec cnd( E1 :: e(), E2 :: e(), E3 :: e() ) -> e().
-      cnd( E1, E2, E3 )                      -> cnd( na, E1, E2, E3 ).
-
--spec cnd( Info :: info(), E1 :: e(), E2 :: e(), E3 :: e() ) -> e().
-      cnd( Info, E1, E2, E3 ) -> {cnd, Info, E1, E2, E3}.
-  
-
--spec var( X :: x() ) -> e().
-      var( X ) -> var( na, X ).
-
--spec var( Info :: info(), X :: x() )  -> e().
-      var( Info, X ) when is_atom( X ) -> {var, Info, X}.
-
-
--spec lam_ntv( ArgLst :: [t_arg()], EBody :: e() ) -> e().
-      lam_ntv( ArgLst, EBody ) -> lam_ntv( na, ArgLst, EBody ).
-
--spec lam_ntv( Info :: info(), ArgLst :: [t_arg()], EBody :: e() ) -> e().
-lam_ntv( Info, ArgLst, EBody ) when is_list( ArgLst ) ->
-  {lam_ntv, Info, ArgLst, EBody}.
-
-
--spec lam_frn( FName, ArgLst, RetType, L, Body ) -> e()
-when FName   :: x(),
-     ArgLst  :: [t_arg()],
-     RetType :: t(),
-     L       :: l(),
-     Body    :: s().
-
-lam_frn( FName, ArgLst, RetType, L, SBody ) ->
-  lam_frn( na, FName, ArgLst, RetType, L, SBody ).
-
-
--spec lam_frn( Info, FName, ArgLst, RetType, L, Body ) -> e()
-when Info    :: info(),
-     FName   :: x(),
-     ArgLst  :: [t_arg()],
-     RetType :: t(),
-     L       :: l(),
-     Body    :: s().
-
-lam_frn( Info, FName, ArgLst, RetType, L, Body )
-when is_atom( FName ),
-     is_list( ArgLst ),
-     is_atom( L ),
-     is_binary( Body ) ->
-  {lam_frn, Info, FName, ArgLst, RetType, L, Body}.
-
-
--spec app( F :: e(), ArgLst :: [e_bind()] ) -> e().
-      app( F, ArgLst )                      -> app( na, F, ArgLst ).
-
--spec app( Info :: info(), F :: e(), ArgLst :: [e_bind()] ) -> e().
-      app( Info, F, ArgLst ) when is_list( ArgLst ) -> {app, Info, F, ArgLst}.
+      false( Info )           -> {false, validate_info( Info )}.
 
 -spec cmp( E1 :: e(), E2 :: e() ) -> e().
       cmp( E1, E2 )               -> cmp( na, E1, E2 ).
 
 -spec cmp( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
-      cmp( Info, E1, E2 )                         -> {cmp, Info, E1, E2}.
 
--spec neg( E :: e() ) -> e().
-      neg( E )        -> neg( na, E ).
-
--spec neg( Info :: info(), E :: e() ) -> e().
-      neg( Info, E )                  -> {neg, Info, E}.
+cmp( Info, E1, E2 ) ->
+  {cmp, validate_info( Info ),
+        validate_expr( E1 ),
+        validate_expr( E2 )}.
 
 -spec conj( E1 :: e(), E2 :: e() ) -> e().
       conj( E1, E2 )               -> conj( na, E1, E2 ).
 
 -spec conj( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
-      conj( Info, E1, E2 )                         -> {conj, Info, E1, E2}.
+
+conj( Info, E1, E2 ) ->
+  {conj, validate_info( Info ),
+         validate_expr( E1 ),
+         validate_expr( E2 )}.
 
 -spec disj( E1 :: e(), E2 :: e() ) -> e().
       disj( E1, E2 )               -> disj( na, E1, E2 ).
 
 -spec disj( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
-      disj( Info, E1, E2 )                         -> {disj, Info, E1, E2}.
 
--spec lst( T :: t(), ELst :: [e()] ) -> e().
-      lst( T, ELst )                 -> lst( na, T, ELst ).
+disj( Info, E1, E2 ) ->
+  {disj, validate_info( Info ),
+         validate_expr( E1 ),
+         validate_expr( E2 )}.
 
--spec lst( Info :: info(), T :: t(), ELst :: [e()] ) -> e().
-      lst( Info, T, [] )      -> null( Info, T );
-      lst( Info, T, [Hd|Tl] ) -> cons( Info, Hd, lst( Info, T, Tl ) ).
+-spec neg( E :: e() ) -> e().
+      neg( E )        -> neg( na, E ).
 
+-spec neg( Info :: info(), E :: e() ) -> e().
+
+neg( Info, E ) ->
+  {neg, validate_info( Info ),
+        validate_expr( E )}.
+
+-spec isnil( E :: e() ) -> e().
+      isnil( E )        -> isnil( na, E ).
+
+-spec isnil( Info :: info(), E :: e() )   -> e().
+
+isnil( Info, E ) ->
+  {isnil, validate_info( Info ), validate_expr( E )}.
+
+-spec cnd( E1 :: e(), E2 :: e(), E3 :: e() ) -> e().
+      cnd( E1, E2, E3 )                      -> cnd( na, E1, E2, E3 ).
+
+-spec cnd( Info :: info(), E1 :: e(), E2 :: e(), E3 :: e() ) -> e().
+
+cnd( Info, E1, E2, E3 ) ->
+  {cnd, validate_info( Info ),
+        validate_expr( E1 ),
+        validate_expr( E2 ),
+        validate_expr( E3 )}.
+  
 -spec null( T :: t() ) -> e().
       null( T )        -> null( na, T ).
 
 -spec null( Info :: info(), T :: t() ) -> e().
-      null( Info, T )                  -> {null, Info, T}.
+
+null( Info, T ) ->
+  {null, validate_info( Info ),
+         validate_type( T )}.
 
 -spec cons( E1 :: e(), E2 :: e() ) -> e().
       cons( E1, E2 )               -> cons( na, E1, E2 ).
 
 -spec cons( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
-      cons( Info, E1, E2 ) -> {cons, Info, E1, E2}.
+
+cons( Info, E1, E2 ) ->
+  {cons, validate_info( Info ),
+         validate_expr( E1 ),
+         validate_expr( E2 )}.
+
+-spec hd( E1 :: e(), E2 :: e() ) -> e().
+      hd( E1, E2 )               -> hd( na, E1, E2 ).
+
+-spec hd( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
+
+hd( Info, E1, E2 ) ->
+  {hd, validate_info( Info ),
+       validate_expr( E1 ),
+       validate_expr( E2 )}.
+
+-spec tl( E1 :: e(), E2 :: e() ) -> e().
+      tl( E1, E2 )               -> tl( na, E1, E2 ).
+
+-spec tl( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
+
+tl( Info, E1, E2 ) ->
+  {tl, validate_info( Info ),
+       validate_expr( E1 ),
+       validate_expr( E2 )}.
 
 -spec append( E1 :: e(), E2 :: e() ) -> e().
       append( E1, E2 )               -> append( na, E1, E2 ).
 
 -spec append( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
-      append( Info, E1, E2 )                         -> {append, Info, E1, E2}.
 
--spec isnil( E :: e() ) -> e().
-      isnil( E )        -> isnil( na, E ).
+append( Info, E1, E2 ) ->
+  {append, validate_info( Info ),
+           validate_expr( E1 ),
+           validate_expr( E2 )}.
 
--spec isnil( Info :: info(), E :: e() ) -> e().
-      isnil( Info, E )                  -> {isnil, Info, E}.
-
--spec for( TRet :: t(), ArgLst :: [typed_bind()], E :: e() ) -> e().
+-spec for( TRet :: t(), ArgLst :: [{x(), t(), e()}], E :: e() ) -> e().
 
 for( TRet, ArgLst, E ) ->
   for( na, TRet, ArgLst, E ).
@@ -280,14 +321,20 @@ for( TRet, ArgLst, E ) ->
 -spec for( Info, TRet, ArgLst, E ) -> e()
 when Info   :: info(),
      TRet   :: t(),
-     ArgLst :: [typed_bind()],
+     ArgLst :: [{x(), t(), e()}],
      E      :: e().
 
-for( Info, TRet, ArgLst, E ) when is_list( ArgLst ) ->
-  {for, Info, TRet, ArgLst, E}.
+for( Info, TRet, ArgLst, E ) ->
+  {for, validate_info( Info ),
+        validate_type( TRet ),
+        validate_xte_lst( ArgLst ),
+        validate_expr( E )}.
 
 
--spec fold( AccBind :: typed_bind(), ArgBind :: typed_bind(), E :: e() ) -> e().
+-spec fold( AccBind, ArgBind, E ) -> e()
+when AccBind :: {x(), t(), e()},
+     ArgBind :: {x(), t(), e()},
+     E       :: e().
 
 fold( AccBind, ArgBind, E ) ->
   fold( na, AccBind, ArgBind, E ).
@@ -295,32 +342,35 @@ fold( AccBind, ArgBind, E ) ->
 
 -spec fold( Info, AccBind, ArgBind, E ) -> e()
 when Info    :: info(),
-     AccBind :: typed_bind(),
-     ArgBind :: typed_bind(),
+     AccBind :: {x(), t(), e()},
+     ArgBind :: {x(), t(), e()},
      E       :: e().
 
-fold( Info, {XAcc, TAcc, EAcc}, {XArg, TArg, EArg}, E )
-when is_atom( XAcc ), is_atom( XArg ) ->
-  {fold, Info, {XAcc, TAcc, EAcc}, {XArg, TArg, EArg}, E}.
+fold( Info, AccBind, LstBind, E ) ->
+  {fold, validate_info( Info ),
+         validate_xte( AccBind ),
+         validate_xte( LstBind ),
+         validate_expr( E )}.
 
 
--spec rcd( ArgLst :: [e_bind()] ) -> e().
+-spec rcd( ArgLst :: [{x(), e()}] ) -> e().
       rcd( ArgLst ) -> rcd( na, ArgLst ).
 
--spec rcd( Info :: info(), ArgLst :: [e_bind()] ) -> e().
-      rcd( Info, ArgLst ) when is_list( ArgLst )  -> {rcd, Info, ArgLst}.
+-spec rcd( Info :: info(), BindLst :: [{x(), e()}] ) -> e().
+
+rcd( Info, BindLst ) ->
+  {rcd, validate_info( Info ),
+        validate_xe_lst( BindLst )}.
 
 -spec proj( X :: x(), E :: e() ) -> e().
       proj( X, E )               -> proj( na, X, E ).
 
 -spec proj( Info :: info(), X :: x(), E :: e() ) -> e().
-      proj( Info, X, E ) when is_atom( X )       -> {proj, Info, X, E}.
 
--spec fix( E :: e() ) -> e().
-      fix( E )        -> fix( na, E ).
-
--spec fix( Info :: info(), E :: e() ) -> e().
-      fix( Info, E )                  -> {fix, Info, E}.
+proj( Info, X, E ) ->
+  {proj, validate_info( Info ),
+         validate_x( X ),
+         validate_expr( E )}.
 
 -spec err( T :: t(), Msg :: binary() ) -> e().
       err( T, Msg )                    -> err( na, T, Msg ).
@@ -328,88 +378,491 @@ when is_atom( XAcc ), is_atom( XArg ) ->
 -spec err( Info :: info(), T :: t(), Msg :: binary() ) -> e().
 
 err( Info, T, Msg ) when is_binary( Msg ) ->
-  {err, Info, T, {user, Msg}}.
+  {err, validate_info( Info ),
+        validate_type( T ),
+        {user, Msg}}.
+
+
+%%====================================================================
+%% Syntactic Sugar
+%%====================================================================
+
+-spec lst( T :: t(), ELst :: [e()] ) -> e().
+      lst( T, ELst )                 -> lst( na, T, ELst ).
+
+
+-spec lst( Info :: info(), T :: t(), ELst :: [e()] ) -> e().
+
+lst( Info, T, [] )      -> null( Info, T );
+lst( Info, T, [Hd|Tl] ) -> cons( Info, Hd, lst( Info, T, Tl ) ).
+
+
+-spec alet( XteLst :: [{x(), t(), e()}], EBody :: e() ) -> e().
+
+alet( XteLst, EBody ) ->
+  alet( na, XteLst, EBody ).
+
+
+-spec alet( Info :: info(), XteLst :: [{x(), t(), e()}], EBody :: e() ) -> e().
+
+alet( Info, XteLst, EBody ) ->
+  app( validate_info( Info ),
+       lam( Info, [{X, T} || {X, T, _} <- XteLst], {ntv, EBody} ),
+       [{X, E} || {X, _, E} <- XteLst] ).
+
+
+%%====================================================================
+%% Pattern constructors and Assignments
+%%====================================================================
+
+-spec r_var( X :: x(), T :: t() ) -> r().
+
+r_var( X, T ) ->
+  {r_var, validate_x( X ),
+          validate_type( T )}.
+
+
+-spec r_rcd( RLst :: [{x(), r()}] ) -> r().
+      r_rcd( RLst )                 -> {r_rcd, validate_xr_lst( RLst )}.
 
 -spec assign( R :: r(), E :: e() ) -> assign().
       assign( R, E )               -> assign( na, R, E ).
 
+
 -spec assign( Info :: info(), R :: r(), E :: e() ) -> assign().
-      assign( Info, R, E ) when is_tuple( R )      -> {assign, Info, R, E}.
+
+assign( Info, R, E ) ->
+  {assign, validate_info( Info ),
+           validate_pattern( R ),
+           validate_expr( E )}.
 
 
--spec create_closure( AssignLst, EBody ) ->
-        {ok, e()} | {error, {ambiguous_name, info(), x()}}
+-spec expand_closure( AssignLst, EBody ) -> e()
 when AssignLst :: [assign()],
      EBody     :: e().
 
-create_closure( AssignLst, EBody ) ->
+expand_closure( [], EBody ) ->
+  validate_expr( EBody );
 
-  F =
+expand_closure( [Hd|Tl], EBody ) ->
+
+  ExpandAssign =
     fun
+      ExpandAssign( {assign, _Info, {r_var, X, T}, E} ) ->
+        [{X, T, E}];
 
-      F( {assign, Info, {r_var, X, T}, E}, EAcc ) ->
-        app( Info,
-             lam_ntv( Info, [t_arg( X, T )], EAcc ),
-             [e_bind( X, E )] );
+      ExpandAssign( {assign, _Info, {r_rcd, []}, _E} ) ->
+        [];
 
-      F( {assign, _Info, {r_rcd, []}, _E}, EAcc ) ->
-        EAcc;
-
-      F( {assign, Info, Z = {r_rcd, [{X, R}|Tl]}, E}, EAcc ) ->
-
-        case find_ambiguous( pattern_names( Z ) ) of
-
-          unambiguous ->
-            EAcc1 = F( assign( Info, R, proj( Info, X, E ) ), EAcc ),
-            F( assign( Info, r_rcd( Tl ), E ), EAcc1 );
-
-          {ambiguous, Name} ->
-            throw( {ambiguous_name, Info, Name} )
-
-        end
-
+      ExpandAssign( {assign, Info, {r_rcd, [{X, R}|T]}, E} ) ->
+          ExpandAssign( assign( Info, R, proj( Info, X, E ) ) )
+        ++ExpandAssign( assign( Info, {r_rcd, T}, E ) )
     end,
 
-  try lists:foldr( F, EBody, AssignLst ) of
-    E1 -> {ok, E1}
-  catch
-    throw:E2 -> {error, E2}
-  end.
+  XteLst = ExpandAssign( Hd ),
+
+  alet( XteLst, expand_closure( Tl, EBody ) ).
 
 
--spec find_ambiguous( NameLst :: [x()] ) -> unambiguous | {ambiguous, x()}.
+%%====================================================================
+%% Name Helpers
+%%====================================================================
 
-find_ambiguous( NameLst ) ->
+-spec ambiguous_names( NameLst :: [x()] ) -> [x()].
 
-  F =
-    fun
-
-      F( [], _SeenLst ) ->
-        unambiguous;
-      
-      F( [H|T], SeenLst ) when is_atom( H ) ->
-        case lists:member( H, SeenLst ) of
-          true  -> {ambiguous, H};
-          false -> F( T, [H|SeenLst] )
-        end
-
-    end,
-
-  F( NameLst, [] ).
-
+ambiguous_names( NameLst ) when is_list( NameLst ) ->
+  lists:usort( NameLst--lists:usort( NameLst ) ).
 
 
 -spec pattern_names( Pattern :: r() ) -> [x()].
 
-pattern_names( {r_var, X, _T} )    ->
+pattern_names( {r_var, X, _T} ) ->
   [X];
 
 pattern_names( {r_rcd, RBindLst} ) ->
+  lists:flatmap( fun( {_X, R} ) -> pattern_names( R ) end, RBindLst ).
 
-  F =
-    fun( {_X, R} ) ->
-      pattern_names( R )
-    end,
+-spec argument_names( ArgLst :: [{x(), t()}] ) -> [x()].
 
-  lists:flatmap( F, RBindLst ).
+argument_names( ArgLst ) ->
+  [X || {X, _T} <- ArgLst].
 
+-spec bind_names( BindLst :: [{x(), e()}] ) -> [x()].
+
+bind_names( BindLst ) ->
+  [X || {X, _E} <- BindLst].
+
+
+%%====================================================================
+%% Validators
+%%====================================================================
+
+-spec validate_x( X :: _ ) -> x().
+
+validate_x( X ) when is_atom( X ) -> X;
+validate_x( X )                   -> error( {bad_symbol, X} ).
+
+
+-spec validate_pattern( X :: _ ) -> r().
+
+validate_pattern( X ) ->
+  case is_pattern( X ) of
+    true  -> X;
+    false -> error( {bad_pattern, X} )
+  end.
+
+-spec validate_xr( X :: _ ) -> {x(), r()}.
+
+validate_xr( X ) ->
+  case is_xr( X ) of
+    true  -> X;
+    false -> {bad_xr, X}
+  end.
+
+-spec validate_xr_lst( X :: _ ) -> [{x(), r()}].
+
+validate_xr_lst( [] ) ->
+  [];
+
+validate_xr_lst( [H|T] ) ->
+  [validate_xr( H )|validate_xr_lst( T )].
+
+
+-spec validate_info( X :: _ ) -> info().
+
+validate_info( X ) ->
+  case is_info( X ) of
+    true  -> X;
+    false -> error( {bad_info, X} )
+  end.
+
+
+-spec validate_xt( X :: _ ) -> {x(), t()}.
+
+validate_xt( X ) ->
+  case is_xt( X ) of
+    true  -> X;
+    false -> {bad_xt, X}
+  end.
+
+-spec validate_xt_lst( X :: _ ) -> [{x(), t()}].
+
+validate_xt_lst( [] ) ->
+  [];
+
+validate_xt_lst( [H|T] ) ->
+  [validate_xt( H )|validate_xt_lst( T )].
+
+
+-spec validate_xe( X :: _ ) -> {x(), e()}.
+
+validate_xe( X ) ->
+  case is_xe( X ) of
+    true  -> X;
+    false -> {bad_xe, X}
+  end.
+
+-spec validate_xe_lst( Lst :: _ ) -> [{x(), e()}].
+
+validate_xe_lst( [] ) ->
+  [];
+
+validate_xe_lst( [H|T] ) ->
+  [validate_xe( H )|validate_xe_lst( T )].
+
+
+-spec validate_xte( X :: _ ) -> {x(), t(), e()}.
+
+validate_xte( X ) ->
+  case is_xte( X ) of
+    true  -> X;
+    false -> {bad_xte, X}
+  end.
+
+-spec validate_xte_lst( Lst :: _ ) -> [{x(), t(), e()}].
+
+validate_xte_lst( [] ) ->
+  [];
+
+validate_xte_lst( [H|T] ) ->
+  [validate_xte( H )|validate_xte_lst( T )].
+
+
+-spec validate_body( X :: _ ) -> {ntv, e()} | {frn, x(), t(), l(), s()}.
+
+validate_body( {ntv, E} ) ->
+  case is_expr( E ) of
+    true  -> {ntv, E};
+    false -> error( {bad_expr, E} )
+  end;
+
+validate_body( {frn, X, T, L, S} )
+when is_atom( X ),
+     is_binary( S ) ->
+  case is_lang( L ) of
+    true  ->
+      case is_type( T ) of
+        true  -> {frn, X, L, S};
+        false -> error( {bad_type, T} )
+      end;
+    false -> error( {bad_lang, L} )
+  end.
+
+
+-spec validate_expr( X :: _ ) -> e().
+
+validate_expr( E ) ->
+  case is_expr( E ) of
+    true  -> E;
+    false -> error( {bad_expr, E} )
+  end.
+
+
+-spec validate_type( X :: _ ) -> t().
+
+validate_type( X ) ->
+  case is_type( X ) of
+    true  -> X;
+    false -> error( {bad_type, X} )
+  end.
+
+
+%%====================================================================
+%% Contract Predicates
+%%====================================================================
+
+-spec is_xr( X :: _ ) -> boolean().
+
+is_xr( {X, R} ) when is_atom( X ) -> is_pattern( R );
+is_xr( _ )                        -> false.
+
+-spec is_pattern( X :: _ ) -> boolean().
+
+is_pattern( {r_var, X, T} ) when is_atom( X ) ->
+  is_type( T );
+
+is_pattern( {r_rcd, RLst} ) when is_list( RLst ) ->
+  lists:all( fun is_xr/1, RLst );
+
+is_pattern( _ ) ->
+  false.
+
+
+-spec is_xt( X :: _ ) -> boolean().
+
+is_xt( {X, T} ) when is_atom( X ) -> is_type( T );
+is_xt( _ )                        -> false.
+
+
+-spec is_xe( X :: _ ) -> boolean().
+
+is_xe( {X, E} ) when is_atom( X ) -> is_expr( E );
+is_xe( _ )                        -> false.
+
+
+-spec is_xte( X :: _ ) -> boolean().
+
+is_xte( {X, T, E} ) when is_atom( X ) -> is_type( T ) andalso is_expr( E );
+is_xte( _ )                           -> false.
+
+
+-spec is_info( X :: _ ) -> boolean().
+
+is_info( na ) ->
+  true;
+
+is_info( N ) when is_integer( N ), N > 0 ->
+  true;
+
+is_info( {B, N} ) when is_binary( B ), is_integer( N ), N > 0 ->
+  true;
+
+is_info( _Term ) ->
+  false.
+
+
+-spec is_type( X :: _ ) -> boolean().
+
+is_type( 'Str' )  ->
+  true;
+
+is_type( 'File' ) ->
+  true;
+
+is_type( 'Bool' ) ->
+  true;
+
+is_type( {'Fn', ArgLst, TRet} )
+when is_list( ArgLst ) ->
+  is_type( TRet ) andalso lists:all( fun is_xt/1, ArgLst );
+
+is_type( {'Lst', T} ) -> is_type( T );
+
+is_type( {'Rcd', FieldLst} )
+when is_list( FieldLst ) ->
+  lists:all( fun is_xt/1, FieldLst );
+
+is_type( _ ) ->
+  false.
+
+
+-spec is_lang( X :: _ ) -> boolean().
+
+is_lang( 'Awk' )        -> true;
+is_lang( 'Bash' )       -> true;
+is_lang( 'Elixir' )     -> true;
+is_lang( 'Erlang' )     -> true;
+is_lang( 'Gnuplot' )    -> true;
+is_lang( 'Java' )       -> true;
+is_lang( 'Javascript' ) -> true;
+is_lang( 'Matlab' )     -> true;
+is_lang( 'Oxtave' )     -> true;
+is_lang( 'Perl' )       -> true;
+is_lang( 'Python' )     -> true;
+is_lang( 'R' )          -> true;
+is_lang( 'Racket' )     -> true;
+is_lang( _ )            -> false.
+
+
+-spec is_expr( X :: _ ) -> boolean().
+
+is_expr( {var, Info, X} )
+when is_atom( X ) ->
+  is_info( Info );
+
+is_expr( {lam, Info, ArgLst, {ntv, E}} )
+when is_list( ArgLst ) ->
+          is_info( Info )
+  andalso lists:all( fun is_xt/1, ArgLst )
+  andalso is_expr( E );
+
+is_expr( {lam, Info, ArgLst, {frn, X, T, L, S}} )
+when is_list( ArgLst ),
+     is_atom( X ),
+     is_binary( S ) ->
+          is_info( Info )
+  andalso lists:all( fun is_xt/1, ArgLst )
+  andalso is_type( T )
+  andalso is_lang( L );
+
+is_expr( {app, Info, F, EBindLst} )
+when is_list( EBindLst ) ->
+          is_info( Info )
+  andalso is_expr( F )
+  andalso lists:all( fun is_xe/1, EBindLst );
+
+is_expr( {fix, Info, E} ) ->
+  is_info( Info ) andalso is_expr( E );
+
+is_expr( {fut, Info, E} ) ->
+  is_info( Info ) andalso is_expr( E );
+
+is_expr( {str, Info, S} )
+when is_binary( S ) ->
+  is_info( Info );
+
+is_expr( {file, Info, S} )
+when is_binary( S ) ->
+  is_info( Info );
+
+is_expr( {true, Info} ) ->
+  is_info( Info );
+
+is_expr( {false, Info} ) ->
+  is_info( Info );
+
+is_expr( {cmp, Info, E1, E2} ) ->
+  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
+
+is_expr( {conj, Info, E1, E2} ) ->
+  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
+
+is_expr( {disj, Info, E1, E2} ) ->
+  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
+
+is_expr( {neg, Info, E} ) ->
+  is_info( Info ) andalso is_expr( E );
+
+is_expr( {isnil, Info, E} ) ->
+  is_info( Info ) andalso is_expr( E );
+
+is_expr( {cnd, Info, E1, E2, E3} ) ->
+          is_info( Info )
+  andalso is_expr( E1 )
+  andalso is_expr( E2 )
+  andalso is_expr( E3 );
+
+is_expr( {null, Info, T} ) ->
+  is_info( Info ) andalso is_type( T );
+
+is_expr( {cons, Info, E1, E2} ) ->
+  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
+
+is_expr( {hd, Info, E1, E2} ) ->
+  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
+
+is_expr( {tl, Info, E1, E2} ) ->
+  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
+
+is_expr( {append, Info, E1, E2} ) ->
+  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
+
+is_expr( {for, Info, TRet, TypedBindLst, EBody} )
+when is_list( TypedBindLst ) ->
+          is_info( Info )
+  andalso is_type( TRet )
+  andalso lists:all( fun is_xte/1, TypedBindLst )
+  andalso is_expr( EBody );
+
+is_expr( {fold, Info, AccBind, LstBind, EBody} ) ->
+          is_info( Info )
+  andalso is_xte( AccBind )
+  andalso is_xte( LstBind )
+  andalso is_expr( EBody );
+
+is_expr( {rcd, Info, BindLst} )
+when is_list( BindLst ) ->
+  is_info( Info ) andalso lists:all( fun is_xe/1, BindLst );
+
+is_expr( {proj, Info, X, E} )
+when is_atom( X ) ->
+  is_info( Info ) andalso is_expr( E );
+
+is_expr( {err, Info, T, R} ) ->
+          is_info( Info )
+  andalso is_type( T )
+  andalso is_reason( R );
+
+is_expr( _ ) ->
+  false.
+
+
+-spec is_reason( X :: _ ) -> boolean().
+
+is_reason( {run, Node, AppId, LamName, ExtendedScript, Output} )
+when is_binary( Node ),
+     is_binary( AppId ),
+     is_binary( LamName ),
+     is_binary( ExtendedScript ),
+     is_binary( Output ) ->
+  true;
+
+is_reason( {stagein, Node, AppId, LamName, FileLst} )
+when is_binary( Node ),
+     is_binary( AppId ),
+     is_binary( LamName ),
+     is_list( FileLst ) ->
+  lists:all( fun is_binary/1, FileLst );
+
+is_reason( {stageout, Node, AppId, LamName, FileLst} )
+when is_binary( Node ),
+     is_binary( AppId ),
+     is_binary( LamName ),
+     is_list( FileLst ) ->
+  lists:all( fun is_binary/1, FileLst );
+
+is_reason( {user, Msg} ) when is_binary( Msg ) ->
+  true;
+
+is_reason( _ ) ->
+  false.

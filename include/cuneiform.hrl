@@ -32,12 +32,36 @@
 %% Type definitions
 %%====================================================================
 
+-type e()           :: {var, info(), x()}
+                     | {lam, info(), [{x(), t()}], {ntv, e()}}                % binding form
+                     | {lam, info(), [{x(), t()}], {frn, x(), t(), l(), s()}}
+                     | {app, info(), e(), [{x(), e()}]}                       % binding form
+                     | {fix, info(), e()}
+                     | {fut, info(), e()}
+                     | {str, info(), s()}
+                     | {file, info(), s()}
+                     | {true, info()}
+                     | {false, info()}
+                     | {cmp, info(), e(), e()}
+                     | {conj, info(), e(), e()}
+                     | {disj, info(), e(), e()}
+                     | {neg, info(), e()}
+                     | {isnil, info(), e()}
+                     | {cnd, info(), e(), e(), e()}
+                     | {null, info(), t()}
+                     | {cons, info(), e(), e()}
+                     | {hd, info(), e(), e()}
+                     | {tl, info(), e(), e()}
+                     | {append, info(), e(), e()}
+                     | {for, info(), t(), [{x(), t(), e()}], e()}             % binding form
+                     | {fold, info(), {x(), t(), e()}, {x(), t(), e()}, e()}  % binding form
+                     | {rcd, info(), [{x(), e()}]}
+                     | {proj, info(), x(), e()}
+                     | {err, info(), t(), reason()}.
+
 -type info()        :: na
                      | pos_integer()
-                     | {string(), pos_integer()}.
-
--type hash()        :: na
-                     | binary().
+                     | {binary(), pos_integer()}.
 
 -type reason()      :: {run, Node :: binary(), AppId :: binary(),
                              LamName :: binary(), ExtendedScript :: binary(),
@@ -52,17 +76,12 @@
 
 -type s()           :: binary().
 
--type tau()         :: ntv
-                     | frn.
-
--type t_arg()       :: {x(), t()}.
-
 -type t()           :: 'Str'
                      | 'File'
                      | 'Bool'
-                     | {'Fn', tau(), [t_arg()], t()}
-                     | {'Rcd', [t_arg()]}
-                     | {'Lst', t()}.
+                     | {'Fn', [{x(), t()}], t()}
+                     | {'Lst', t()}
+                     | {'Rcd', [{x(), t()}]}.
 
 -type l()           :: 'Awk'
                      | 'Bash'
@@ -78,43 +97,51 @@
                      | 'R'
                      | 'Racket'.
 
--type e_bind()      :: {x(), e()}.
--type r_bind()      :: {x(), r()}.
--type typed_bind()  :: {x(), t(), e()}.
-
--type e()           :: {str, info(), s()}
-                     | {cmp, info(), e(), e()}
-                     | {file, info(), s(), hash()}
-                     | {true, info()}
-                     | {false, info()}
-                     | {cnd, info(), e(), e(), e()}
-                     | {neg, info(), e()}
-                     | {conj, info(), e(), e()}
-                     | {disj, info(), e(), e()}
-                     | {var, info(), x()}
-                     | {lam_ntv, info(), [t_arg()], e()}         % binding form
-                     | {lam_frn, info(), x(), [t_arg()], t(), l(), s()}
-                     | {app, info(), e(), [e_bind()]}
-                     | {fut, info(), t(), hash()}
-                     | {null, info(), t()}
-                     | {cons, info(), e(), e()}
-                     | {append, info(), e, e}
-                     | {isnil, info(), e}
-                     | {for, info(), t(), [typed_bind()], e()}         % binding form
-                     | {fold, info(), typed_bind(), typed_bind(), e()} % binding form
-                     | {rcd, info(), [e_bind()]}
-                     | {proj, info(), x(), e()}
-                     | {fix, info(), e()}
-                     | {err, info(), t(), reason()}.
+-type r()           :: {r_var, x(), t()}
+                     | {r_rcd, [{x(), r()}]}.
 
 -type assign()      :: {assign, info(), r(), e()}.
 
--type r()           :: {r_var, x(), t()}
-                     | {r_rcd, [r_bind()]}.
+-type stage() :: load
+               | scan
+               | parse
+               | type
+               | runtime.
 
--type type_error()  :: {unbound_var, info(), x()}
+-type type_error()  :: {unbound_var,                               info(), x()}
+                     | {ambiguous_name,                            info(), [x()]}
+                     | {frn_fn_ambiguous_arg_or_return_field_name, info(), [x()]}
+                     | {awk_frn_fn_first_arg_no_file,              info(), {x(), t()}}
+                     | {awk_frn_fn_no_arg,                         info()}
+                     | {awk_frn_fn_result_field_no_file,           info(), t()}
+                     | {awk_frn_fn_no_result_field,                info()}
+                     | {app_missing_bind,                          info(), {x(), t()}}
+                     | {app_dangling_bind,                         info(), {x(), e()}}
+                     | {app_bind_type_mismatch,                    info(), {x(), t(), e(), t()}}
+                     | {app_arg_name_mismatch,                     info(), {x(), x()}}
+                     | {fix_fn_no_arg,                             info(), {e(), t()}}
+                     | {fix_fn_arg_type_mismatch,                  info(), {x(), t(), t()}}
+                     | {fix_no_fn,                                 info(), {e(), t()}}
+                     | {cmp_incomparable,                          info(), {e(), t(), e(), t()}}
+                     | {conj_lhs_no_bool,                          info(), {e(), t()}}
+                     | {conj_rhs_no_bool,                          info(), {e(), t()}}
+                     | {disj_lhs_no_bool,                          info(), {e(), t()}}
+                     | {disj_rhs_no_bool,                          info(), {e(), t()}}
+                     | {neg_no_bool,                               info(), {e(), t()}}
+                     | {isnil_no_list,                             info(), {e(), t()}}
+                     | {cnd_result_type_mismatch,                  info(), {t(), t()}}
+                     | {cnd_case_no_bool,                          info(), {e(), t()}}
+                     | {cons_element_type_mismatch,                info(), {e(), t(), t()}}
+                     | {cons_no_list,                              info(), {e(), t()}}
+                     | {hd_type_mismatch,                          info(), {t(), e(), t()}}
+                     | {hd_no_list,                                info(), {e(), t()}}
+                     | {tl_type_mismatch,                          info(), {t(), e(), t()}}
+                     | {tl_no_list,                                info(), {e(), t()}}
+                     | {append_lhs_no_list,                        info(), {e(), t()}}
+                     | {append_rhs_no_list,                        info(), {e(), t()}}
+                     | {append_element_type_mismatch,              info(), {t(), t()}}
+
                      | {type_mismatch, info(), {t(), t()}}
-                     | {ambiguous_name, info(), x()}
                      | {key_missing, info(), x()}
                      | {superfluous_key, info(), x()}
                      | {key_mismatch, info(), {x(), x()}}
@@ -124,10 +151,4 @@
                      | {no_list_type, info(), t()}
                      | {no_comparable_type, info(), t()}
                      | {argument_mismatch, info(), x(), x()}.
-
--type stage() :: load
-               | scan
-               | parse
-               | type
-               | runtime.
 

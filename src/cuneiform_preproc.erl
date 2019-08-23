@@ -90,7 +90,7 @@ join_stat( {A1, B1, C1}, {A2, B2, C2} ) ->
 
 
 
--spec visit_from( Id, T, E ) -> typed_bind()
+-spec visit_from( Id, T, E ) -> {x(), t(), e()}
 when Id :: {id, _, S :: string()},
      T  :: t(),
      E  :: e().
@@ -104,7 +104,7 @@ when Fold   :: {fold, L :: pos_integer(), _},
      Id     :: {id, _, S :: string()},
      T      :: t(),
      E      :: e(),
-     From   :: typed_bind(),
+     From   :: {x(), t(), e()},
      DefLst :: [assign()],
      EBody  :: e().
 
@@ -148,7 +148,7 @@ visit_cnd( {cnd, L, _}, EIf, DefLstThen, EThen, DefLstElse, EElse ) ->
 
 -spec visit_for( For, FromLst, DefLst, E, TRet ) -> e()
 when For     :: {for, L :: pos_integer(), _},
-     FromLst :: [typed_bind()],
+     FromLst :: [{x(), t(), e()}],
      DefLst  :: [assign()],
      E       :: e(),
      TRet    :: t().
@@ -231,8 +231,8 @@ visit_neg( {neg, L, _}, E ) ->
 -spec visit_def_frn( Def, Id, ArgLst, UArgLst, Lang, Body ) -> assign()
 when Def     :: {def, _, _},
      Id      :: {id, _, string()},
-     ArgLst  :: [t_arg()],
-     UArgLst :: [t_arg()],
+     ArgLst  :: [{x(), t()}],
+     UArgLst :: [{x(), t()}],
      Lang    :: l(),
      Body    :: {body, _, string()}.
 
@@ -249,7 +249,7 @@ visit_def_frn( {def, L, _}, {id, _, SName}, ArgLst, UArgLst, Lang, {body, _, SBo
 -spec visit_def_ntv( Def, Id, ArgLst, RetType, DefLst, EBody ) -> assign()
 when Def     :: {def, _, _},
      Id      :: {id, _, string()},
-     ArgLst  :: [t_arg()],
+     ArgLst  :: [{x(), t()}],
      RetType :: t(),
      DefLst  :: [assign()],
      EBody   :: e().
@@ -285,31 +285,31 @@ when is_integer( L ),
   end.
 
 
--spec visit_t_arg( {id, _, S :: string()}, T :: t() ) -> t_arg().
+-spec visit_t_arg( {id, _, S :: string()}, T :: t() ) -> {x(), t()}.
 
 visit_t_arg( {id, _, S}, T ) ->
   t_arg( list_to_atom( S ), T ).
 
 
--spec visit_app( {id, L :: _, S :: string()}, EBindLst :: [e_bind()] ) -> e().
+-spec visit_app( {id, L :: _, S :: string()}, EBindLst :: [{x(), e()}] ) -> e().
 
 visit_app( {id, L, S}, EBindLst ) ->
   app( L, var( L, list_to_atom( S ) ), EBindLst ).
 
 
--spec visit_e_bind( {id, _, S :: string()}, E :: e() ) -> e_bind().
+-spec visit_e_bind( {id, _, S :: string()}, E :: e() ) -> {x(), e()}.
 
 visit_e_bind( {id, _, S}, E ) ->
   e_bind( list_to_atom( S ), E ).
 
 
--spec visit_r_bind( {id, _, S :: string()}, R :: r() ) -> r_bind().
+-spec visit_r_bind( {id, _, S :: string()}, R :: r() ) -> {x(), r()}.
 
 visit_r_bind( {id, _, S}, R ) ->
   r_bind( list_to_atom( S ), R ).
 
 
--spec visit_r_rcd( {ltag, Info :: _, _}, RBindLst :: [r_bind()] ) -> r().
+-spec visit_r_rcd( {ltag, Info :: _, _}, RBindLst :: [{x(), r()}] ) -> r().
 
 visit_r_rcd( {ltag, Info, _}, RBindLst ) ->
 
@@ -330,7 +330,7 @@ visit_r_rcd( {ltag, Info, _}, RBindLst ) ->
   R.
 
 
--spec visit_rcd( {ltag, L :: _, _}, EBindLst :: [e_bind()] ) -> e().
+-spec visit_rcd( {ltag, L :: _, _}, EBindLst :: [{x(), e()}] ) -> e().
 
 visit_rcd( {ltag, L, _}, EBindLst ) ->
   rcd( L, EBindLst ).
