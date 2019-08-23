@@ -32,35 +32,18 @@
 
 -include( "cuneiform.hrl" ).
 
--import( cuneiform_lang, [lam_ntv/3, rcd/2, for/4, assign/4, proj/3] ).
--import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/2, t_arg/2,
-                          t_rcd/1, t_lst/1] ).
--import( cuneiform_lang, [r_rcd/1] ).
--import( cuneiform_lang, [ambiguous_names/1, xt_names/1, xte_names/1, xe_names/1] ).
+-import( cuneiform_lang, [t_bool/0,
+                          t_file/0,
+                          t_fn/2,
+                          t_lst/1,
+                          t_rcd/1,
+                          t_str/0] ).
+-import( cuneiform_lang, [ambiguous_names/1,
+                          xt_names/1,
+                          xte_names/1,
+                          xe_names/1] ).
 
--export( [is_comparable/2, type/1, type/2] ).
-
-
-%%====================================================================
-%% Comparability
-%%====================================================================
-
--spec is_comparable( T1 :: t(), T2 :: t() ) -> boolean().
-
-is_comparable( 'Bool', 'Bool' )           -> true;                    % C-bool
-is_comparable( 'Str', 'Str' )             -> true;                    % C-str
-is_comparable( {'Lst', T1}, {'Lst', T2} ) -> is_comparable( T1, T2 ); % C-lst
-is_comparable( {'Rcd', []}, {'Rcd', []} ) -> true;                    % C-rcd-base
-is_comparable( {'Rcd', XtLst1}, {'Rcd', XtLst2} ) ->                  % C-rcd-ind
-  [{X1, T1}|Tl1] = lists:keysort( 1, XtLst1 ),
-  [{X2, T2}|Tl2] = lists:keysort( 1, XtLst2 ),
-  case X1 of
-    X2 ->
-              is_comparable( T1, T2 )
-      andalso is_comparable( t_rcd( Tl1 ), t_rcd( Tl2 ) );
-    _  ->
-      false
-  end.
+-export( [type/1, type/2] ).
 
 
 
@@ -548,3 +531,22 @@ check_argument_binding( Gamma, Info, [{X, TArg}|T1], [{X, EArg}|T2] ) ->
 
 check_argument_binding( _Gamma, Info, [{X, _}|_], [{Y, _}|_] ) ->
   {error, {app_arg_name_mismatch, Info, {X, Y}}}.
+
+
+-spec is_comparable( T1 :: t(), T2 :: t() ) -> boolean().
+
+is_comparable( 'Bool', 'Bool' )           -> true;                    % C-bool
+is_comparable( 'Str', 'Str' )             -> true;                    % C-str
+is_comparable( {'Lst', T1}, {'Lst', T2} ) -> is_comparable( T1, T2 ); % C-lst
+is_comparable( {'Rcd', []}, {'Rcd', []} ) -> true;                    % C-rcd-base
+is_comparable( {'Rcd', XtLst1}, {'Rcd', XtLst2} ) ->                  % C-rcd-ind
+  [{X1, T1}|Tl1] = lists:keysort( 1, XtLst1 ),
+  [{X2, T2}|Tl2] = lists:keysort( 1, XtLst2 ),
+  case X1 of
+    X2 ->
+              is_comparable( T1, T2 )
+      andalso is_comparable( t_rcd( Tl1 ), t_rcd( Tl2 ) );
+    _  ->
+      false
+  end;
+is_comparable( _, _ )                     -> false.

@@ -98,7 +98,16 @@
           validate_type/1] ).
 
 %% Contract Predicates
--export( [] ).
+-export( [is_xr/1,
+          is_pattern/1,
+          is_xt/1,
+          is_xe/1,
+          is_xte/1,
+          is_info/1,
+          is_type/1,
+          is_lang/1,
+          is_expr/1,
+          is_reason/1] ).
 
 %%====================================================================
 %% Language constructors
@@ -891,3 +900,93 @@ is_reason( {user, Msg} ) when is_binary( Msg ) ->
 
 is_reason( _ ) ->
   false.
+
+
+%%====================================================================
+%% Renaming and Substitution
+%%====================================================================
+
+
+-spec rename_xt_lst( [{x(), t()}], x(), x() ) -> [{x(), t()}].
+
+rename_xt_lst( [], _X1, _X2 )         -> [];
+rename_xt_lst( [{X1, T}|Tl], X1, X2 ) -> [{X2, T}|rename_xt_lst( Tl, X1, X2 )];
+rename_xt_lst( [Hd|Tl], X1, X2 )      -> [Hd|rename_xt_lst( Tl, X1, X2 )].
+
+-spec rename_xe( {x(), e()}, x() x() ) -> {x(), e()}.
+
+rename_xe( {X1, E}, X1, X2 ) -> {X2, rename( E, X1, X2 )};
+rename_xe( {X, E}, X1, X2 )  -> {X, rename( E, X1, X2 )}.
+
+
+-spec rename_xe_lst( [{x(), e()}], x(), x() ) -> [{x(), e()}].
+
+
+-spec rename_xte( {x(), t(), e()}, x(), x() ) -> {x(), t(), e()}.
+
+rename_xte( {X1, T, E}, X1, X2 ) -> {X2, T, rename( E, X1, X2 )};
+rename_xte( {X, T, E}, X1, X2 )  -> {X, T, rename( E, X1, X2 )}.
+
+-spec rename_xte_lst( [{x(), t(), e()}], x(), x() ) -> [{x(), t(), e()}].
+
+rename_xte_lst( [] )    -> [];
+rename_xte_lst( [H|T] ) -> [rename_xte( H )|rename_xte_lst( T )].
+
+
+-spec rename( E :: e(), X1 :: x(), X2 :: x() ) -> e().
+
+rename( {var, Info, X1}, X1, X2 ) -> var( Info, X2 );
+rename( E = {var, _, _}, _, _ )   -> E;
+
+rename( {lam, Info, ArgLst, {ntv, E}}, X1, X2 ) ->
+  lam( Info, rename_xt_lst( ArgLst, X1, X2 ), {ntv, rename( E, X1, X2 )} );
+
+rename( {lam, Info, ArgLst, Body}, X1, X2 ) ->
+  lam( Info, rename_xt_lst( ArgLst, X1, X2 ), Body );
+
+rename( {app, Info, F, XeLst}, X1, X2 ) ->
+  app( Info, rename( F, X1, X2 ), rename_xe_lst( XeLst, X1, X2 ) );
+
+rename( {fix, Info, E}, X1, X2 ) ->
+  fix( Info, rename( E, X1, X2 ) );
+
+rename( E = {fut, _, _}, _, _ )  -> E;
+rename( E = {str, _, _}, _, _ )  -> E;
+rename( E = {file, _, _}, _, _ ) -> E;
+rename( E = {true, _}, _, _ )    -> E;
+rename( E = {false, _}, _, _ )   -> E;
+
+rename( {cmp, Info, E1, E2}, X1, X2 ) ->
+  cmp( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+
+rename( {conj, Info, E1, E2}, X1, X2 ) ->
+  conj( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+
+rename( {disj, Info, E1, E2}, X1, X2 ) ->
+  disj( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+
+rename( {neg, Info, E}, X1, X2 ) ->
+  neg( Info, rename( E, X1, X2 ) );
+
+rename( {isnil, Info, E}, X1, X2 ) ->
+  isnil( Info, rename( E, X1, X2 ) );
+
+rename( {cnd, Info, E1, E2, E3}, X1, X2 ) ->
+  cnd( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ), rename( E3, X1, X2 ) );
+
+rename( E = {null, _, _}, _, _ ) -> E;
+
+rename( {cons, Info, E1, E2}, X1, X2 ) ->
+  cons( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+
+rename( {hd, Info, E1, E2}, X1, X2 ) ->
+  hd( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+
+rename( {tl, Info, E1, E2}, X1, X2 ) ->
+  tl( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+
+rename( {append, Info, E1, E2}, X1, X2 ) ->
+  append( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+
+rename( {for, Info, TRet, XteLst, EBody}, X1, X2 ) ->
+  for( Info, TRet, rename_xte_lst( XteLst, X1, X2 ), rename( ))
