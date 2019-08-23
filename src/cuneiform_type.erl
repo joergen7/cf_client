@@ -33,10 +33,10 @@
 -include( "cuneiform.hrl" ).
 
 -import( cuneiform_lang, [lam_ntv/3, rcd/2, for/4, assign/4, proj/3] ).
--import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/3, t_arg/2,
+-import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/2, t_arg/2,
                           t_rcd/1, t_lst/1] ).
 -import( cuneiform_lang, [r_rcd/1] ).
--import( cuneiform_lang, [ambiguous_names/1, argument_names/1] ).
+-import( cuneiform_lang, [ambiguous_names/1, xt_names/1, xte_names/1, xe_names/1] ).
 
 -export( [is_comparable/2, type/1, type/2] ).
 
@@ -57,7 +57,7 @@ is_comparable( {'Rcd', XtLst1}, {'Rcd', XtLst2} ) ->                  % C-rcd-in
   case X1 of
     X2 ->
               is_comparable( T1, T2 )
-      andalso is_comparable( t_rcd( Tl1 ), t_rcd( Tl2 )} );
+      andalso is_comparable( t_rcd( Tl1 ), t_rcd( Tl2 ) );
     _  ->
       false
   end.
@@ -86,7 +86,7 @@ type( Gamma, {var, Info, X} ) ->                                                
 
 type( Gamma, {lam, Info, ArgLst, {ntv, EBody}} ) ->                             % T-lambda-ntv
 
-  case ambiguous_names( argument_names( ArgLst ) ) of
+  case ambiguous_names( xt_names( ArgLst ) ) of
 
     [] ->
       Gamma1 = maps:from_list( ArgLst ),
@@ -94,14 +94,14 @@ type( Gamma, {lam, Info, ArgLst, {ntv, EBody}} ) ->                             
       type( Gamma2, EBody );
 
     Lst ->
-      {error, {ambiguous_name, Info, Lst}};
+      {error, {ambiguous_name, Info, Lst}}
 
   end;
 
-type( _Gamma, {lam_frn, Info, ArgLst, {frn, FName, TRet, Lang, _SBody}} ) ->    % t-lambda-frn
+type( _Gamma, {lam_frn, Info, ArgLst, {frn, _FName, TRet, Lang, _SBody}} ) ->   % t-lambda-frn
 
   {'Rcd', FieldLst} = TRet,
-  NameLst = argument_names( ArgLst )++argument_names( FieldLst ),
+  NameLst = xt_names( ArgLst )++xt_names( FieldLst ),
 
   try
 
@@ -134,7 +134,7 @@ type( _Gamma, {lam_frn, Info, ArgLst, {frn, FName, TRet, Lang, _SBody}} ) ->    
 
       end,
 
-    {ok, t_fn( TArgLst, TRet )}
+    {ok, t_fn( ArgLst, TRet )}
 
   catch
     throw:R -> {error, R}
@@ -161,7 +161,7 @@ type( Gamma, {fix, Info, E} ) ->                                                
     {error, Reason} ->
       {error, Reason};
 
-    {ok, T4={'Fn', ntv, [], _}} ->
+    {ok, T4={'Fn', [], _}} ->
       {error, {fix_fn_no_arg, Info, {E, T4}}};
 
     {ok, {'Fn', [Arg1|ArgLst], TRet}} ->
@@ -175,6 +175,12 @@ type( Gamma, {fix, Info, E} ) ->                                                
       {error, {fix_no_fn, Info, {E, T5}}}
 
   end;
+
+type( _Gamma, {fut, _Info, {app, _, {lam, _, _, {frn, _, TRet, _, _}}, _}} ) ->
+  {ok, TRet};
+
+type( _Gamma, {err, _Info, T, _Reason} ) ->
+  {ok, T};
 
 type( _Gamma, {str, _Info, _S} ) ->                                             % T-str
   {ok, t_str()};
@@ -198,7 +204,7 @@ type( Gamma, {cmp, Info, E1, E2} ) ->                                           
         {ok, T2} ->
           case is_comparable( T1, T2 ) of
             true  -> {ok, t_bool()};
-            false -> {error, {cmp_incomparable, {E1, T1, E2, T2}}}
+            false -> {error, {cmp_incomparable, Info, {E1, T1, E2, T2}}}
           end;
 
         {error, Reason2} ->
@@ -313,7 +319,7 @@ type( Gamma, {cons, Info, E1, E2} ) ->                                          
     {ok, T1} ->
       case type( Gamma, E2 ) of
         {ok, {'Lst', T1}} -> {ok, {'Lst', T1}};
-        {ok, {'Lst', T2}} -> {error, {cons_type_mismatch, Info, {E1, T1, T2}}}
+        {ok, {'Lst', T2}} -> {error, {cons_element_type_mismatch, Info, {T2, E1, T1}}};
         {ok, T2}          -> {error, {cons_no_list, Info, {E2, T2}}};
         {error, Reason1}  -> {error, Reason1}
       end;
@@ -326,27 +332,27 @@ type( Gamma, {cons, Info, E1, E2} ) ->                                          
 type( Gamma, {hd, Info, E1, E2} ) ->                                            % T-hd
 
   case type( Gamma, E1 ) of
-    {'Lst', T1}      ->
+    {ok, {'Lst', T1}} ->
       case type( Gamma, E2 ) of
-        T1               -> {ok, T1};
-        T2               -> {error, {hd_type_mismatch, Info, {T1, E2, T2}}};
+        {ok, T1}         -> {ok, T1};
+        {ok, T2}         -> {error, {hd_type_mismatch, Info, {T1, E2, T2}}};
         {error, Reason2} -> {error, Reason2}
       end;
-    T1               -> {error, {hd_no_list, Info, {E1, T1}}};
-    {error, Reason1} -> {error, Reason1}
+    {ok, T1}          -> {error, {hd_no_list, Info, {E1, T1}}};
+    {error, Reason1}  -> {error, Reason1}
   end;
 
 type( Gamma, {tl, Info, E1, E2} ) ->                                            % T-tl
 
   case type( Gamma, E1 ) of
-    {'Lst', T1}      ->
+    {ok, {'Lst', T1}} ->
       case type( Gamma, E2 ) of
-        T1               -> {ok, T1};
-        T2               -> {error, {tl_type_mismatch, Info, {T1, E2, T2}}};
+        {ok, T1}         -> {ok, T1};
+        {ok, T2}         -> {error, {tl_type_mismatch, Info, {T1, E2, T2}}};
         {error, Reason2} -> {error, Reason2}
       end;
-    T1               -> {error, {tl_no_list, Info, {E1, T1}}};
-    {error, Reason1} -> {error, Reason1}
+    {ok, T5}          -> {error, {tl_no_list, Info, {E1, T5}}};
+    {error, Reason1}  -> {error, Reason1}
   end;
 
 type( Gamma, {append, Info, E1, E2} ) ->                                        % T-append
@@ -369,110 +375,39 @@ type( Gamma, {append, Info, E1, E2} ) ->                                        
 
   end;
 
+type( Gamma, {for, Info, TRet, XteLst, EBody} ) ->                              % T-for
 
+  NameLst = xte_names( XteLst ),
 
+  case ambiguous_names( NameLst ) of
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-type( _Gamma, {rcd, _Info, []} ) ->
-  {ok, t_rcd( [] )};
-
-type( Gamma, {rcd, Info, [{X, E}|EBindLst]} ) ->
-
-  case find_ambiguous( [X|[Y || {Y, _} <- EBindLst]] ) of
-
-    {ambiguous, Z} ->
-      {error, {ambiguous_name, Info, Z}};
-
-    unambiguous ->
-      case type( Gamma, E ) of
+    [] ->
+      case check_for_binding( Gamma, Info, XteLst ) of
 
         {error, Reason1} ->
           {error, Reason1};
 
-        {ok, T} ->
-          case type( Gamma, rcd( Info, EBindLst ) ) of
-            {error, Reason2}       -> {error, Reason2};
-            {ok, {'Rcd', TArgLst}} -> {ok, t_rcd( [t_arg( X, T )|TArgLst])}
+        ok ->
+          Gamma1 = maps:from_list( [{X, T} || {X, T, _E} <- XteLst] ),
+          Gamma2 = maps:merge( Gamma, Gamma1 ),
+          case type( Gamma2, EBody ) of
+            {ok, TRet}       -> {ok, t_lst( TRet )};
+            {ok, T1}         -> {error, {for_body_type_mismatch, Info, {TRet, EBody, T1}}};
+            {error, Reason2} -> {error, Reason2}
           end
-
-      end
-
-  end;
-
-
-
-type( Gamma, {proj, Info, X, E} ) ->
-
-  case type( Gamma, E ) of
-
-    {ok, {'Rcd', TArgLst}} ->
-      case lists:keyfind( X, 1, TArgLst ) of
-        {X, T} -> {ok, T};
-        false  -> {error, {key_missing, Info, X}}
       end;
 
-    {ok, T} ->
-      {error, {no_record_type, Info, T}};
-
-    {error, Reason} ->
-      {error, Reason}
+    Lst ->
+      {error, {for_ambiguous_bind_name, Info, Lst}}
 
   end;
 
-type( Gamma, {for, Info, TRet, [], EBody} ) ->
-  case type( Gamma, EBody ) of
-    {ok, TRet}         -> {ok, t_lst( TRet )};
-    {ok, T}            -> {error, {type_mismatch, Info, {TRet, T}}};
-    {error, Reason}    -> {error, Reason}
-  end;
-
-type( Gamma, {for, Info, TRet, [{X1, T1, E1}|TypedBindLst], EBody} ) ->
-
-  NameLst = [X1|[X || {X, _, _} <- TypedBindLst]],
-  case cuneiform_lang:find_ambiguous( NameLst ) of
-
-    {ambiguous, Xa} ->
-      {error, {ambiguous_name, Info, Xa}};
-
-    unambiguous ->
-      case type( Gamma, E1 ) of
-
-        {error, Reason} ->
-          {error, Reason};
-
-        {ok, {'Lst', T1}} ->
-          type( Gamma#{ X1 => T1 }, for( Info, TRet, TypedBindLst, EBody ) );
-
-        {ok, {'Lst', T2}} ->
-          {error, {type_mismatch, Info, {{'Lst', T1}, {'Lst', T2}}}};
-
-        {ok, T3} ->
-          {error, {no_list_type, Info, T3}}
-
-      end
-
-  end;
-
-type( _Gamma, {fold, Info, {X, _T, _EAcc}, {X, _T, _ELst}, _EBody} ) ->
-  {error, {ambiguous_name, Info, X}};
+type( _Gamma, {fold, Info, {X, _T, _EAcc}, {X, _T, _ELst}, _EBody} ) ->         % T-fold
+  {error, {fold_ambiguous_bind_name, Info, X}};
 
 type( Gamma, {fold, Info, {X1, T1, E1}, {X2, T2, E2}, EBody} ) ->
-  case type( Gamma, E1 ) of
 
-    {error, Reason1} ->
-      {error, Reason1};
+  case type( Gamma, E1 ) of
 
     {ok, T1} ->
       case type( Gamma, E2 ) of
@@ -480,15 +415,15 @@ type( Gamma, {fold, Info, {X1, T1, E1}, {X2, T2, E2}, EBody} ) ->
         {ok, {'Lst', T2}} ->
           case type( Gamma#{ X1 => T1, X2 => T2 }, EBody ) of
             {ok, T1}            -> {ok, T1};
-            {ok, TBody}         -> {error, {type_mismatch, Info, {T1, TBody}}};
+            {ok, TBody}         -> {error, {fold_body_type_mismatch, Info, {T1, EBody, TBody}}};
             {error, ReasonBody} -> {error, ReasonBody}
           end;
 
         {ok, {'Lst', T4}} ->
-          {error, {type_mismatch, Info, {{'Lst', T2}, {'Lst', T4}}}};
+          {error, {fold_list_bind_type_mismatch, Info, {X2, T2, E2, T4}}};
 
-        {ok, T2} ->
-          {error, {no_list_type, Info, T2}};
+        {ok, T5} ->
+          {error, {fold_no_list_type, Info, {X2, T2, E2, T5}}};
         
         {error, Reason2} ->
           {error, Reason2}
@@ -496,22 +431,89 @@ type( Gamma, {fold, Info, {X1, T1, E1}, {X2, T2, E2}, EBody} ) ->
       end;
 
     {ok, T3} ->
-      {error, {type_mismatch, Info, {T1, T3}}}
+      {error, {fold_acc_bind_type_mismatch, Info, {X1, T1, E1, T3}}};
+
+    {error, Reason1} ->
+      {error, Reason1}
 
   end;
 
-type( _Gamma, {fut, _Info, T, _Hash} ) ->
-  {ok, T};
+type( Gamma, {rcd, Info, BindLst} ) ->                                          % T-rcd
+  case ambiguous_names( xe_names( BindLst ) ) of
+    []  -> check_rcd_binding( Gamma, BindLst );
+    Lst -> {error, {rcd_ambiguous_field_name, Info, Lst}}
+  end;
 
-type( _Gamma, {err, _Info, T, _Reason} ) ->
-  {ok, T};
 
-type( _Gamma, E ) -> error( {bad_expr, E} ).
+
+type( Gamma, {proj, Info, X, E} ) ->                                            % T-pi
+
+  case type( Gamma, E ) of
+
+    {ok, {'Rcd', TArgLst}} ->
+      case lists:keyfind( X, 1, TArgLst ) of
+        {X, T} -> {ok, T};
+        false  -> {error, {proj_field_missing, Info, X}}
+      end;
+
+    {ok, T} ->
+      {error, {proj_no_record, Info, {X, T, E}}};
+
+    {error, Reason} ->
+      {error, Reason}
+
+  end;
+
+type( _Gamma, E ) -> error( {bad_expr, E} ).                                    % T-error
 
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
+
+-spec check_rcd_binding( Gamma, XeLst ) -> {ok, t()} | {error, type_error()}
+when Gamma :: #{ x() => t() },
+     XeLst :: [{x(), e()}].
+
+check_rcd_binding( _Gamma, [] ) ->
+  {ok, t_rcd( [] )};
+
+check_rcd_binding( Gamma, [{X, E}|Tl] ) ->
+  case check_rcd_binding( Gamma, Tl ) of
+    {ok, {'Rcd', XtLst}} ->
+      case type( Gamma, E ) of
+        {ok, T}          -> {ok, t_rcd( [{X, T}|XtLst] )};
+        {error, Reason2} -> {error, Reason2}
+      end;
+    {error, Reason1}     -> {error, Reason1}
+  end.
+
+-spec check_for_binding( Gamma, Info, XteLst ) -> ok | {error, type_error()}
+when Gamma  :: #{ x() => t() },
+     Info   :: info(),
+     XteLst :: [{x(), t(), e()}].
+
+check_for_binding( _Gamma, _Info, [] ) ->
+  ok;
+
+check_for_binding( Gamma, Info, [{X, T, E}|Tl] ) ->
+
+  case type( Gamma, E ) of
+
+    {ok, {'Lst', T}} ->
+      check_for_binding( Gamma, Info, Tl );
+
+    {ok, {'Lst', T1}} ->
+      {error, {for_bind_type_mismatch, Info, {X, T, E, T1}}};
+
+    {ok, T2} ->
+      {error, {for_bind_no_list, Info, {X, T, E, T2}}};
+
+    {error, Reason} ->
+      {error, Reason}
+
+  end.
+
 
 -spec check_argument_binding( Gamma, Info, TArgLst, EBindLst ) -> Result
 when Gamma    :: #{ x() => t() },

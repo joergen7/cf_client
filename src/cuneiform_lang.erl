@@ -79,10 +79,23 @@
 -export( [r_var/2, r_rcd/1, assign/2, assign/3, expand_closure/2] ).
 
 %% Name Helpers
--export( [ambiguous_names/1, pattern_names/1, argument_names/1, bind_names/1] ).
+-export( [ambiguous_names/1,
+          pattern_names/1,
+          xt_names/1,
+          xe_names/1,
+          xte_names/1] ).
 
 %% Validators
--export( [] ).
+-export( [validate_x/1,   validate_x_lst/1,
+          validate_xr/1,  validate_xr_lst/1,
+          validate_xt/1,  validate_xt_lst/1,
+          validate_xe/1,  validate_xe_lst/1,
+          validate_xte/1, validate_xte_lst/1,
+          validate_pattern/1,
+          validate_info/1,
+          validate_body/1,
+          validate_expr/1,
+          validate_type/1] ).
 
 %% Contract Predicates
 -export( [] ).
@@ -414,20 +427,12 @@ alet( Info, XteLst, EBody ) ->
 -spec asc( E :: e(), T :: t() ) -> e().
 
 asc( E, T ) ->
-  asc( Info, E, T ).
+  asc( na, E, T ).
 
 -spec asc( Info :: info(), E :: e(), T :: t() ) -> e().
 
-asc( Info, E, T, ) ->
-
-  BinaryToHexString =
-    fun( X ) when is_binary( X ) ->
-      list_to_binary( 
-        lists:flatten(
-          [io_lib:format( "~2.16.0b", [B] ) || <<B>> <= X] ) )
-    end,
-
-  X = BinaryToHexString( crypto:hash( sha224, E ) ),
+asc( Info, E, T ) ->
+  X = '$asc',
   alet( Info, [{X, T, E}], var( Info, X ) ).
 
 
@@ -490,32 +495,44 @@ expand_closure( [Hd|Tl], EBody ) ->
 
 -spec ambiguous_names( NameLst :: [x()] ) -> [x()].
 
-ambiguous_names( NameLst ) when is_list( NameLst ) ->
-  lists:usort( NameLst--lists:usort( NameLst ) ).
+ambiguous_names( NameLst ) ->
+  L = validate_x_lst( NameLst ),
+  lists:usort( L--lists:usort( L ) ).
 
 
 -spec pattern_names( Pattern :: r() ) -> [x()].
 
-pattern_names( {r_var, X, _T} ) ->
+pattern_names( {r_var, X, _T} ) when is_atom( X ) ->
   [X];
 
-pattern_names( {r_rcd, RBindLst} ) ->
-  lists:flatmap( fun( {_X, R} ) -> pattern_names( R ) end, RBindLst ).
+pattern_names( {r_rcd, BindLst} ) ->
+  lists:flatmap( fun( {_X, R} ) -> pattern_names( R ) end,
+                 validate_xr_lst( BindLst ) ).
 
--spec argument_names( ArgLst :: [{x(), t()}] ) -> [x()].
+-spec xt_names( BindLst :: [{x(), t()}] ) -> [x()].
 
-argument_names( ArgLst ) ->
-  [X || {X, _T} <- ArgLst].
+xt_names( BindLst ) ->
+  [X || {X, _T} <- validate_xt_lst( BindLst )].
 
--spec bind_names( BindLst :: [{x(), e()}] ) -> [x()].
+-spec xe_names( BindLst :: [{x(), e()}] ) -> [x()].
 
-bind_names( BindLst ) ->
-  [X || {X, _E} <- BindLst].
+xe_names( BindLst ) ->
+  [X || {X, _E} <- validate_xe_lst( BindLst )].
+
+-spec xte_names( BindLst :: [{x(), t(), e()}] ) -> [x()].
+
+xte_names( BindLst ) ->
+  [X || {X, _T, _E} <- validate_xte_lst( BindLst )].
 
 
 %%====================================================================
 %% Validators
 %%====================================================================
+
+-spec validate_x_lst( X :: _ ) -> [x()].
+
+validate_x_lst( [] )    -> [];
+validate_x_lst( [H|T] ) -> [validate_x( H )|validate_x_lst( T )].
 
 -spec validate_x( X :: _ ) -> x().
 
@@ -541,11 +558,8 @@ validate_xr( X ) ->
 
 -spec validate_xr_lst( X :: _ ) -> [{x(), r()}].
 
-validate_xr_lst( [] ) ->
-  [];
-
-validate_xr_lst( [H|T] ) ->
-  [validate_xr( H )|validate_xr_lst( T )].
+validate_xr_lst( [] )    -> [];
+validate_xr_lst( [H|T] ) -> [validate_xr( H )|validate_xr_lst( T )].
 
 
 -spec validate_info( X :: _ ) -> info().
@@ -567,11 +581,8 @@ validate_xt( X ) ->
 
 -spec validate_xt_lst( X :: _ ) -> [{x(), t()}].
 
-validate_xt_lst( [] ) ->
-  [];
-
-validate_xt_lst( [H|T] ) ->
-  [validate_xt( H )|validate_xt_lst( T )].
+validate_xt_lst( [] )    -> [];
+validate_xt_lst( [H|T] ) -> [validate_xt( H )|validate_xt_lst( T )].
 
 
 -spec validate_xe( X :: _ ) -> {x(), e()}.
@@ -584,11 +595,8 @@ validate_xe( X ) ->
 
 -spec validate_xe_lst( Lst :: _ ) -> [{x(), e()}].
 
-validate_xe_lst( [] ) ->
-  [];
-
-validate_xe_lst( [H|T] ) ->
-  [validate_xe( H )|validate_xe_lst( T )].
+validate_xe_lst( [] )    -> [];
+validate_xe_lst( [H|T] ) -> [validate_xe( H )|validate_xe_lst( T )].
 
 
 -spec validate_xte( X :: _ ) -> {x(), t(), e()}.
@@ -601,11 +609,8 @@ validate_xte( X ) ->
 
 -spec validate_xte_lst( Lst :: _ ) -> [{x(), t(), e()}].
 
-validate_xte_lst( [] ) ->
-  [];
-
-validate_xte_lst( [H|T] ) ->
-  [validate_xte( H )|validate_xte_lst( T )].
+validate_xte_lst( [] )    -> [];
+validate_xte_lst( [H|T] ) -> [validate_xte( H )|validate_xte_lst( T )].
 
 
 -spec validate_body( X :: _ ) -> {ntv, e()} | {frn, x(), t(), l(), s()}.

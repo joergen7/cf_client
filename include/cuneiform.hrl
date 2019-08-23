@@ -131,7 +131,7 @@
                      | {isnil_no_list,                             info(), {e(), t()}}
                      | {cnd_result_type_mismatch,                  info(), {t(), t()}}
                      | {cnd_case_no_bool,                          info(), {e(), t()}}
-                     | {cons_element_type_mismatch,                info(), {e(), t(), t()}}
+                     | {cons_element_type_mismatch,                info(), {t(), e(), t()}}
                      | {cons_no_list,                              info(), {e(), t()}}
                      | {hd_type_mismatch,                          info(), {t(), e(), t()}}
                      | {hd_no_list,                                info(), {e(), t()}}
@@ -140,15 +140,17 @@
                      | {append_lhs_no_list,                        info(), {e(), t()}}
                      | {append_rhs_no_list,                        info(), {e(), t()}}
                      | {append_element_type_mismatch,              info(), {t(), t()}}
-
-                     | {type_mismatch, info(), {t(), t()}}
-                     | {key_missing, info(), x()}
-                     | {superfluous_key, info(), x()}
-                     | {key_mismatch, info(), {x(), x()}}
-                     | {no_record_type, info(), t()}
-                     | {no_native_function_type, info(), t()}
-                     | {no_argument, info(), t()}
-                     | {no_list_type, info(), t()}
-                     | {no_comparable_type, info(), t()}
-                     | {argument_mismatch, info(), x(), x()}.
+                     | {for_ambiguous_bind_name,                   info(), [x()]}
+                     | {for_bind_type_mismatch,                    info(), {x(), t(), e(), t()}}
+                     | {for_bind_no_list,                          info(), {x(), t(), e(), t()}}
+                     | {for_body_type_mismatch,                    info(), {t(), e(), t()}}
+                     | {fold_ambiguous_bind_name,                  info(), x()}
+                     | {fold_acc_bind_type_mismatch,               info(), {x(), t(), e(), t()}}
+                     | {fold_list_bind_type_mismatch,              info(), {x(), t(), e(), t()}}
+                     | {fold_no_list_type,                         info(), {x(), t(), e(), t()}}
+                     | {fold_body_type_mismatch,                   info(), {t(), e(), t()}}
+                     | {rcd_ambiguous_field_name,                  info(), [x()]}
+                     | {proj_field_missing,                        info(), x()}
+                     | {proj_no_record,                            info(), {x(), t(), e()}}
+                     .
 
