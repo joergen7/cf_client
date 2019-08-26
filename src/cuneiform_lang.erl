@@ -109,6 +109,9 @@
           is_expr/1,
           is_reason/1] ).
 
+%% Renaming and Substitution
+-export( [rename/3] ).
+
 %%====================================================================
 %% Language constructors
 %%====================================================================
@@ -479,24 +482,21 @@ expand_closure( [], EBody ) ->
   validate_expr( EBody );
 
 expand_closure( [Hd|Tl], EBody ) ->
-
-  ExpandAssign =
-    fun
-      ExpandAssign( {assign, _Info, {r_var, X, T}, E} ) ->
-        [{X, T, E}];
-
-      ExpandAssign( {assign, _Info, {r_rcd, []}, _E} ) ->
-        [];
-
-      ExpandAssign( {assign, Info, {r_rcd, [{X, R}|T]}, E} ) ->
-          ExpandAssign( assign( Info, R, proj( Info, X, E ) ) )
-        ++ExpandAssign( assign( Info, {r_rcd, T}, E ) )
-    end,
-
-  XteLst = ExpandAssign( Hd ),
-
+  XteLst = expand_assign( Hd ),
   alet( XteLst, expand_closure( Tl, EBody ) ).
 
+
+-spec expand_assign( assign() ) -> [{x(), t(), e()}].
+
+expand_assign( {assign, _Info, {r_var, X, T}, E} ) ->
+  [{X, T, E}];
+
+expand_assign( {assign, _Info, {r_rcd, []}, _E} ) ->
+  [];
+
+expand_assign( {assign, Info, {r_rcd, [{X, R}|T]}, E} ) ->
+    expand_assign( assign( Info, R, proj( Info, X, E ) ) )
+  ++expand_assign( assign( Info, {r_rcd, T}, E ) ).
 
 %%====================================================================
 %% Name Helpers
@@ -913,13 +913,19 @@ rename_xt_lst( [], _X1, _X2 )         -> [];
 rename_xt_lst( [{X1, T}|Tl], X1, X2 ) -> [{X2, T}|rename_xt_lst( Tl, X1, X2 )];
 rename_xt_lst( [Hd|Tl], X1, X2 )      -> [Hd|rename_xt_lst( Tl, X1, X2 )].
 
--spec rename_xe( {x(), e()}, x() x() ) -> {x(), e()}.
+-spec rename_xe( {x(), e()}, x(), x() ) -> {x(), e()}.
 
 rename_xe( {X1, E}, X1, X2 ) -> {X2, rename( E, X1, X2 )};
 rename_xe( {X, E}, X1, X2 )  -> {X, rename( E, X1, X2 )}.
 
 
 -spec rename_xe_lst( [{x(), e()}], x(), x() ) -> [{x(), e()}].
+
+rename_xe_lst( [], _, _ ) ->
+  [];
+
+rename_xe_lst( [H|T], X1, X2 ) ->
+  [rename_xe( H, X1, X2 )|rename_xe_lst( T, X1, X2 )].
 
 
 -spec rename_xte( {x(), t(), e()}, x(), x() ) -> {x(), t(), e()}.
@@ -929,8 +935,11 @@ rename_xte( {X, T, E}, X1, X2 )  -> {X, T, rename( E, X1, X2 )}.
 
 -spec rename_xte_lst( [{x(), t(), e()}], x(), x() ) -> [{x(), t(), e()}].
 
-rename_xte_lst( [] )    -> [];
-rename_xte_lst( [H|T] ) -> [rename_xte( H )|rename_xte_lst( T )].
+rename_xte_lst( [], _, _ )      ->
+  [];
+
+rename_xte_lst( [H|T], X1, X2 ) ->
+  [rename_xte( H, X1, X2 )|rename_xte_lst( T, X1, X2 )].
 
 
 -spec rename( E :: e(), X1 :: x(), X2 :: x() ) -> e().
@@ -989,4 +998,20 @@ rename( {append, Info, E1, E2}, X1, X2 ) ->
   append( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
 
 rename( {for, Info, TRet, XteLst, EBody}, X1, X2 ) ->
-  for( Info, TRet, rename_xte_lst( XteLst, X1, X2 ), rename( ))
+  for( Info, TRet, rename_xte_lst( XteLst, X1, X2 ), rename( EBody, X1, X2 ) );
+
+rename( {fold, Info, Xte1, Xte2, EBody}, X1, X2 ) ->
+  fold( Info, rename_xte( Xte1, X1, X2 ),
+              rename_xte( Xte2, X1, X2 ),
+              rename( EBody, X1, X2 ) );
+
+rename( {rcd, Info, XeLst}, X1, X2 ) ->
+  rcd( Info, rename_xe_lst( XeLst, X1, X2 ) );
+
+rename( {proj, Info, X1, E}, X1, X2 ) ->
+  proj( Info, X2, rename( E, X1, X2 ) );
+
+rename( {proj, Info, X, E}, X1, X2 ) ->
+  proj( Info, X, rename( E, X1, X2 ) );
+
+rename( E={err, _, _, _}, _, _ ) -> E.
