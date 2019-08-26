@@ -76,7 +76,8 @@
           asc/2, asc/3] ).
 
 %% Patterns, Assignments, and Expansion
--export( [r_var/2, r_rcd/1, assign/2, assign/3, expand_closure/2] ).
+-export( [r_var/2, r_rcd/1, assign/2, assign/3,
+          expand_assign/1, expand_closure/2] ).
 
 %% Name Helpers
 -export( [ambiguous_names/1,
@@ -479,7 +480,7 @@ when AssignLst :: [assign()],
      EBody     :: e().
 
 expand_closure( [], EBody ) ->
-  validate_expr( EBody );
+  EBody;
 
 expand_closure( [Hd|Tl], EBody ) ->
   XteLst = expand_assign( Hd ),
@@ -1015,3 +1016,9 @@ rename( {proj, Info, X, E}, X1, X2 ) ->
   proj( Info, X, rename( E, X1, X2 ) );
 
 rename( E={err, _, _, _}, _, _ ) -> E.
+
+
+-spec subst( e(), x(), e() ) -> e().
+
+subst( {var, _, X1}, X1, E1 ) -> E1;
+subst( E = {var, _, _}, X1, E1 )  -> E.
