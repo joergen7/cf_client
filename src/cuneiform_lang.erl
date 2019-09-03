@@ -49,6 +49,7 @@
           lam/2,    lam/3,
           app/2,    app/3,
           fix/1,    fix/2,
+          fut/1,    fut/2,
           str/1,    str/2,
           file/1,   file/2,
           true/0,   true/1,
@@ -77,7 +78,7 @@
 
 %% Patterns, Assignments, and Expansion
 -export( [r_var/2, r_rcd/1, assign/2, assign/3,
-          expand_assign/1, expand_closure/2] ).
+          expand_closure/2] ).
 
 %% Name Helpers
 -export( [ambiguous_names/1,
@@ -87,23 +88,14 @@
           xte_names/1] ).
 
 %% Validators
--export( [validate_x/1,   validate_x_lst/1,
-          validate_xr/1,  validate_xr_lst/1,
-          validate_xt/1,  validate_xt_lst/1,
-          validate_xe/1,  validate_xe_lst/1,
-          validate_xte/1, validate_xte_lst/1,
-          validate_pattern/1,
+-export( [validate_pattern/1,
           validate_info/1,
           validate_body/1,
           validate_expr/1,
           validate_type/1] ).
 
 %% Contract Predicates
--export( [is_xr/1,
-          is_pattern/1,
-          is_xt/1,
-          is_xe/1,
-          is_xte/1,
+-export( [is_pattern/1,
           is_info/1,
           is_type/1,
           is_lang/1,
@@ -111,7 +103,17 @@
           is_reason/1] ).
 
 %% Renaming and Substitution
--export( [rename/3] ).
+-export( [rename/3,
+          rename_type/3,
+          protect_name/1,
+          subst/3] ).
+
+%% Properties
+-export( [free_vars/1,
+          is_alpha_equivalent/2,
+          is_value/1] ).
+
+
 
 %%====================================================================
 %% Language constructors
@@ -131,6 +133,7 @@
 -spec l_r()          -> l(). l_r()          -> 'R'.
 -spec l_racket()     -> l(). l_racket()     -> 'Racket'.
 
+
 %%====================================================================
 %% Type constructors
 %%====================================================================
@@ -144,11 +147,10 @@
 -spec t_bool() -> t().
       t_bool() -> 'Bool'.
 
--spec t_rcd( ArgLst :: [{x(), t()}] )        -> t().
+-spec t_rcd( ArgLst :: [{x(), t()}] ) -> t().
 
 t_rcd( ArgLst ) ->
   {'Rcd', validate_xt_lst( ArgLst )}.
-
 
 -spec t_lst( T :: t() ) -> t().
       t_lst( T )        -> {'Lst', validate_type( T )}.
@@ -207,6 +209,14 @@ app( Info, F, ArgLst ) ->
 
 -spec fix( Info :: info(), E :: e() ) -> e().
       fix( Info, E )                  -> {fix, Info, validate_expr( E )}.
+
+-spec fut( E :: e() ) -> e().
+      fut( E )        -> fut( na, E ).
+
+-spec fut( Info :: info(), E :: e() ) -> e().
+
+fut( Info, E={app, _, {lam, _, _, {frn, _, _, _, _}}, _} ) ->
+  {fut, Info, validate_expr( E )}.
 
 -spec str( S :: s() ) -> e().
       str( S )        -> str( na, S ).
@@ -432,6 +442,9 @@ alet( XteLst, EBody ) ->
 
 -spec alet( Info :: info(), XteLst :: [{x(), t(), e()}], EBody :: e() ) -> e().
 
+alet( _Info, [], EBody ) ->
+  validate_expr( EBody );
+
 alet( Info, XteLst, EBody ) ->
   app( validate_info( Info ),
        lam( Info, [{X, T} || {X, T, _} <- XteLst], {ntv, EBody} ),
@@ -445,12 +458,12 @@ asc( E, T ) ->
 -spec asc( Info :: info(), E :: e(), T :: t() ) -> e().
 
 asc( Info, E, T ) ->
-  X = '$asc',
+  X = '#asc',
   alet( Info, [{X, T, E}], var( Info, X ) ).
 
 
 %%====================================================================
-%% Pattern constructors and Assignments
+%% Pattern Constructors, Assignments, and Expansion
 %%====================================================================
 
 -spec r_var( X :: x(), T :: t() ) -> r().
@@ -498,6 +511,7 @@ expand_assign( {assign, _Info, {r_rcd, []}, _E} ) ->
 expand_assign( {assign, Info, {r_rcd, [{X, R}|T]}, E} ) ->
     expand_assign( assign( Info, R, proj( Info, X, E ) ) )
   ++expand_assign( assign( Info, {r_rcd, T}, E ) ).
+
 
 %%====================================================================
 %% Name Helpers
@@ -625,19 +639,19 @@ validate_xte_lst( [H|T] ) -> [validate_xte( H )|validate_xte_lst( T )].
 
 -spec validate_body( X :: _ ) -> {ntv, e()} | {frn, x(), t(), l(), s()}.
 
-validate_body( {ntv, E} ) ->
+validate_body( Body = {ntv, E} ) ->
   case is_expr( E ) of
-    true  -> {ntv, E};
+    true  -> Body;
     false -> error( {bad_expr, E} )
   end;
 
-validate_body( {frn, X, T, L, S} )
+validate_body( Body = {frn, X, T, L, S} )
 when is_atom( X ),
      is_binary( S ) ->
   case is_lang( L ) of
     true  ->
       case is_type( T ) of
-        true  -> {frn, X, L, S};
+        true  -> Body;
         false -> error( {bad_type, T} )
       end;
     false -> error( {bad_lang, L} )
@@ -907,32 +921,42 @@ is_reason( _ ) ->
 %% Renaming and Substitution
 %%====================================================================
 
+rename_type( T = 'Str', _, _ )  -> T;
+rename_type( T = 'File', _, _ ) -> T;
+rename_type( T = 'Bool', _, _ ) -> T;
+
+rename_type( {'Fn', XtLst, TRet}, X1, X2 ) ->
+  t_fn( rename_xt_lst( XtLst, X1, X2 ),
+        rename_type( TRet, X1, X2 ) );
+
+rename_type( {'Lst', T}, X1, X2 ) ->
+  t_lst( rename_type( T, X1, X2 ) );
+
+rename_type( {'Rcd', XtLst}, X1, X2 ) ->
+  t_rcd( [{X, rename_type( T, X1, X2 )} || {X, T} <- XtLst] ).
+
+-spec rename_xt( {x(), t()}, x(), x() ) -> {x(), t()}.
+
+rename_xt( {X1, T}, X1, X2 ) -> {X2, rename_type( T, X1, X2 )};
+rename_xt( {X, T}, X1, X2 )  -> {X, rename_type( T, X1, X2 )}.
 
 -spec rename_xt_lst( [{x(), t()}], x(), x() ) -> [{x(), t()}].
 
-rename_xt_lst( [], _X1, _X2 )         -> [];
-rename_xt_lst( [{X1, T}|Tl], X1, X2 ) -> [{X2, T}|rename_xt_lst( Tl, X1, X2 )];
-rename_xt_lst( [Hd|Tl], X1, X2 )      -> [Hd|rename_xt_lst( Tl, X1, X2 )].
-
--spec rename_xe( {x(), e()}, x(), x() ) -> {x(), e()}.
-
-rename_xe( {X1, E}, X1, X2 ) -> {X2, rename( E, X1, X2 )};
-rename_xe( {X, E}, X1, X2 )  -> {X, rename( E, X1, X2 )}.
-
-
--spec rename_xe_lst( [{x(), e()}], x(), x() ) -> [{x(), e()}].
-
-rename_xe_lst( [], _, _ ) ->
+rename_xt_lst( [], _, _ ) ->
   [];
 
-rename_xe_lst( [H|T], X1, X2 ) ->
-  [rename_xe( H, X1, X2 )|rename_xe_lst( T, X1, X2 )].
-
+rename_xt_lst( [H|T], X1, X2 ) ->
+  [rename_xt( H, X1, X2 )|rename_xt_lst( T, X1, X2 )].
 
 -spec rename_xte( {x(), t(), e()}, x(), x() ) -> {x(), t(), e()}.
 
-rename_xte( {X1, T, E}, X1, X2 ) -> {X2, T, rename( E, X1, X2 )};
-rename_xte( {X, T, E}, X1, X2 )  -> {X, T, rename( E, X1, X2 )}.
+rename_xte( {X1, T, E}, X1, X2 ) ->
+  {X2, rename_type( T, X1, X2 ),
+       rename( E, X1, X2 )};
+
+rename_xte( {X, T, E}, X1, X2 ) ->
+  {X, rename_type( T, X1, X2 ),
+      rename( E, X1, X2 )}.
 
 -spec rename_xte_lst( [{x(), t(), e()}], x(), x() ) -> [{x(), t(), e()}].
 
@@ -942,7 +966,6 @@ rename_xte_lst( [], _, _ )      ->
 rename_xte_lst( [H|T], X1, X2 ) ->
   [rename_xte( H, X1, X2 )|rename_xte_lst( T, X1, X2 )].
 
-
 -spec rename( E :: e(), X1 :: x(), X2 :: x() ) -> e().
 
 rename( {var, Info, X1}, X1, X2 ) -> var( Info, X2 );
@@ -951,11 +974,11 @@ rename( E = {var, _, _}, _, _ )   -> E;
 rename( {lam, Info, ArgLst, {ntv, E}}, X1, X2 ) ->
   lam( Info, rename_xt_lst( ArgLst, X1, X2 ), {ntv, rename( E, X1, X2 )} );
 
-rename( {lam, Info, ArgLst, Body}, X1, X2 ) ->
-  lam( Info, rename_xt_lst( ArgLst, X1, X2 ), Body );
+rename( E = {lam, _, _, {frn, _, _, _, _}}, _, _ ) -> E;
 
 rename( {app, Info, F, XeLst}, X1, X2 ) ->
-  app( Info, rename( F, X1, X2 ), rename_xe_lst( XeLst, X1, X2 ) );
+  app( Info, rename( F, X1, X2 ),
+             [{X, rename( E, X1, X2 )} || {X, E} <- XeLst] );
 
 rename( {fix, Info, E}, X1, X2 ) ->
   fix( Info, rename( E, X1, X2 ) );
@@ -1007,10 +1030,7 @@ rename( {fold, Info, Xte1, Xte2, EBody}, X1, X2 ) ->
               rename( EBody, X1, X2 ) );
 
 rename( {rcd, Info, XeLst}, X1, X2 ) ->
-  rcd( Info, rename_xe_lst( XeLst, X1, X2 ) );
-
-rename( {proj, Info, X1, E}, X1, X2 ) ->
-  proj( Info, X2, rename( E, X1, X2 ) );
+  rcd( Info, [{X, rename( E, X1, X2 )} || {X, E} <- XeLst] );
 
 rename( {proj, Info, X, E}, X1, X2 ) ->
   proj( Info, X, rename( E, X1, X2 ) );
@@ -1018,7 +1038,427 @@ rename( {proj, Info, X, E}, X1, X2 ) ->
 rename( E={err, _, _, _}, _, _ ) -> E.
 
 
+-spec protect_name( x() ) -> x().
+
+protect_name( X ) ->
+  Y = atom_to_list( X ),
+  [Z|_] = string:split( Y, "$" ),
+  N = integer_to_list( erlang:unique_integer( [positive] ) ),
+  list_to_atom( Z++[36|N] ).
+
+
+-spec protect_expr( E :: e() ) -> e().
+
+protect_expr( E = {var, _, _} )                    -> E;
+
+protect_expr( {lam, Info, [], {ntv, EBody}} ) ->
+  lam( Info, [], {ntv, protect_expr( EBody )} );
+
+protect_expr( {lam, Info, [{X1, T}|XtLst], {ntv, EBody}} ) ->
+  {lam, _, XtLst1, {ntv, EBody1}} = protect_expr( lam( Info, XtLst, {ntv, EBody} ) ),
+  X2 = protect_name( X1 ),
+  EBody2 = rename( EBody1, X1, X2 ),
+  lam( Info, [{X2, T}|XtLst1], {ntv, EBody2} );
+
+protect_expr( E = {lam, _, _, {frn, _, _, _, _}} ) -> E;
+
+protect_expr( {app, Info, EFn, XeLst} ) ->
+  app( Info, protect_expr( EFn ),
+             [{X, protect_expr( E )} || {X, E} <- XeLst] );
+
+protect_expr( {fix, Info, E} ) ->
+  fix( Info, protect_expr( E ) );
+
+protect_expr( E = {fut, _, _} )                    -> E;
+protect_expr( E = {str, _, _} )                    -> E;
+protect_expr( E = {file, _, _} )                   -> E;
+protect_expr( E = {true, _} )                      -> E;
+protect_expr( E = {false, _} )                     -> E;
+
+protect_expr( {cmp, Info, E1, E2} ) ->
+  cmp( Info, protect_expr( E1 ), protect_expr( E2 ) );
+
+protect_expr( {conj, Info, E1, E2} ) ->
+  conj( Info, protect_expr( E1 ), protect_expr( E2 ) );
+
+protect_expr( {disj, Info, E1, E2} ) ->
+  disj( Info, protect_expr( E1 ), protect_expr( E2 ) );
+
+protect_expr( {neg, Info, E} ) ->
+  neg( Info, protect_expr( E ) );
+
+protect_expr( {isnil, Info, E} ) ->
+  isnil( Info, protect_expr( E ) );
+
+protect_expr( {cnd, Info, E1, E2, E3} ) ->
+  cnd( Info, protect_expr( E1 ), protect_expr( E2 ), protect_expr( E3 ) );
+
+protect_expr( E = {null, _, _} )                   -> E;
+
+protect_expr( {cons, Info, E1, E2} ) ->
+  cons( Info, protect_expr( E1 ), protect_expr( E2 ) );
+
+protect_expr( {hd, Info, E1, E2} ) ->
+  hd( Info, protect_expr( E1 ), protect_expr( E2 ) );
+
+protect_expr( {tl, Info, E1, E2} ) ->
+  tl( Info, protect_expr( E1 ), protect_expr( E2 ) );
+
+protect_expr( {append, Info, E1, E2} ) ->
+  append( Info, protect_expr( E1 ), protect_expr( E2 ) );
+
+protect_expr( {for, Info, TRet, [], EBody} ) ->
+  for( Info, TRet, [], protect_expr( EBody ) );
+
+protect_expr( {for, Info, TRet, [{X1, T, E1}|XteLst], EBody} ) ->
+  {for, _, _, XteLst1, EBody1} = protect_expr( for( Info, TRet, XteLst, EBody ) ),
+  X2 = protect_name( X1 ),
+  E2 = protect_expr( E1 ),
+  EBody2 = rename( EBody1, X1, X2 ),
+  for( Info, TRet, [{X2, T, E2}|XteLst1], EBody2 );
+
+protect_expr( {fold, Info, {X1, T1, E1}, {X2, T2, E2}, EBody} ) ->
+  X3 = protect_name( X1 ),
+  X4 = protect_name( X2 ),
+  fold( Info, {X3, T1, protect_expr( E1 )},
+              {X4, T2, protect_expr( E2 )},
+              rename( rename( protect_expr( EBody ), X1, X3 ), X2, X4 ) );
+
+protect_expr( {rcd, Info, XeLst} ) ->
+  rcd( Info, [{X, protect_expr( E )} || {X, E} <- XeLst] );
+
+protect_expr( {proj, Info, X, E} ) ->
+  proj( Info, X, protect_expr( E ) );
+
+protect_expr( E = {err, _, _, _} )                 -> E.
+
+
+-spec subst_protected( e(), x(), e() ) -> e().
+
+subst_protected( {var, _, X1}, X1, E1 ) ->
+  E1;
+
+subst_protected( E = {var, _, _}, _, _ )    -> E;
+
+subst_protected( {lam, Info, XtLst, {ntv, EBody}}, X1, E1 ) ->
+  lam( Info, XtLst, {ntv, subst_protected( EBody, X1, E1)} );
+
+subst_protected( E = {lam, _, _, {frn, _, _, _, _}}, _, _ ) ->
+  E;
+
+subst_protected( {app, Info, EFn, XeLst}, X1, E1 ) ->
+  app( Info, subst_protected( EFn, X1, E1 ),
+             [{X, subst_protected( E, X1, E1 )} || {X, E} <- XeLst] );
+
+subst_protected( {fix, Info, E}, X1, E1 ) ->
+  fix( Info, subst_protected( E, X1, E1 ) );
+
+subst_protected( E = {fut, _, _}, _, _ )    -> E;
+subst_protected( E = {str, _, _}, _, _ )    -> E;
+subst_protected( E = {file, _, _}, _, _ )   -> E;
+subst_protected( E = {true, _}, _, _ )      -> E;
+subst_protected( E = {false, _}, _, _ )     -> E;
+
+subst_protected( {cmp, Info, ELeft, ERight}, X1, E1 ) ->
+  cmp( Info, subst_protected( ELeft, X1, E1 ),
+             subst_protected( ERight, X1, E1 ) );
+
+subst_protected( {conj, Info, ELeft, ERight}, X1, E1 ) ->
+  conj( Info, subst_protected( ELeft, X1, E1 ),
+              subst_protected( ERight, X1, E1 ) );
+
+subst_protected( {disj, Info, ELeft, ERight}, X1, E1 ) ->
+  disj( Info, subst_protected( ELeft, X1, E1 ),
+              subst_protected( ERight, X1, E1 ) );
+
+subst_protected( {neg, Info, E}, X1, E1 ) ->
+  neg( Info, subst_protected( E, X1, E1 ) );
+
+subst_protected( {isnil, Info, E}, X1, E1 ) ->
+  isnil( Info, subst_protected( E, X1, E1 ) );
+
+subst_protected( {cnd, Info, EA, EB, EC}, X1, E1 ) ->
+  cnd( Info, subst_protected( EA, X1, E1 ),
+             subst_protected( EB, X1, E1 ),
+             subst_protected( EC, X1, E1 ) );
+
+subst_protected( E = {null, _, _}, _, _ )   -> E;
+
+subst_protected( {cons, Info, ELeft, ERight}, X1, E1 ) ->
+  cons( Info, subst_protected( ELeft, X1, E1 ),
+              subst_protected( ERight, X1, E1 ) );
+
+subst_protected( {hd, Info, ELeft, ERight}, X1, E1 ) ->
+  hd( Info, subst_protected( ELeft, X1, E1 ),
+            subst_protected( ERight, X1, E1 ) );
+
+subst_protected( {tl, Info, ELeft, ERight}, X1, E1 ) ->
+  tl( Info, subst_protected( ELeft, X1, E1 ),
+            subst_protected( ERight, X1, E1 ) );
+
+subst_protected( {append, Info, ELeft, ERight}, X1, E1 ) ->
+  append( Info, subst_protected( ELeft, X1, E1 ),
+                subst_protected( ERight, X1, E1 ) );
+
+subst_protected( {for, Info, TRet, XteLst, EBody}, X1, E1 ) ->
+  for( Info, TRet,
+             [{X, T, subst_protected( E, X1, E1 )} || {X, T, E} <- XteLst],
+             subst_protected( EBody, X1, E1 ) );
+
+subst_protected( {fold, Info, {XA, TA, EA}, {XB, TB, EB}, EBody}, X1, E1 ) ->
+  fold( Info, {XA, TA, subst_protected( EA, X1, E1 )},
+              {XB, TB, subst_protected( EB, X1, E1 )},
+              subst_protected( EBody, X1, E1 ) );
+
+subst_protected( {rcd, Info, XeLst}, X1, E1 ) ->
+  rcd( Info, [{X, subst_protected( E, X1, E1 )} || {X, E} <- XeLst] );
+
+subst_protected( {proj, Info, X, E}, X1, E1 ) ->
+  proj( Info, X, subst_protected( E, X1, E1 ) );
+
+subst_protected( E = {err, _, _, _}, _, _ ) -> E.
+
+
 -spec subst( e(), x(), e() ) -> e().
 
-subst( {var, _, X1}, X1, E1 ) -> E1;
-subst( E = {var, _, _}, X1, E1 )  -> E.
+subst( E, X1, E1 ) ->
+  E2 = protect_expr( E ),
+  subst_protected( E2, X1, E1 ).
+
+
+%%====================================================================
+%% Renaming and Substitution
+%%====================================================================
+
+-spec free_vars( e() ) -> [x()].
+
+free_vars( {var, _, X} ) ->
+  [X];
+
+free_vars( {lam, _, XtLst, {ntv, EBody}} ) ->
+  free_vars( EBody )--[X || {X, _} <- XtLst];
+
+free_vars( {lam, _, _, {frn, _, _, _, _}} ) ->
+  [];
+
+free_vars( {app, _, EFn, XeLst} ) ->
+  lists:usort(   free_vars( EFn )
+               ++lists:flatmap( fun( {_, E} ) -> free_vars( E ) end, XeLst ) );
+
+free_vars( {fix, _, E} ) ->
+  free_vars( E );
+
+free_vars( {fut, _, _} )  -> [];
+free_vars( {str, _, _} )  -> [];
+free_vars( {file, _, _} ) -> [];
+free_vars( {true, _} )    -> [];
+free_vars( {false, _} )   -> [];
+
+free_vars( {cmp, _, E1, E2} ) ->
+  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+
+free_vars( {conj, _, E1, E2} ) ->
+  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+
+free_vars( {disj, _, E1, E2} ) ->
+  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+
+free_vars( {neg, _, E} ) ->
+  free_vars( E );
+
+free_vars( {isnil, _, E} ) ->
+  free_vars( E );
+
+free_vars( {cnd, _, E1, E2, E3} ) ->
+  lists:usort( free_vars( E1 )++free_vars( E2 )++free_vars( E3 ) );
+
+free_vars( {null, _, _} ) -> [];
+
+free_vars( {cons, _, E1, E2} ) ->
+  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+
+free_vars( {hd, _, E1, E2} ) ->
+  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+
+free_vars( {tl, _, E1, E2} ) ->
+  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+
+free_vars( {append, _, E1, E2} ) ->
+  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+
+free_vars( {for, _, _, XteLst, EBody} ) ->
+  lists:usort(   lists:flatmap( fun( {_, _, E} ) -> free_vars( E ) end, XteLst )
+               ++free_vars( EBody ) );
+
+free_vars( {fold, _, {_, _, E1}, {_, _, E2}, EBody} ) ->
+  lists:usort( free_vars( E1 )++free_vars( E2 )++free_vars( EBody ) );
+
+free_vars( {rcd, _, XeLst} ) ->
+  lists:usort( lists:flatmap( fun( {_, E} ) -> free_vars( E ) end, XeLst ) );
+
+free_vars( {proj, _, _, E} ) ->
+  free_vars( E );
+
+free_vars( {err, _, _, _} ) -> [].
+
+
+-spec is_alpha_equivalent( e(), e() ) -> boolean().
+
+is_alpha_equivalent( E1, E2 ) ->
+  is_alpha_equivalent_protected( protect_expr( E1 ), protect_expr( E2 ), [] ).
+
+
+-spec is_alpha_equivalent_protected( e(), e(), [x()] ) -> boolean().
+
+is_alpha_equivalent_protected( {var, _, X1}, {var, _, X2}, BoundLst ) ->
+  Bound1 = lists:member( X1, BoundLst ),
+  Bound2 = lists:member( X2, BoundLst ),
+  if
+    Bound1 andalso Bound2      -> X1 =:= X2;
+    not (Bound1 orelse Bound2) -> true;
+    true                       -> false
+  end;
+
+is_alpha_equivalent_protected( {lam, _, [], {ntv, EBody1}},
+                               {lam, _, [], {ntv, EBody2}},
+                               BoundLst ) ->
+  is_alpha_equivalent_protected( EBody1, EBody2, BoundLst );
+
+is_alpha_equivalent_protected( {lam, I1, [{X1, _}|XtLst1], {ntv, EBody1}},
+                               {lam, I2, [{X2, _}|XtLst2], {ntv, EBody2}},
+                               BoundLst ) ->
+  is_alpha_equivalent_protected( lam( I1, XtLst1, {ntv, EBody1} ),
+                                 lam( I2, XtLst2, {ntv, rename( EBody2, X2, X1 )} ),
+                                 [X1|BoundLst] );
+
+is_alpha_equivalent_protected( {lam, _, XtLst1, {frn, _, _, L, S}},
+                               {lam, _, XtLst2, {frn, _, _, L, S}},
+                               _BoundLst ) ->
+  xt_names( XtLst1 ) =:= xt_names( XtLst2 );
+
+is_alpha_equivalent_protected( {app, _, EFn1, []},
+                     {app, _, EFn2, []},
+                     BoundLst ) ->
+  is_alpha_equivalent_protected( EFn1, EFn2, BoundLst );
+
+is_alpha_equivalent_protected( {app, Info1, EFn1, [{_, E1}|XeLst1]},
+                     {app, Info2, EFn2, [{_, E2}|XeLst2]},
+                     BoundLst ) ->
+  case is_alpha_equivalent_protected( E1, E2, BoundLst ) of
+    true  -> is_alpha_equivalent_protected( app( Info1, EFn1, XeLst1 ),
+                                  app( Info2, EFn2, XeLst2 ),
+                                  BoundLst );
+    false -> false
+  end;
+
+is_alpha_equivalent_protected( {fix, _, E1}, {fix, _, E2}, BoundLst ) ->
+  is_alpha_equivalent_protected( E1, E2, BoundLst );
+
+is_alpha_equivalent_protected( {fut, _, E1}, {fut, _, E2}, _BoundLst ) ->
+  is_alpha_equivalent_protected( E1, E2, [] );
+
+is_alpha_equivalent_protected( {str, _, S}, {str, _, S}, _ )   -> true;
+is_alpha_equivalent_protected( {file, _, S}, {file, _, S}, _ ) -> true;
+is_alpha_equivalent_protected( {true, _}, {true, _}, _ )       -> true;
+is_alpha_equivalent_protected( {false, _}, {false, _}, _ )     -> true;
+
+is_alpha_equivalent_protected( {cmp, _, E11, E12}, {cmp, _, E21, E22}, BoundLst ) ->
+          is_alpha_equivalent_protected( E11, E21, BoundLst )
+  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
+
+is_alpha_equivalent_protected( {conj, _, E11, E12}, {conj, _, E21, E22}, BoundLst ) ->
+          is_alpha_equivalent_protected( E11, E21, BoundLst )
+  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
+
+is_alpha_equivalent_protected( {disj, _, E11, E12}, {disj, _, E21, E22}, BoundLst ) ->
+          is_alpha_equivalent_protected( E11, E21, BoundLst )
+  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
+
+is_alpha_equivalent_protected( {neg, _, E1}, {neg, _, E2}, BoundLst ) ->
+  is_alpha_equivalent_protected( E1, E2, BoundLst );
+
+is_alpha_equivalent_protected( {isnil, _, E1}, {isnil, _, E2}, BoundLst ) ->
+  is_alpha_equivalent_protected( E1, E2, BoundLst );
+
+is_alpha_equivalent_protected( {cnd, _, E11, E12, E13},
+                     {cnd, _, E21, E22, E23},
+                     BoundLst ) ->
+          is_alpha_equivalent_protected( E11, E21, BoundLst )
+  andalso is_alpha_equivalent_protected( E12, E22, BoundLst )
+  andalso is_alpha_equivalent_protected( E13, E23, BoundLst );
+
+is_alpha_equivalent_protected( {null, _, _}, {null, _, _}, _ ) -> true;
+
+is_alpha_equivalent_protected( {cons, _, E11, E12}, {cons, _, E21, E22}, BoundLst ) ->
+          is_alpha_equivalent_protected( E11, E21, BoundLst )
+  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
+
+is_alpha_equivalent_protected( {hd, _, E11, E12}, {hd, _, E21, E22}, BoundLst ) ->
+          is_alpha_equivalent_protected( E11, E21, BoundLst )
+  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
+
+is_alpha_equivalent_protected( {tl, _, E11, E12}, {tl, _, E21, E22}, BoundLst ) ->
+          is_alpha_equivalent_protected( E11, E21, BoundLst )
+  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
+
+is_alpha_equivalent_protected( {append, _, E11, E12}, {append, _, E21, E22}, BoundLst ) ->
+          is_alpha_equivalent_protected( E11, E21, BoundLst )
+  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
+
+is_alpha_equivalent_protected( {for, _, [], EBody1}, {for, _, [], EBody2}, BoundLst ) ->
+  is_alpha_equivalent_protected( EBody1, EBody2, BoundLst );
+
+is_alpha_equivalent_protected( {for, I1, [{X1, _, E1}|XteLst1], EBody1},
+                     {for, I2, [{X2, _, E2}|XteLst2], EBody2},
+                     BoundLst ) ->
+  case is_alpha_equivalent_protected( E1, E2, BoundLst ) of
+    true  -> is_alpha_equivalent_protected( for( I1, XteLst1, EBody1 ),
+                                  for( I2, XteLst2, rename( EBody2, X2, X1 ) ),
+                                  [X1|BoundLst] );
+    false -> false
+  end;
+
+is_alpha_equivalent_protected( {fold, _, {X11, _, E11}, {X12, _, E12}, EBody1},
+                     {fold, _, {X21, _, E21}, {X22, _, E22}, EBody2},
+                     BoundLst ) ->
+  C1 = is_alpha_equivalent_protected( E11, E21, BoundLst ),
+  C2 = is_alpha_equivalent_protected( E12, E22, BoundLst ),
+  EBody3 = rename( rename( EBody2, X21, X11 ), X22, X12 ),
+  if
+    C1 and C2 -> is_alpha_equivalent_protected( EBody1, EBody3, [X11, X12|BoundLst] );
+    true      -> false
+  end;
+
+is_alpha_equivalent_protected( {rcd, _, []}, {rcd, _, []}, _ ) -> true;
+
+is_alpha_equivalent_protected( {rcd, I1, [{X, E1}|Tl1]},
+                     {rcd, I2, [{X, E2}|Tl2]},
+                     BoundLst ) ->
+  case is_alpha_equivalent_protected( E1, E2, BoundLst ) of
+    true  -> is_alpha_equivalent_protected( rcd( I1, Tl1 ),
+                                  rcd( I2, Tl2 ),
+                                  BoundLst );
+    false -> false
+  end;
+
+is_alpha_equivalent_protected( {proj, _, X, E1}, {proj, _, X, E2}, BoundLst ) ->
+  is_alpha_equivalent_protected( E1, E2, BoundLst );
+
+is_alpha_equivalent_protected( {err, _, _, _}, {err, _, _, _}, _BoundLst ) ->
+  true;
+
+is_alpha_equivalent_protected( _, _, _ ) ->
+  false.
+
+
+-spec is_value( e() ) -> boolean().
+
+is_value( {lam, _, _, _} )    -> true;
+is_value( {str, _, _} )       -> true;
+is_value( {file, _, _} )      -> true;
+is_value( {true, _} )         -> true;
+is_value( {false, _} )        -> true;
+is_value( {null, _, _} )      -> true;
+is_value( {cons, _, E1, E2} ) -> is_value( E1 ) andalso is_value( E2 );
+is_value( {rcd, _, XeLst} )   -> lists:all( fun( {_, E} ) -> is_value( E ) end, XeLst );
+is_value( _ )                 -> false.

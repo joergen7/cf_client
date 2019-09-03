@@ -531,6 +531,7 @@ check_argument_binding( Gamma, Info, [{X, TArg}|T1], [{X, EArg}|T2] ) ->
 
 check_argument_binding( _Gamma, Info, [{X, _}|_], [{Y, _}|_] ) ->
   {error, {app_arg_name_mismatch, Info, {X, Y}}}.
+  % TODO: Cut some slack for renamed arguments. E.g., x$123 = x.
 
 
 -spec is_comparable( T1 :: t(), T2 :: t() ) -> boolean().
