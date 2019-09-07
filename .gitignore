@@ -14,3 +14,4 @@ rebar3.crashdump
 src/cuneiform_scan.erl
 src/cuneiform_parse.erl
 doc
+test/.rebar3

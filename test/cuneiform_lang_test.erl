@@ -35,15 +35,21 @@
 -import( cuneiform_lang, [expand_closure/2, assign/2, r_var/2, r_rcd/1] ).
 -import( cuneiform_lang, [t_str/0, t_rcd/1, t_file/0, t_bool/0, t_lst/1,
                           t_fn/2] ).
--import( cuneiform_lang, [alet/2] ).
+-import( cuneiform_lang, [alet/2, lst/2] ).
 -import( cuneiform_lang, [var/1, app/2, lam/2, proj/2, str/1, err/2, rcd/1,
-                          fix/1, fut/1, true/0, false/0, file/1] ).
+                          fix/1, fut/1, true/0, false/0, file/1, cmp/2, conj/2,
+                          disj/2, neg/1, isnil/1, cnd/3, null/1, cons/2, hd/2,
+                          tl/2, append/2, for/3, fold/3] ).
 -import( cuneiform_lang, [l_bash/0, l_elixir/0, l_erlang/0, l_java/0,
                           l_javascript/0, l_matlab/0, l_octave/0, l_perl/0,
                           l_python/0, l_r/0, l_racket/0, l_awk/0, l_gnuplot/0] ).
 -import( cuneiform_lang, [subst/3] ).
 -import( cuneiform_lang, [is_alpha_equivalent/2] ).
 
+
+%%====================================================================
+%% Language constructors
+%%====================================================================
 
 lang_constructor_test_() ->
   {foreach,
@@ -82,6 +88,10 @@ l_awk_returns_atom()        -> ?assertEqual( 'Awk', l_awk() ).
 l_gnuplot_returns_atom()    -> ?assertEqual( 'Gnuplot', l_gnuplot() ).
 
 
+%%====================================================================
+%% Type constructors
+%%====================================================================
+
 type_constructor_test_() ->
   {foreach,
    fun() -> ok end,
@@ -112,6 +122,19 @@ t_fn_returns_type() ->
   ?assertEqual( {'Fn', [{x, 'Str'}, {y, 'File'}], 'Bool'},
                 t_fn( [{x, t_str()}, {y, t_file()}], t_bool() ) ).
 
+
+
+%%====================================================================
+%% Expression constructors
+%%====================================================================
+
+%%====================================================================
+%% Syntactic Sugar
+%%====================================================================
+
+%%====================================================================
+%% Pattern Constructors, Assignments, and Expansion
+%%====================================================================
 
 expand_closure_test_() ->
   {foreach,
@@ -171,6 +194,21 @@ ambiguous_variable_binding_returns_no_error() ->
                 expand_closure( AssignLst, EBody ) ).
 
 
+%%====================================================================
+%% Name Helpers
+%%====================================================================
+
+%%====================================================================
+%% Validators
+%%====================================================================
+
+%%====================================================================
+%% Contract Predicates
+%%====================================================================
+
+%%====================================================================
+%% Renaming and Substitution
+%%====================================================================
 
 subst_test_() ->
   {foreach,
@@ -181,14 +219,14 @@ subst_test_() ->
      fun subst_free_var/0},
     {"subst unrelated var",
      fun subst_unrelated_var/0},
-    {"subst var in ntv function",
-     fun subst_var_in_ntv_function/0},
-    {"subst function can shadow var",
-     fun subst_function_can_shadow_var/0},
-    {"subst function cannot capture",
-     fun subst_function_cannot_capture/0},
+    {"subst ntv lam traverses body",
+     fun subst_ntv_lam_traverses_body/0},
+    {"subst ntv lam shadows",
+     fun subst_ntv_lam_shadows/0},
+    {"subst ntv lam cannot capture",
+     fun subst_ntv_lam_cannot_capture/0},
     {"subst frn function no effect",
-     fun subst_frn_function_no_effect/0},
+     fun subst_frn_lam_no_effect/0},
     {"subst app traverses function position",
      fun subst_app_traverses_function_position/0},
     {"subst app traverses argument position",
@@ -205,7 +243,68 @@ subst_test_() ->
      fun subst_true_no_effect/0},
     {"subst false no effect",
      fun subst_false_no_effect/0},
-
+    {"subst cmp traverses lhs",
+     fun subst_cmp_traverses_lhs/0},
+    {"subst cmp traverses rhs",
+     fun subst_cmp_traverses_rhs/0},
+    {"subst conj traverses lhs",
+     fun subst_conj_traverses_lhs/0},
+    {"subst conj traverses rhs",
+     fun subst_conj_traverses_rhs/0},
+    {"subst disj traverses lhs",
+     fun subst_disj_traverses_lhs/0},
+    {"subst disj traverses rhs",
+     fun subst_disj_traverses_rhs/0},
+    {"subst neg traverses",
+     fun subst_neg_traverses/0},
+    {"subst isnil traverses",
+     fun subst_isnil_traverses/0},
+    {"subst cnd traverses if posiiton",
+     fun subst_cnd_traverses_if_position/0},
+    {"subst cnd traverses then posiiton",
+     fun subst_cnd_traverses_then_position/0},
+    {"subst cnd traverses else posiiton",
+     fun subst_cnd_traverses_else_position/0},
+    {"subst null no effect",
+     fun subst_null_no_effect/0},
+    {"subst cons traverses lhs",
+     fun subst_cons_traverses_lhs/0},
+    {"subst cons traverses rhs",
+     fun subst_cons_traverses_rhs/0},
+    {"subst hd traverses lhs",
+     fun subst_hd_traverses_lhs/0},
+    {"subst hd traverses rhs",
+     fun subst_hd_traverses_rhs/0},
+    {"subst tl traverses lhs",
+     fun subst_tl_traverses_lhs/0},
+    {"subst tl traverses rhs",
+     fun subst_tl_traverses_rhs/0},
+    {"subst append traverses lhs",
+     fun subst_append_traverses_lhs/0},
+    {"subst append traverses rhs",
+     fun subst_append_traverses_rhs/0},
+    {"subst for traverses list_binding",
+     fun subst_for_traverses_list_binding/0},
+    {"subst for traverses body",
+     fun subst_for_traverses_body/0},
+    {"subst for list binding shadows",
+     fun subst_for_list_binding_shadows/0},
+    {"subst for list binding cannot capture",
+     fun subst_for_list_binding_cannot_capture/0},
+    {"subst fold traverses acc binding",
+     fun subst_fold_traverses_acc_binding/0},
+    {"subst fold traverses list binding",
+     fun subst_fold_traverses_list_binding/0},
+    {"subst fold traverses body",
+     fun subst_fold_traverses_body/0},
+    {"subst fold acc binding shadows",
+     fun subst_fold_acc_binding_shadows/0},
+    {"subst fold acc binding cannot capture",
+     fun subst_fold_acc_binding_cannot_capture/0},
+    {"subst fold list binding shadows",
+     fun subst_fold_list_binding_shadows/0},
+    {"subst fold list binding cannot capture",
+     fun subst_fold_list_binding_cannot_capture/0},
     {"subst rcd propagates",
      fun subst_rcd_propagates/0},
     {"subst proj propagates",
@@ -224,24 +323,24 @@ subst_unrelated_var() ->
   E1 = str( <<"blub">> ),
   ?assertEqual( E0, subst( E0, y, E1 ) ).
 
-subst_var_in_ntv_function() ->
+subst_ntv_lam_traverses_body() ->
   E0 = lam( [], {ntv, var( x )} ),
   E1 = str( <<"blub">> ),
   E2 = lam( [], {ntv, E1} ),
   ?assertEqual( E2, subst( E0, x, E1 ) ).
 
-subst_function_can_shadow_var() ->
+subst_ntv_lam_shadows() ->
   E0 = lam( [{x, t_str()}], {ntv, var( x )} ),
   E1 = str( <<"blub">> ),
   ?assert( is_alpha_equivalent( E0, subst( E0, x, E1 ) ) ).
 
-subst_function_cannot_capture() ->
+subst_ntv_lam_cannot_capture() ->
   E0 = lam( [{x, t_str()}], {ntv, var( y )} ),
   E1 = lam( [{x, t_str()}], {ntv, var( x )} ),
   E2 = subst( E0, y, var( x ) ),
   ?assertNot( is_alpha_equivalent( E1, E2 ) ).
 
-subst_frn_function_no_effect() ->
+subst_frn_lam_no_effect() ->
   E0 = lam( [{x, t_str()}],
             {frn, f,
                   t_rcd( [{y, t_str()}] ),
@@ -292,15 +391,206 @@ subst_false_no_effect() ->
   E0 = false(),
   ?assertEqual( E0, subst( E0, x, false() ) ).
 
+subst_cmp_traverses_lhs() ->
+  E0 = cmp( var( x ), str( <<"blub">> ) ),
+  E1 = str( <<"bla">> ),
+  E2 = cmp( E1, str( <<"blub">> ) ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
 
+subst_cmp_traverses_rhs() ->
+  E0 = cmp( str( <<"blub">> ), var( x ) ),
+  E1 = str( <<"bla">> ),
+  E2 = cmp( str( <<"blub">> ), E1 ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
 
+subst_conj_traverses_lhs() ->
+  E0 = conj( var( x ), str( <<"blub">> ) ),
+  E1 = str( <<"bla">> ),
+  E2 = conj( E1, str( <<"blub">> ) ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
 
+subst_conj_traverses_rhs() ->
+  E0 = conj( str( <<"blub">> ), var( x ) ),
+  E1 = str( <<"bla">> ),
+  E2 = conj( str( <<"blub">> ), E1 ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
 
+subst_disj_traverses_lhs() ->
+  E0 = disj( var( x ), str( <<"blub">> ) ),
+  E1 = str( <<"bla">> ),
+  E2 = disj( E1, str( <<"blub">> ) ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
 
+subst_disj_traverses_rhs() ->
+  E0 = disj( str( <<"blub">> ), var( x ) ),
+  E1 = str( <<"bla">> ),
+  E2 = disj( str( <<"blub">> ), E1 ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
 
+subst_neg_traverses() ->
+  E0 = neg( var( x ) ),
+  E1 = str( <<"bla">> ),
+  E2 = neg( E1 ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
 
+subst_isnil_traverses() ->
+  E0 = isnil( var( x ) ),
+  E1 = str( <<"bla">> ),
+  E2 = isnil( E1 ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
 
+subst_cnd_traverses_if_position() ->
+  E0 = cnd( var( x ), str( <<"bla">> ), str( <<"blub">> ) ),
+  E1 = str( <<"foo">> ),
+  E2 = cnd( E1, str( <<"bla">> ), str( <<"blub">> ) ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
 
+subst_cnd_traverses_then_position() ->
+  E0 = cnd( str( <<"bla">> ), var( x ), str( <<"blub">> ) ),
+  E1 = str( <<"foo">> ),
+  E2 = cnd( str( <<"bla">> ), E1, str( <<"blub">> ) ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
+
+subst_cnd_traverses_else_position() ->
+  E0 = cnd( str( <<"bla">> ), str( <<"blub">> ), var( x ) ),
+  E1 = str( <<"foo">> ),
+  E2 = cnd( str( <<"bla">> ), str( <<"blub">> ), E1 ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
+
+subst_null_no_effect() ->
+  E0 = null( t_str() ),
+  ?assertEqual( E0, subst( E0, y, str( <<"blub">> ) ) ).
+
+subst_cons_traverses_lhs() ->
+  E0 = cons( var( x ), str( <<"blub">> ) ),
+  E1 = str( <<"bla">> ),
+  E2 = cons( E1, str( <<"blub">> ) ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
+
+subst_cons_traverses_rhs() ->
+  E0 = cons( str( <<"blub">> ), var( x ) ),
+  E1 = str( <<"bla">> ),
+  E2 = cons( str( <<"blub">> ), E1 ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
+
+subst_hd_traverses_lhs() ->
+  E0 = hd( var( x ), str( <<"blub">> ) ),
+  E1 = str( <<"bla">> ),
+  E2 = hd( E1, str( <<"blub">> ) ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
+
+subst_hd_traverses_rhs() ->
+  E0 = hd( str( <<"blub">> ), var( x ) ),
+  E1 = str( <<"bla">> ),
+  E2 = hd( str( <<"blub">> ), E1 ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
+
+subst_tl_traverses_lhs() ->
+  E0 = tl( var( x ), str( <<"blub">> ) ),
+  E1 = str( <<"bla">> ),
+  E2 = tl( E1, str( <<"blub">> ) ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
+
+subst_tl_traverses_rhs() ->
+  E0 = tl( str( <<"blub">> ), var( x ) ),
+  E1 = str( <<"bla">> ),
+  E2 = tl( str( <<"blub">> ), E1 ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
+
+subst_append_traverses_lhs() ->
+  E0 = append( var( x ), str( <<"blub">> ) ),
+  E1 = str( <<"bla">> ),
+  E2 = append( E1, str( <<"blub">> ) ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
+
+subst_append_traverses_rhs() ->
+  E0 = append( str( <<"blub">> ), var( x ) ),
+  E1 = str( <<"bla">> ),
+  E2 = append( str( <<"blub">> ), E1 ),
+  ?assertEqual( E2, subst( E0, x, E1 ) ).
+
+subst_for_traverses_list_binding() ->
+  E0 = for( t_str(), [{x, t_str(), var( l )}], var( x ) ),
+  E1 = lst( t_str(), [str( <<"bla">> ), str( <<"blub">> )] ),
+  E2 = for( t_str(), [{x, t_str(), E1}], var( x ) ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, l, E1 ) ) ).
+
+subst_for_traverses_body() ->
+  E0 = for( t_str(), [{x, t_str(), null( t_str() )}], var( y ) ),
+  E1 = str( <<"blub">> ),
+  E2 = for( t_str(), [{x, t_str(), null( t_str() )}], E1 ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, y, E1 ) ) ).
+
+subst_for_list_binding_shadows() ->
+  E0 = for( t_str(), [{x, t_str(), null( t_str() )}], var( x ) ),
+  ?assert( is_alpha_equivalent( E0, subst( E0, x, var( y ) ) ) ).
+
+subst_for_list_binding_cannot_capture() ->
+  E0 = for( t_str(), [{x, t_str(), null( t_str() )}], var( y ) ),
+  E1 = for( t_str(), [{x, t_str(), null( t_str() )}], var( x ) ),
+  ?assert( not is_alpha_equivalent( E1, subst( E0, y, var( x ) ) ) ).
+
+subst_fold_traverses_acc_binding() ->
+  E0 = fold( {acc, t_str(), var( s )},
+             {x, t_str(), null( t_str() )},
+             var( x ) ),
+  E1 = str( <<"blub">> ),
+  E2 = fold( {acc, t_str(), E1},
+             {x, t_str(), null( t_str() )},
+             var( x ) ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, s, E1 ) ) ).
+
+subst_fold_traverses_list_binding() ->
+  E0 = fold( {acc, t_str(), str( <<"bla">> )},
+             {x, t_str(), var( l )},
+             var( x ) ),
+  E1 = null( t_str() ),
+  E2 = fold( {acc, t_str(), str( <<"bla">> )},
+             {x, t_str(), E1},
+             var( x ) ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, l, E1 ) ) ).
+
+subst_fold_traverses_body() ->
+  E0 = fold( {acc, t_str(), str( <<"bla">> )},
+             {x, t_str(), null( t_str() )},
+             var( y ) ),
+  E1 = str( <<"blub">> ),
+  E2 = fold( {acc, t_str(), str( <<"bla">> )},
+             {x, t_str(), null( t_str() )},
+             E1 ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, y, E1 ) ) ).
+
+subst_fold_acc_binding_shadows() ->
+  E0 = fold( {acc, t_str(), str( <<"bla">> )},
+             {x, t_str(), null( t_str() )},
+             var( acc ) ),
+  E1 = str( <<"blub">> ),
+  ?assert( is_alpha_equivalent( E0, subst( E0, y, E1 ) ) ).
+
+subst_fold_acc_binding_cannot_capture() ->
+  E0 = fold( {acc, t_str(), str( <<"bla">> )},
+             {x, t_str(), null( t_str() )},
+             var( y ) ),
+  E2 = fold( {acc, t_str(), str( <<"bla">> )},
+             {x, t_str(), null( t_str() )},
+             var( acc ) ),
+  ?assertNot( is_alpha_equivalent( E2, subst( E0, y, var( acc ) ) ) ).
+
+subst_fold_list_binding_shadows() ->
+  E0 = fold( {acc, t_str(), str( <<"bla">> )},
+             {x, t_str(), null( t_str() )},
+             var( x ) ),
+  E1 = str( <<"blub">> ),
+  ?assert( is_alpha_equivalent( E0, subst( E0, y, E1 ) ) ).
+
+subst_fold_list_binding_cannot_capture() ->
+  E0 = fold( {acc, t_str(), str( <<"bla">> )},
+             {x, t_str(), null( t_str() )},
+             var( y ) ),
+  E2 = fold( {acc, t_str(), str( <<"bla">> )},
+             {x, t_str(), null( t_str() )},
+             var( x ) ),
+  ?assertNot( is_alpha_equivalent( E2, subst( E0, y, var( x ) ) ) ).
 
 subst_rcd_propagates() ->
   E0 = rcd( [{a, var( x )}] ),
@@ -324,7 +614,9 @@ subst_error_no_effect() ->
 
 
 
-
+%%====================================================================
+%% Expression Analysis
+%%====================================================================
 
 is_alpha_equivalent_test_() ->
   {foreach,
@@ -332,19 +624,40 @@ is_alpha_equivalent_test_() ->
    fun( _ ) -> ok end,
 
    [
-    {"identity functions different arguments equivalent",
-     fun identity_functions_different_arguments_equivalent/0},
-    {"identity function and open closure not equivalent",
-     fun identity_function_and_open_closure_not_equivalent/0}
+    {"is_alpha_equivalent lam identity functions",
+     fun is_alpha_equivalent_lam_identity_functions/0},
+    {"is_alpha_equivalent lam free var not bound var",
+     fun is_alpha_equivalent_lam_free_var_not_bound_var/0},
+    {"is_alpha_equivalent for renamed list binding",
+     fun is_alpha_equivalent_for_renamed_list_binding/0},
+    {"is_alpha_equivalent for free var not bound var",
+     fun is_alpha_equivalent_for_free_var_not_bound_var/0},
+    {"is_alpha_equivalent null",
+     fun is_alpha_equivalent_null/0}
    ]
   }.
 
-identity_functions_different_arguments_equivalent() ->
+is_alpha_equivalent_lam_identity_functions() ->
   E1 = lam( [{x, t_str()}], {ntv, var( x )} ),
   E2 = lam( [{y, t_str()}], {ntv, var( y )} ),
   ?assert( is_alpha_equivalent( E1, E2 ) ).
 
-identity_function_and_open_closure_not_equivalent() ->
+is_alpha_equivalent_lam_free_var_not_bound_var() ->
   E1 = lam( [{x, t_str()}], {ntv, var( x )} ),
   E2 = lam( [{y, t_str()}], {ntv, var( x )} ),
   ?assertNot( is_alpha_equivalent( E1, E2 ) ).
+
+is_alpha_equivalent_for_renamed_list_binding() ->
+  E1 = for( t_str(), [{x, t_str(), null( t_str() )}], var( x ) ),
+  E2 = for( t_str(), [{y, t_str(), null( t_str() )}], var( y ) ),
+  ?assert( is_alpha_equivalent( E1, E2 ) ).
+
+is_alpha_equivalent_for_free_var_not_bound_var() ->
+  E1 = for( t_str(), [{x, t_str(), null( t_str() )}], var( x ) ),
+  E2 = for( t_str(), [{y, t_str(), null( t_str() )}], var( x ) ),
+  ?assertNot( is_alpha_equivalent( E1, E2 ) ).
+
+is_alpha_equivalent_null() ->
+  E0 = null( t_str() ),
+  ?assert( is_alpha_equivalent( E0, E0 ) ).
+

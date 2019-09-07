@@ -104,8 +104,8 @@
 
 %% Renaming and Substitution
 -export( [rename/3,
-          rename_type/3,
           protect_name/1,
+          protect_expr/1,
           subst/3] ).
 
 %% Properties
@@ -921,24 +921,11 @@ is_reason( _ ) ->
 %% Renaming and Substitution
 %%====================================================================
 
-rename_type( T = 'Str', _, _ )  -> T;
-rename_type( T = 'File', _, _ ) -> T;
-rename_type( T = 'Bool', _, _ ) -> T;
-
-rename_type( {'Fn', XtLst, TRet}, X1, X2 ) ->
-  t_fn( rename_xt_lst( XtLst, X1, X2 ),
-        rename_type( TRet, X1, X2 ) );
-
-rename_type( {'Lst', T}, X1, X2 ) ->
-  t_lst( rename_type( T, X1, X2 ) );
-
-rename_type( {'Rcd', XtLst}, X1, X2 ) ->
-  t_rcd( [{X, rename_type( T, X1, X2 )} || {X, T} <- XtLst] ).
 
 -spec rename_xt( {x(), t()}, x(), x() ) -> {x(), t()}.
 
-rename_xt( {X1, T}, X1, X2 ) -> {X2, rename_type( T, X1, X2 )};
-rename_xt( {X, T}, X1, X2 )  -> {X, rename_type( T, X1, X2 )}.
+rename_xt( {X1, T}, X1, X2 ) -> {X2, T};
+rename_xt( Xt, _, _ )        -> Xt.
 
 -spec rename_xt_lst( [{x(), t()}], x(), x() ) -> [{x(), t()}].
 
@@ -950,13 +937,8 @@ rename_xt_lst( [H|T], X1, X2 ) ->
 
 -spec rename_xte( {x(), t(), e()}, x(), x() ) -> {x(), t(), e()}.
 
-rename_xte( {X1, T, E}, X1, X2 ) ->
-  {X2, rename_type( T, X1, X2 ),
-       rename( E, X1, X2 )};
-
-rename_xte( {X, T, E}, X1, X2 ) ->
-  {X, rename_type( T, X1, X2 ),
-      rename( E, X1, X2 )}.
+rename_xte( {X1, T, E}, X1, X2 ) -> {X2, T, rename( E, X1, X2 )};
+rename_xte( {X, T, E}, X1, X2 )  -> {X, T, rename( E, X1, X2 )}.
 
 -spec rename_xte_lst( [{x(), t(), e()}], x(), x() ) -> [{x(), t(), e()}].
 
@@ -1227,7 +1209,7 @@ subst( E, X1, E1 ) ->
 
 
 %%====================================================================
-%% Renaming and Substitution
+%% Expression Analysis
 %%====================================================================
 
 -spec free_vars( e() ) -> [x()].
@@ -1405,17 +1387,22 @@ is_alpha_equivalent_protected( {append, _, E11, E12}, {append, _, E21, E22}, Bou
           is_alpha_equivalent_protected( E11, E21, BoundLst )
   andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
 
-is_alpha_equivalent_protected( {for, _, [], EBody1}, {for, _, [], EBody2}, BoundLst ) ->
+is_alpha_equivalent_protected( {for, _, _, [], EBody1},
+                               {for, _, _, [], EBody2},
+                               BoundLst ) ->
   is_alpha_equivalent_protected( EBody1, EBody2, BoundLst );
 
-is_alpha_equivalent_protected( {for, I1, [{X1, _, E1}|XteLst1], EBody1},
-                     {for, I2, [{X2, _, E2}|XteLst2], EBody2},
-                     BoundLst ) ->
+is_alpha_equivalent_protected( {for, I1, T1, [{X1, _, E1}|XteLst1], EBody1},
+                               {for, I2, T2, [{X2, _, E2}|XteLst2], EBody2},
+                               BoundLst ) ->
   case is_alpha_equivalent_protected( E1, E2, BoundLst ) of
-    true  -> is_alpha_equivalent_protected( for( I1, XteLst1, EBody1 ),
-                                  for( I2, XteLst2, rename( EBody2, X2, X1 ) ),
-                                  [X1|BoundLst] );
-    false -> false
+    true ->
+      is_alpha_equivalent_protected(
+        for( I1, T1, XteLst1, EBody1 ),
+        for( I2, T2, XteLst2, rename( EBody2, X2, X1 ) ),
+        [X1|BoundLst] );
+    false ->
+      false
   end;
 
 is_alpha_equivalent_protected( {fold, _, {X11, _, E11}, {X12, _, E12}, EBody1},
