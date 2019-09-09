@@ -43,8 +43,8 @@
 -import( cuneiform_lang, [l_bash/0, l_elixir/0, l_erlang/0, l_java/0,
                           l_javascript/0, l_matlab/0, l_octave/0, l_perl/0,
                           l_python/0, l_r/0, l_racket/0, l_awk/0, l_gnuplot/0] ).
--import( cuneiform_lang, [subst/3] ).
--import( cuneiform_lang, [is_alpha_equivalent/2] ).
+-import( cuneiform_lang, [subst/3, protect_expr/1] ).
+-import( cuneiform_lang, [is_alpha_equivalent/2, free_vars/1] ).
 
 
 %%====================================================================
@@ -661,3 +661,23 @@ is_alpha_equivalent_null() ->
   E0 = null( t_str() ),
   ?assert( is_alpha_equivalent( E0, E0 ) ).
 
+
+
+
+
+protect_expr_test_() ->
+  {foreach,
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"protect_expr fold", fun protect_expr_fold/0}
+   ]
+  }.
+
+protect_expr_fold() ->
+  E1 = {cmp,na,{fix,na,{app,na,{var,na,'\000'},[{'',{append,na,{cmp,na,{var,na,'\000'},{lam,na,[],{ntv,{fix,na,{for,na,'Str',[],{fold,na,{'','Str',{var,na,''}},{'','File',{app,1,{cnd,na,{cmp,na,{proj,na,'\207',{false,{<<>>,1}}},{tl,{<<>>,1},{true,3},{false,{<<53>>,1}}}},{var,na,''},{str,na,<<>>}},[{'',{fix,{<<5>>,1},{str,na,<<>>}}}]}},{null,na,{'Fn',[{'','Str'},{'>','Str'},{'','Str'}],'Bool'}}}}}}}},{var,na,'\000'}}}]}},{var,na,'\000'}},
+  F1 = free_vars( E1 ),
+  E2 = protect_expr( E1 ),
+  F2 = free_vars( E2 ),
+  ?assertEqual( F1, F2 ).
