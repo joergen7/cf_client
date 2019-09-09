@@ -34,7 +34,7 @@
 
 -type e()           :: {var, info(), x()}
                      | {lam, info(), [{x(), t()}], {ntv, e()}}                % binding form
-                     | {lam, info(), [{x(), t()}], {frn, x(), t(), l(), s()}}
+                     | {lam, info(), [{x(), t()}], {frn, s(), t(), l(), s()}}
                      | {app, info(), e(), [{x(), e()}]}                       % binding form
                      | {fix, info(), e()}
                      | {fut, info(), e()}

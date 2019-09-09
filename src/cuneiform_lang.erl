@@ -178,7 +178,7 @@ var( Info, X ) ->
 -spec lam( ArgLst, Body ) -> e()
 when ArgLst :: [{x(), t()}],
      Body   :: {ntv, e()}
-             | {frn, x(), t(), l(), s()}.
+             | {frn, s(), t(), l(), s()}.
 
 lam( ArgLst, Body ) ->
   lam( na, ArgLst, Body ).
@@ -187,7 +187,7 @@ lam( ArgLst, Body ) ->
 when Info   :: info(),
      ArgLst :: [{x(), t()}],
      Body   :: {ntv, e()}
-             | {frn, x(), t(), l(), s()}.
+             | {frn, s(), t(), l(), s()}.
 
 lam( Info, ArgLst, Body ) ->
   {lam, validate_info( Info ),
@@ -637,7 +637,7 @@ validate_xte_lst( [] )    -> [];
 validate_xte_lst( [H|T] ) -> [validate_xte( H )|validate_xte_lst( T )].
 
 
--spec validate_body( X :: _ ) -> {ntv, e()} | {frn, x(), t(), l(), s()}.
+-spec validate_body( X :: _ ) -> {ntv, e()} | {frn, s(), t(), l(), s()}.
 
 validate_body( Body = {ntv, E} ) ->
   case is_expr( E ) of
@@ -646,7 +646,7 @@ validate_body( Body = {ntv, E} ) ->
   end;
 
 validate_body( Body = {frn, X, T, L, S} )
-when is_atom( X ),
+when is_binary( X ),
      is_binary( S ) ->
   case is_lang( L ) of
     true  ->
@@ -765,7 +765,7 @@ is_lang( 'Gnuplot' )    -> true;
 is_lang( 'Java' )       -> true;
 is_lang( 'Javascript' ) -> true;
 is_lang( 'Matlab' )     -> true;
-is_lang( 'Oxtave' )     -> true;
+is_lang( 'Octave' )     -> true;
 is_lang( 'Perl' )       -> true;
 is_lang( 'Python' )     -> true;
 is_lang( 'R' )          -> true;
@@ -787,7 +787,7 @@ when is_list( ArgLst ) ->
 
 is_expr( {lam, Info, ArgLst, {frn, X, T, L, S}} )
 when is_list( ArgLst ),
-     is_atom( X ),
+     is_binary( X ),
      is_binary( S ) ->
           is_info( Info )
   andalso lists:all( fun is_xt/1, ArgLst )

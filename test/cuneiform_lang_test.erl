@@ -342,7 +342,7 @@ subst_ntv_lam_cannot_capture() ->
 
 subst_frn_lam_no_effect() ->
   E0 = lam( [{x, t_str()}],
-            {frn, f,
+            {frn, <<"f">>,
                   t_rcd( [{y, t_str()}] ),
                   l_bash(), <<"bla">>} ),
   ?assertEqual( E0, subst( E0, y, str( <<"blub">> ) ) ).
@@ -368,7 +368,7 @@ subst_fix_traverses() ->
 
 subst_fut_no_effect() ->
   E0 = fut( app( lam( [{x, t_bool()}],
-                      {frn, f,
+                      {frn, <<"f">>,
                             t_rcd( [{y, t_bool()}] ),
                             l_elixir(),
                             <<"bla">>} ),
