@@ -2,7 +2,7 @@
 
 -include_lib( "proper/include/proper.hrl" ).
 
--export( [e/0, t/0, x/0] ).
+-export( [e/0, t/0, x/0, info/0] ).
 
 %%==========================================================
 %% Exported Generators
@@ -65,7 +65,8 @@ xte_lst() ->
   resize( 3, list( {x(), t(), e()} ) ).
 
 x() ->
-  atom().
+  frequency( [{99, oneof( [w, x, y, z] )},
+              {1, atom()}] ).
 
 s() ->
   binary().

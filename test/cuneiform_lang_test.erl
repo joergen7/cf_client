@@ -665,19 +665,49 @@ is_alpha_equivalent_null() ->
 
 
 
-protect_expr_test_() ->
+free_vars_test_() ->
   {foreach,
    fun() -> ok end,
    fun( _ ) -> ok end,
 
    [
-    {"protect_expr fold", fun protect_expr_fold/0}
+    {"free_vars for subtracts list binding",
+     fun free_vars_for_subtracts_list_binding/0},
+    {"free_vars for free var in list binding",
+     fun free_vars_for_free_var_in_list_binding/0},
+    {"free_vars fold subtracts acc binding",
+     fun free_vars_fold_subtracts_acc_binding/0},
+    {"free_vars fold subtracts list binding",
+     fun free_vars_fold_subtracts_list_binding/0},
+    {"free_vars fold free var in acc",
+     fun free_vars_fold_free_var_in_acc/0},
+    {"free_vars fold free var in list binding",
+     fun free_vars_fold_free_var_in_list_binding/0}
    ]
   }.
 
-protect_expr_fold() ->
-  E1 = {cmp,na,{fix,na,{app,na,{var,na,'\000'},[{'',{append,na,{cmp,na,{var,na,'\000'},{lam,na,[],{ntv,{fix,na,{for,na,'Str',[],{fold,na,{'','Str',{var,na,''}},{'','File',{app,1,{cnd,na,{cmp,na,{proj,na,'\207',{false,{<<>>,1}}},{tl,{<<>>,1},{true,3},{false,{<<53>>,1}}}},{var,na,''},{str,na,<<>>}},[{'',{fix,{<<5>>,1},{str,na,<<>>}}}]}},{null,na,{'Fn',[{'','Str'},{'>','Str'},{'','Str'}],'Bool'}}}}}}}},{var,na,'\000'}}}]}},{var,na,'\000'}},
-  F1 = free_vars( E1 ),
-  E2 = protect_expr( E1 ),
-  F2 = free_vars( E2 ),
-  ?assertEqual( F1, F2 ).
+free_vars_for_subtracts_list_binding() ->
+  E = for( t_str(), [{y, t_str(), null( t_str() )}], var( y ) ),
+  ?assertEqual( [], free_vars( E ) ).
+
+free_vars_for_free_var_in_list_binding() ->
+  E = {hd,na,{proj,na,'',{cnd,na,{disj,na,{fix,na,{for,na,'Str',[{'','Str',{var,na,''}}],{var,na,''}}},{var,na,'\000'}},{var,na,'\000'},{var,na,'\000'}}},{var,na,'\000'}},
+  ?assertEqual( ['', '\000'], free_vars( E ) ).
+
+free_vars_fold_subtracts_acc_binding() ->
+  E = fold( {x, t_str(), str( <<"blub">> )}, {y, t_str(), null( t_str() )}, var( x ) ),
+  ?assertEqual( [], free_vars( E ) ).
+
+free_vars_fold_subtracts_list_binding() ->
+  E = fold( {x, t_str(), str( <<"blub">> )}, {y, t_str(), null( t_str() )}, var( y ) ),
+  ?assertEqual( [], free_vars( E ) ).
+
+free_vars_fold_free_var_in_acc() ->
+  E = {cmp,na,{fix,na,{app,na,{var,na,'\000'},[{'',{append,na,{cmp,na,{var,na,'\000'},{lam,na,[],{ntv,{fix,na,{for,na,'Str',[],{fold,na,{'','Str',{var,na,''}},{'','File',{app,1,{cnd,na,{cmp,na,{proj,na,'\207',{false,{<<>>,1}}},{tl,{<<>>,1},{true,3},{false,{<<53>>,1}}}},{var,na,''},{str,na,<<>>}},[{'',{fix,{<<5>>,1},{str,na,<<>>}}}]}},{null,na,{'Fn',[{'','Str'},{'>','Str'},{'','Str'}],'Bool'}}}}}}}},{var,na,'\000'}}}]}},{var,na,'\000'}},
+  ?assertEqual( ['','\000'], free_vars( E ) ).
+
+free_vars_fold_free_var_in_list_binding() ->
+  E = fold( {x, t_str(), str( <<"blub">> )}, {y, t_str(), var( y )}, str( <<"bla">> ) ),
+  ?assertEqual( [y], free_vars( E ) ).
+
+

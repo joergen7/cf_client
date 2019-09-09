@@ -109,7 +109,9 @@
           subst/3] ).
 
 %% Properties
--export( [free_vars/1,
+-export( [expr_vars/1,
+          expr_free_vars/1,
+          expr_size/1,
           is_alpha_equivalent/2,
           is_value/1] ).
 
@@ -1212,76 +1214,195 @@ subst( E, X1, E1 ) ->
 %% Expression Analysis
 %%====================================================================
 
--spec free_vars( e() ) -> [x()].
+-spec expr_vars( e() ) -> [x()].
 
-free_vars( {var, _, X} ) ->
+expr_vars( {var, _, X} )                    -> [X];
+expr_vars( {lam, _, _, {ntv, E}} )          -> expr_vars( E );
+expr_vars( {lam, _, _, {frn, _, _, _, _}} ) -> [];
+
+expr_vars( {app, _, EFn, XeLst} ) ->
+  lists:usort(   expr_vars( EFn )
+               ++lists:flatmap( fun( {_, E} ) -> expr_vars( E ) end, XeLst ) );
+
+expr_vars( {fix, _, E} )                    -> expr_vars( E );
+expr_vars( {fut, _, _} )                    -> [];
+expr_vars( {str, _, _} )                    -> [];
+expr_vars( {file, _, _} )                   -> [];
+expr_vars( {true, _} )                      -> [];
+expr_vars( {false, _} )                     -> [];
+
+expr_vars( {cmp, _, E1, E2} ) ->
+  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
+
+expr_vars( {conj, _, E1, E2} ) ->
+  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
+
+expr_vars( {disj, _, E1, E2} ) ->
+  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
+
+expr_vars( {neg, _, E} )                    -> expr_vars( E );
+expr_vars( {isnil, _, E} )                  -> expr_vars( E );
+
+expr_vars( {cnd, _, E1, E2, E3} ) ->
+  lists:usort( expr_vars( E1 )++expr_vars( E2 )++expr_vars( E3 ) );
+
+expr_vars( {null, _, _} )                   -> [];
+
+expr_vars( {cons, _, E1, E2} ) ->
+  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
+
+expr_vars( {hd, _, E1, E2} ) ->
+  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
+
+expr_vars( {tl, _, E1, E2} ) ->
+  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
+
+expr_vars( {append, _, E1, E2} ) ->
+  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
+
+expr_vars( {for, _, _, XteLst, EBody} ) ->
+  lists:usort(   expr_vars( EBody )
+               ++lists:flatmap( fun( {_, _, E} ) -> expr_vars( E ) end,
+                                XteLst ) );
+
+expr_vars( {fold, _, {_, _, EAcc}, {_, _, ELst}, EBody} ) ->
+  lists:usort( expr_vars( EAcc )++expr_vars( ELst)++expr_vars( EBody ) );
+
+expr_vars( {rcd, _, XeLst} ) ->
+  lists:usort( lists:flatmap( fun( {_, E} ) -> expr_vars( E ) end, XeLst ) );
+
+expr_vars( {proj, _, _, E} )                -> expr_vars( E );
+expr_vars( {err, _, _, _} )                 -> [].
+
+
+-spec expr_free_vars( e() ) -> [x()].
+
+expr_free_vars( {var, _, X} ) ->
   [X];
 
-free_vars( {lam, _, XtLst, {ntv, EBody}} ) ->
-  free_vars( EBody )--[X || {X, _} <- XtLst];
+expr_free_vars( {lam, _, XtLst, {ntv, EBody}} ) ->
+  expr_free_vars( EBody )--[X || {X, _} <- XtLst];
 
-free_vars( {lam, _, _, {frn, _, _, _, _}} ) ->
+expr_free_vars( {lam, _, _, {frn, _, _, _, _}} ) ->
   [];
 
-free_vars( {app, _, EFn, XeLst} ) ->
-  lists:usort(   free_vars( EFn )
-               ++lists:flatmap( fun( {_, E} ) -> free_vars( E ) end, XeLst ) );
+expr_free_vars( {app, _, EFn, XeLst} ) ->
+  lists:usort(   expr_free_vars( EFn )
+               ++lists:flatmap( fun( {_, E} ) -> expr_free_vars( E ) end, XeLst ) );
 
-free_vars( {fix, _, E} ) ->
-  free_vars( E );
+expr_free_vars( {fix, _, E} ) ->
+  expr_free_vars( E );
 
-free_vars( {fut, _, _} )  -> [];
-free_vars( {str, _, _} )  -> [];
-free_vars( {file, _, _} ) -> [];
-free_vars( {true, _} )    -> [];
-free_vars( {false, _} )   -> [];
+expr_free_vars( {fut, _, _} )  -> [];
+expr_free_vars( {str, _, _} )  -> [];
+expr_free_vars( {file, _, _} ) -> [];
+expr_free_vars( {true, _} )    -> [];
+expr_free_vars( {false, _} )   -> [];
 
-free_vars( {cmp, _, E1, E2} ) ->
-  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+expr_free_vars( {cmp, _, E1, E2} ) ->
+  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
 
-free_vars( {conj, _, E1, E2} ) ->
-  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+expr_free_vars( {conj, _, E1, E2} ) ->
+  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
 
-free_vars( {disj, _, E1, E2} ) ->
-  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+expr_free_vars( {disj, _, E1, E2} ) ->
+  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
 
-free_vars( {neg, _, E} ) ->
-  free_vars( E );
+expr_free_vars( {neg, _, E} ) ->
+  expr_free_vars( E );
 
-free_vars( {isnil, _, E} ) ->
-  free_vars( E );
+expr_free_vars( {isnil, _, E} ) ->
+  expr_free_vars( E );
 
-free_vars( {cnd, _, E1, E2, E3} ) ->
-  lists:usort( free_vars( E1 )++free_vars( E2 )++free_vars( E3 ) );
+expr_free_vars( {cnd, _, E1, E2, E3} ) ->
+  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 )++expr_free_vars( E3 ) );
 
-free_vars( {null, _, _} ) -> [];
+expr_free_vars( {null, _, _} ) -> [];
 
-free_vars( {cons, _, E1, E2} ) ->
-  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+expr_free_vars( {cons, _, E1, E2} ) ->
+  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
 
-free_vars( {hd, _, E1, E2} ) ->
-  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+expr_free_vars( {hd, _, E1, E2} ) ->
+  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
 
-free_vars( {tl, _, E1, E2} ) ->
-  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+expr_free_vars( {tl, _, E1, E2} ) ->
+  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
 
-free_vars( {append, _, E1, E2} ) ->
-  lists:usort( free_vars( E1 )++free_vars( E2 ) );
+expr_free_vars( {append, _, E1, E2} ) ->
+  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
 
-free_vars( {for, _, _, XteLst, EBody} ) ->
-  lists:usort(   lists:flatmap( fun( {_, _, E} ) -> free_vars( E ) end, XteLst )
-               ++free_vars( EBody ) )--[X || {X, _, _} <- XteLst];
+expr_free_vars( {for, _, _, XteLst, EBody} ) ->
+  lists:usort(   lists:flatmap( fun( {_, _, E} ) -> expr_free_vars( E ) end, XteLst )
+               ++( expr_free_vars( EBody )--[X || {X, _, _} <- XteLst] ) );
 
-free_vars( {fold, _, {X1, _, E1}, {X2, _, E2}, EBody} ) ->
-  lists:usort( free_vars( E1 )++free_vars( E2 )++free_vars( EBody ) )--[X1, X2];
+expr_free_vars( {fold, _, {X1, _, E1}, {X2, _, E2}, EBody} ) ->
+  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 )++( expr_free_vars( EBody )--[X1, X2] ) );
 
-free_vars( {rcd, _, XeLst} ) ->
-  lists:usort( lists:flatmap( fun( {_, E} ) -> free_vars( E ) end, XeLst ) );
+expr_free_vars( {rcd, _, XeLst} ) ->
+  lists:usort( lists:flatmap( fun( {_, E} ) -> expr_free_vars( E ) end, XeLst ) );
 
-free_vars( {proj, _, _, E} ) ->
-  free_vars( E );
+expr_free_vars( {proj, _, _, E} ) ->
+  expr_free_vars( E );
 
-free_vars( {err, _, _, _} ) -> [].
+expr_free_vars( {err, _, _, _} ) -> [].
+
+
+-spec expr_size( E :: e() ) -> non_neg_integer().
+
+expr_size( {var, _, _} )                    -> 0;
+expr_size( {lam, _, _, {ntv, EBody}} )      -> 1+expr_size( EBody );
+expr_size( {lam, _, _, {frn, _, _, _, _}} ) -> 1;
+
+expr_size( {app, _, EFn, XeLst} ) ->
+  1+expr_size( EFn )+lists:sum( [expr_size( E ) || {_, E} <- XeLst] );
+
+expr_size( {fix, _, E} )                    -> 1+expr_size( E );
+expr_size( {fut, _, E} )                    -> 1;
+expr_size( {str, _, _} )                    -> 1;
+expr_size( {file, _, _} )                   -> 1;
+expr_size( {true, _} )                      -> 1;
+expr_size( {false, _} )                     -> 1;
+
+expr_size( {cmp, _, E1, E2} ) ->
+  1+expr_size( E1 )+expr_size( E2 );
+
+expr_size( {conj, _, E1, E2} ) ->
+  1+expr_size( E1 )+expr_size( E2 );
+
+expr_size( {disj, _, E1, E2} ) ->
+  1+expr_size( E1 )+expr_size( E2 );
+
+expr_size( {neg, _, E} )                    -> 1+expr_size( E );
+expr_size( {isnil, _, E} )                  -> 1+expr_size( E );
+
+expr_size( {cnd, _, E1, E2, E3} ) ->
+  1+expr_size( E1 )+expr_size( E2 )+expr_size( E3 );
+
+expr_size( {null, _, _} )                   -> 1;
+
+expr_size( {cons, _, E1, E2} ) ->
+  1+expr_size( E1 )+expr_size( E2 );
+
+expr_size( {hd, _, E1, E2} ) ->
+  1+expr_size( E1 )+expr_size( E2 );
+
+expr_size( {tl, _, E1, E2} ) ->
+  1+expr_size( E1 )+expr_size( E2 );
+
+expr_size( {append, _, E1, E2} ) ->
+  1+expr_size( E1 )+expr_size( E2 );
+
+expr_size( {for, _, _, XteLst, EBody} ) ->
+  1+expr_size( EBody )+lists:sum( [expr_size( E ) || {_, _, E} <- XteLst] );
+
+expr_size( {fold, _, {_, _, EAcc}, {_, _, ELst}, EBody} ) ->
+  1+expr_size( EAcc )+expr_size( ELst )+expr_size( EBody );
+
+expr_size( {rcd, _, XeLst} ) ->
+  1+lists:sum( [expr_size( E ) || {_, E} <- XeLst] );
+
+expr_size( {proj, _, _, E} )                -> 1+expr_size( E );
+expr_size( {err, _, _, _} )                 -> 1.
 
 
 -spec is_alpha_equivalent( e(), e() ) -> boolean().
