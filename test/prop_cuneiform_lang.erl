@@ -17,7 +17,7 @@
 prop_is_expr_total() ->
   ?FORALL( Z, oneof( [e(), term()] ), 
     begin
-      collect( is_expr( Z ), is_boolean( is_expr( Z ) ) )
+      is_boolean( is_expr( Z ) )
     end ).
 
 prop_is_expr_true_for_expr() ->
@@ -29,7 +29,7 @@ prop_is_expr_true_for_expr() ->
 prop_is_type_total() ->
   ?FORALL( Z, oneof( [t(), term()] ),
     begin
-      collect( is_type( Z ), is_boolean( is_type( Z ) ) )
+      is_boolean( is_type( Z ) )
     end ).
 
 prop_is_type_true_for_type() ->

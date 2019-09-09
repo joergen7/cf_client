@@ -1270,10 +1270,10 @@ free_vars( {append, _, E1, E2} ) ->
 
 free_vars( {for, _, _, XteLst, EBody} ) ->
   lists:usort(   lists:flatmap( fun( {_, _, E} ) -> free_vars( E ) end, XteLst )
-               ++free_vars( EBody ) );
+               ++free_vars( EBody ) )--[X || {X, _, _} <- XteLst];
 
-free_vars( {fold, _, {_, _, E1}, {_, _, E2}, EBody} ) ->
-  lists:usort( free_vars( E1 )++free_vars( E2 )++free_vars( EBody ) );
+free_vars( {fold, _, {X1, _, E1}, {X2, _, E2}, EBody} ) ->
+  lists:usort( free_vars( E1 )++free_vars( E2 )++free_vars( EBody ) )--[X1, X2];
 
 free_vars( {rcd, _, XeLst} ) ->
   lists:usort( lists:flatmap( fun( {_, E} ) -> free_vars( E ) end, XeLst ) );

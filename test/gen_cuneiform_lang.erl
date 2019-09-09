@@ -9,14 +9,14 @@
 %%==========================================================
 
 e() ->
-  frequency( [{5, {var, info(), atom()}},
+  frequency( [{5, {var, info(), x()}},
               {4, ?LAZY( {lam, info(), xt_lst(), {ntv, e()}} )},
-              {5, ?LAZY( {lam, info(), xt_lst(), {frn, binary(), t(), l(), binary()}} )},
+              {5, ?LAZY( {lam, info(), xt_lst(), {frn, s(), t(), l(), s()}} )},
               {1, ?LAZY( {app, info(), e(), xe_lst()} )},
               {4, ?LAZY( {fix, info(), e()} )},
               {4, ?LAZY( {fut, info(), e()} )},
-              {5, {str, info(), binary()}},
-              {5, {file, info(), binary()}},
+              {5, {str, info(), s()}},
+              {5, {file, info(), s()}},
               {5, {true, info()}},
               {5, {false, info()}},
               {3, ?LAZY( {cmp, info(), e(), e()} )},
@@ -65,7 +65,10 @@ xte_lst() ->
   resize( 3, list( {x(), t(), e()} ) ).
 
 x() ->
-  oneof( [w, x, y, z] ).
+  atom().
+
+s() ->
+  binary().
 
 l() ->
   oneof( ['Awk',
