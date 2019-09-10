@@ -2,7 +2,7 @@
 
 -include_lib( "proper/include/proper.hrl" ).
 
--export( [e/0, t/0, x/0, info/0] ).
+-export( [e/0, t/0, x/0, info/0, l/0] ).
 
 %%==========================================================
 %% Exported Generators
