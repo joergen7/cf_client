@@ -210,28 +210,39 @@ app( Info, F, ArgLst ) ->
       fix( E )        -> fix( na, E ).
 
 -spec fix( Info :: info(), E :: e() ) -> e().
-      fix( Info, E )                  -> {fix, Info, validate_expr( E )}.
+
+fix( Info, E ) ->
+  {fix, validate_info( Info ), validate_expr( E )}.
 
 -spec fut( E :: e() ) -> e().
       fut( E )        -> fut( na, E ).
 
 -spec fut( Info :: info(), E :: e() ) -> e().
 
-fut( Info, E={app, _, {lam, _, _, {frn, _, _, _, _}}, _} ) ->
-  {fut, Info, validate_expr( E )}.
+fut( Info, E ) ->
+  {fut, validate_info( Info ), validate_expr( E )}.
 
 -spec str( S :: s() ) -> e().
       str( S )        -> str( na, S ).
 
 -spec str( Info :: info(), S :: s() )    -> e().
-      str( Info, S ) when is_binary( S ) -> {str, validate_info( Info ), S}.
+
+str( Info, S ) when is_binary( S ) ->
+  {str, validate_info( Info ), S};
+
+str( _, Z ) ->
+  error( {bad_binary, Z} ).
 
 -spec file( S :: s() ) -> e().
       file( S ) -> file( na, S ).
 
 -spec file( Info :: info(), S :: s() ) -> e().
+
 file( Info, S ) when is_binary( S ) ->
-  {file, validate_info( Info ), S}.
+  {file, validate_info( Info ), S};
+
+file( _, Z ) ->
+  error( {bad_binary, Z} ).
 
 -spec true() -> e().
       true() -> true( na ).
@@ -599,30 +610,45 @@ validate_info( X ) ->
 
 -spec validate_xt( X :: _ ) -> {x(), t()}.
 
-validate_xt( X ) ->
-  case is_xt( X ) of
-    true  -> X;
-    false -> {bad_xt, X}
-  end.
+validate_xt( Xt = {X, T} ) when is_atom( X ) ->
+  case is_type( T ) of
+    true -> Xt;
+    false -> error( {bad_type, T} )
+  end;
+
+validate_xt( {Z, _} ) ->
+  error( {bad_name, Z} );
+
+validate_xt( Z ) ->
+  error( {bad_xt, Z} ).
 
 -spec validate_xt_lst( X :: _ ) -> [{x(), t()}].
 
 validate_xt_lst( [] )    -> [];
-validate_xt_lst( [H|T] ) -> [validate_xt( H )|validate_xt_lst( T )].
+validate_xt_lst( [H|T] ) -> [validate_xt( H )|validate_xt_lst( T )];
+validate_xt_lst( Z )     -> error( {bad_xt_lst, Z} ).
 
 
 -spec validate_xe( X :: _ ) -> {x(), e()}.
 
-validate_xe( X ) ->
-  case is_xe( X ) of
-    true  -> X;
-    false -> {bad_xe, X}
-  end.
+validate_xe( Xe = {X, E} )
+when is_atom( X ) ->
+  case is_expr( E ) of
+    true  -> Xe;
+    false -> error( {bad_expr, E} )
+  end;
+
+validate_xe( {Z, _} ) ->
+  error( {bad_name, Z} );
+
+validate_xe( Z ) ->
+  error( {bad_xe, Z} ).
 
 -spec validate_xe_lst( Lst :: _ ) -> [{x(), e()}].
 
 validate_xe_lst( [] )    -> [];
-validate_xe_lst( [H|T] ) -> [validate_xe( H )|validate_xe_lst( T )].
+validate_xe_lst( [H|T] ) -> [validate_xe( H )|validate_xe_lst( T )];
+validate_xe_lst( Z )     -> error( {bad_xe_lst, Z} ).
 
 
 -spec validate_xte( X :: _ ) -> {x(), t(), e()}.
@@ -657,7 +683,18 @@ when is_binary( X ),
         false -> error( {bad_type, T} )
       end;
     false -> error( {bad_lang, L} )
-  end.
+  end;
+
+validate_body( {frn, X, _, _, _} )
+when not is_binary( X ) ->
+  error( {bad_fn_name, X} );
+
+validate_body( {frn, _, _, _, S} )
+when not is_binary( S ) ->
+  error( {bad_script, S} );
+
+validate_body( Z ) ->
+  error( {bad_body, Z} ).
 
 
 -spec validate_expr( X :: _ ) -> e().
@@ -1357,7 +1394,7 @@ expr_size( {app, _, EFn, XeLst} ) ->
   1+expr_size( EFn )+lists:sum( [expr_size( E ) || {_, E} <- XeLst] );
 
 expr_size( {fix, _, E} )                    -> 1+expr_size( E );
-expr_size( {fut, _, E} )                    -> 1;
+expr_size( {fut, _, _} )                    -> 1;
 expr_size( {str, _, _} )                    -> 1;
 expr_size( {file, _, _} )                   -> 1;
 expr_size( {true, _} )                      -> 1;

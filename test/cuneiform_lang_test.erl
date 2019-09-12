@@ -40,11 +40,13 @@
                           fix/1, fut/1, true/0, false/0, file/1, cmp/2, conj/2,
                           disj/2, neg/1, isnil/1, cnd/3, null/1, cons/2, hd/2,
                           tl/2, append/2, for/3, fold/3] ).
+-import( cuneiform_lang, [var/2, lam/3, app/3, fix/2, fut/2, str/2, file/2,
+                          true/1, false/1, cmp/3, conj/3, disj/3] ).
 -import( cuneiform_lang, [l_bash/0, l_elixir/0, l_erlang/0, l_java/0,
                           l_javascript/0, l_matlab/0, l_octave/0, l_perl/0,
                           l_python/0, l_r/0, l_racket/0, l_awk/0, l_gnuplot/0] ).
 -import( cuneiform_lang, [subst/3, protect_expr/1] ).
--import( cuneiform_lang, [is_alpha_equivalent/2, free_vars/1] ).
+-import( cuneiform_lang, [is_alpha_equivalent/2, expr_free_vars/1] ).
 
 
 %%====================================================================
@@ -98,35 +100,374 @@ type_constructor_test_() ->
    fun( _ ) -> ok end,
 
    [
-    fun t_str_returns_type/0,
-    fun t_file_returns_type/0,
-    fun t_bool_returns_type/0,
-    fun t_rcd_returns_type/0,
-    fun t_lst_returns_type/0,
-    fun t_fn_returns_type/0
+    {"t_str returns type",
+     fun t_str_returns_type/0},
+    {"t_file returns type",
+     fun t_file_returns_type/0},
+    {"t_bool returns type",
+     fun t_bool_returns_type/0},
+    {"t_rcd returns type",
+     fun t_rcd_returns_type/0},
+    {"t_rcd fails for invalid xt list",
+     fun t_rcd_fails_for_invalid_xt_list/0},
+    {"t_rcd fails for invalid xt",
+     fun t_rcd_fails_for_invalid_xt/0},
+    {"t_rcd fails for invalid x",
+     fun t_rcd_fails_for_invalid_x/0},
+    {"t_rcd fails for invalid t",
+     fun t_rcd_fails_for_invalid_t/0},
+    {"t_lst returns type",
+     fun t_lst_returns_type/0},
+    {"t_lst fails for invalid type",
+     fun t_lst_fails_for_invalid_type/0},
+    {"t_fn returns type",
+     fun t_fn_returns_type/0},
+    {"t_fn fails for invalid xt list",
+     fun t_fn_fails_for_invalid_xt_list/0},
+    {"t_fn fails for invalid xt",
+     fun t_fn_fails_for_invalid_xt/0},
+    {"t_fn fails for invalid x",
+     fun t_fn_fails_for_invalid_x/0},
+    {"t_fn fails for invalid t",
+     fun t_fn_fails_for_invalid_t/0},
+    {"t_fn fails for invalid return type",
+     fun t_fn_fails_for_invalid_return_type/0}
    ]
   }.
 
-t_str_returns_type()  -> ?assertEqual( 'Str', t_str() ).
-t_file_returns_type() -> ?assertEqual( 'File', t_file() ).
-t_bool_returns_type() -> ?assertEqual( 'Bool', t_bool() ).
+t_str_returns_type()  ->
+  ?assertEqual( 'Str', t_str() ).
+
+t_file_returns_type() ->
+  ?assertEqual( 'File', t_file() ).
+
+t_bool_returns_type() ->
+  ?assertEqual( 'Bool', t_bool() ).
 
 t_rcd_returns_type()  ->
   ?assertEqual( {'Rcd', [{a, 'Str'}, {b, 'File'}]},
                 t_rcd( [{a, t_str()}, {b, t_file()}] ) ).
 
+t_rcd_fails_for_invalid_xt_list() ->
+  ?assertError( {bad_xt_lst, 5}, t_rcd( 5 ) ).
+
+t_rcd_fails_for_invalid_xt() ->
+  ?assertError( {bad_xt, 5}, t_rcd( [5] ) ).
+
+t_rcd_fails_for_invalid_x() ->
+  ?assertError( {bad_name, 5}, t_rcd( [{5, t_str()}] ) ).
+
+t_rcd_fails_for_invalid_t() ->
+  ?assertError( {bad_type, 5}, t_rcd( [{a, 5}] ) ).
+
 t_lst_returns_type() ->
   ?assertEqual( {'Lst', 'Str'}, t_lst( t_str() ) ).
+
+t_lst_fails_for_invalid_type() ->
+  ?assertError( {bad_type, 5}, t_lst( 5 ) ).
 
 t_fn_returns_type() ->
   ?assertEqual( {'Fn', [{x, 'Str'}, {y, 'File'}], 'Bool'},
                 t_fn( [{x, t_str()}, {y, t_file()}], t_bool() ) ).
 
+t_fn_fails_for_invalid_xt_list() ->
+  ?assertError( {bad_xt_lst, 5}, t_fn( 5, t_str() ) ).
+
+t_fn_fails_for_invalid_xt() ->
+  ?assertError( {bad_xt, 5}, t_fn( [5], t_str() ) ).
+
+t_fn_fails_for_invalid_x() ->
+  ?assertError( {bad_name, 5}, t_fn( [{5, t_bool()}], t_str() ) ).
+
+t_fn_fails_for_invalid_t() ->
+  ?assertError( {bad_type, 5}, t_fn( [{x, 5}], t_str() ) ).
+
+t_fn_fails_for_invalid_return_type() ->
+  ?assertError( {bad_type, 5}, t_fn( [{x, t_bool()}], 5 ) ).
 
 
 %%====================================================================
 %% Expression constructors
 %%====================================================================
+
+expr_constructor_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [{"var returns expr",
+     fun var_returns_expr/0},
+    {"var fails for invalid info",
+     fun var_fails_for_invalid_info/0},
+    {"var fails for invalid variable name",
+     fun var_fails_for_invalid_variable_name/0},
+    {"lam ntv returns expr",
+     fun lam_ntv_returns_expr/0},
+    {"lam frn returns expr",
+     fun lam_frn_returns_expr/0},
+    {"lam fails for invalid info",
+     fun lam_fails_for_invalid_info/0},
+    {"lam fails for invalid xt list",
+     fun lam_fails_for_invalid_xt_list/0},
+    {"lam fails for invalid xt",
+     fun lam_fails_for_invalid_xt/0},
+    {"lam fails for invalid x",
+     fun lam_fails_for_invalid_x/0},
+    {"lam fails for invalid t",
+     fun lam_fails_for_invalid_t/0},
+    {"lam fails for invalid body",
+     fun lam_fails_for_invalid_body/0},
+    {"lam ntv fails for invalid body expr",
+     fun lam_ntv_fails_for_invalid_body_expr/0},
+    {"lam frn fails for invalid function name",
+     fun lam_frn_fails_for_invalid_function_name/0},
+    {"lam frn fails for invalid return type",
+     fun lam_frn_fails_for_invalid_return_type/0},
+    {"lam frn fails for invalid lang",
+     fun lam_frn_fails_for_invalid_lang/0},
+    {"lam frn fails for invalid script",
+     fun lam_frn_fails_for_invalid_script/0},
+    {"app returns expr",
+     fun app_returns_expr/0},
+    {"app fails for invalid info",
+     fun app_fails_for_invalid_info/0},
+    {"app fails for invalid function expr",
+     fun app_fails_for_invalid_function_expr/0},
+    {"app fails for invalid xe list",
+     fun app_fails_for_invalid_xe_list/0},
+    {"app fails for invalid xe",
+     fun app_fails_for_invalid_xe/0},
+    {"app fails for invalid x",
+     fun app_fails_for_invalid_x/0},
+    {"app fails for invalid e",
+     fun app_fails_for_invalid_e/0},
+    {"fix returns expr",
+     fun fix_returns_expr/0},
+    {"fix fails for invalid info",
+     fun fix_fails_for_invalid_info/0},
+    {"fix fails for invalid operand",
+     fun fix_fails_for_invalid_operand/0},
+    {"fut returns expr",
+     fun fut_returns_expr/0},
+    {"fut fails for invalid info",
+     fun fut_fails_for_invalid_info/0},
+    {"fut fails for invalid operand",
+     fun fut_fails_for_invalid_operand/0},
+    {"str returns expr",
+     fun str_returns_expr/0},
+    {"str fails for invalid info",
+     fun str_fails_for_invalid_info/0},
+    {"str fails for invalid content",
+     fun str_fails_for_invalid_content/0},
+    {"file returns expr",
+     fun file_returns_expr/0},
+    {"file fails for invalid info",
+     fun file_fails_for_invalid_info/0},
+    {"file fails for invalid content",
+     fun file_fails_for_invalid_content/0},
+    {"true returns expr",
+     fun true_returns_expr/0},
+    {"true fails for invalid info",
+     fun true_fails_for_invalid_info/0},
+    {"false returns expr",
+     fun false_returns_expr/0},
+    {"false fails for invalid info",
+     fun false_fails_for_invalid_info/0},
+    {"cmp returns expr",
+     fun cmp_returns_expr/0},
+    {"cmp fails for invalid info",
+     fun cmp_fails_for_invalid_info/0},
+    {"cmp fails for invalid lhs",
+     fun cmp_fails_for_invalid_lhs/0},
+    {"cmp fails for invalid rhs",
+     fun cmp_fails_for_invalid_rhs/0},
+    {"conj returns expr",
+     fun conj_returns_expr/0},
+    {"conj fails for invalid info",
+     fun conj_fails_for_invalid_info/0},
+    {"conj fails for invalid lhs",
+     fun conj_fails_for_invalid_lhs/0},
+    {"conj fails for invalid rhs",
+     fun conj_fails_for_invalid_rhs/0},
+    {"disj returns expr",
+     fun disj_returns_expr/0},
+    {"disj fails for invalid info",
+     fun disj_fails_for_invalid_info/0},
+    {"disj fails for invalid lhs",
+     fun disj_fails_for_invalid_lhs/0},
+    {"disj fails for invalid rhs",
+     fun disj_fails_for_invalid_rhs/0}
+   ]  
+  }.
+
+var_returns_expr() ->
+  ?assertEqual( {var, na, x}, var( na, x ) ).
+
+var_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, var( y, x ) ).
+
+var_fails_for_invalid_variable_name() ->
+  ?assertError( {bad_symbol, 5}, var( na, 5 ) ).
+
+lam_ntv_returns_expr() ->
+  ?assertEqual( {lam, na, [{x, 'Str'}], {ntv, {var, na, x}}},
+                lam( na, [{x, t_str()}], {ntv, var( x )} ) ).
+
+lam_frn_returns_expr() ->
+  Body = {frn, <<"f">>, t_rcd( [{y, t_str()}] ), l_bash(), <<"blub">>},
+  ?assertEqual( {lam, na, [{x, 'Str'}], Body},
+                lam( na, [{x, t_str()}], Body ) ).
+
+lam_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, lam( y, [], {ntv, var( x )} ) ).
+
+lam_fails_for_invalid_xt_list() ->
+  ?assertError( {bad_xt_lst, 5}, lam( na, 5, {ntv, var( x )} ) ).
+
+lam_fails_for_invalid_xt() ->
+  ?assertError( {bad_xt, 5}, lam( na, [5], {ntv, var( x )} ) ).
+
+lam_fails_for_invalid_x() ->
+  ?assertError( {bad_name, 5}, lam( na, [{5, t_str()}], {ntv, var( x )} ) ).
+
+lam_fails_for_invalid_t() ->
+  ?assertError( {bad_type, 5}, lam( na, [{x, 5}], {ntv, var( x )} ) ).
+
+lam_fails_for_invalid_body() ->
+  ?assertError( {bad_body, 5}, lam( na, [], 5 ) ).
+
+lam_ntv_fails_for_invalid_body_expr() ->
+  ?assertError( {bad_expr, 5}, lam( na, [], {ntv, 5} ) ).
+
+lam_frn_fails_for_invalid_function_name() ->
+  Body = {frn, 5, t_rcd( [{y, t_str()}] ), l_bash(), <<"blub">>},
+  ?assertError( {bad_fn_name, 5}, lam( na, [], Body ) ).
+
+lam_frn_fails_for_invalid_return_type() ->
+  Body = {frn, <<"f">>, 5, l_bash(), <<"blub">>},
+  ?assertError( {bad_type, 5}, lam( na, [], Body ) ).
+
+lam_frn_fails_for_invalid_lang() ->
+  Body = {frn, <<"f">>, t_rcd( [{y, t_str()}] ), 5, <<"blub">>},
+  ?assertError( {bad_lang, 5}, lam( na, [], Body ) ).
+
+lam_frn_fails_for_invalid_script() ->
+  Body = {frn, <<"f">>, t_rcd( [{y, t_str()}] ), l_bash(), 5},
+  ?assertError( {bad_script, 5}, lam( na, [], Body ) ).
+
+app_returns_expr() ->
+  E = app( na, lam( [{x, t_str()}], {ntv, var( x )} ),
+               [{x, str( <<"bla">> )}] ),
+  ?assertEqual( {app, na, {lam, na, [{x, 'Str'}], {ntv, {var, na, x}}},
+                          [{x, {str, na, <<"bla">>}}]},
+                E ).
+
+app_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, app( y, var( f ), [] ) ).
+
+app_fails_for_invalid_function_expr() ->
+  ?assertError( {bad_expr, 5}, app( na, 5, [] ) ).
+
+app_fails_for_invalid_xe_list() ->
+  ?assertError( {bad_xe_lst, 5}, app( na, var( f ), 5 ) ).
+
+app_fails_for_invalid_xe() ->
+  ?assertError( {bad_xe, 5}, app( na, var( f ), [5] ) ).
+
+app_fails_for_invalid_x() ->
+  ?assertError( {bad_name, 5}, app( na, var( f ), [{5, true()}] ) ).
+
+app_fails_for_invalid_e() ->
+  ?assertError( {bad_expr, 5}, app( na, var( f ), [{x, 5}] ) ).
+
+fix_returns_expr() ->
+  ?assertEqual( {fix, na, {true, na}}, fix( na, true() ) ).
+
+fix_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, fix( y, true() ) ).
+
+fix_fails_for_invalid_operand() ->
+  ?assertError( {bad_expr, 5}, fix( na, 5 ) ).
+
+fut_returns_expr() ->
+  ?assertEqual( {fut, na, {true, na}}, fut( na, true() ) ).
+
+fut_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, fut( y, true() ) ).
+
+fut_fails_for_invalid_operand() ->
+  ?assertError( {bad_expr, 5}, fut( na, 5 ) ).
+
+str_returns_expr() ->
+  ?assertEqual( {str, na, <<"blub">>}, str( na, <<"blub">> ) ).
+
+str_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, str( y, <<"blub">> ) ).
+
+str_fails_for_invalid_content() ->
+  ?assertError( {bad_binary, 5}, str( na, 5 ) ).
+
+file_returns_expr() ->
+  ?assertEqual( {file, na, <<"blub">>}, file( na, <<"blub">> ) ).
+
+file_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, file( y, <<"blub">> ) ).
+
+file_fails_for_invalid_content() ->
+  ?assertError( {bad_binary, 5}, file( na, 5 ) ).
+
+true_returns_expr() ->
+  ?assertEqual( {true, na}, true( na ) ).
+
+true_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, true( y ) ).
+
+false_returns_expr() ->
+  ?assertEqual( {false, na}, false( na ) ).
+
+false_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, false( y ) ).
+
+cmp_returns_expr() ->
+  ?assertEqual( {cmp, na, {true, na}, {false, na}},
+                cmp( na, true(), false() ) ).
+
+cmp_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, cmp( y, true(), false() ) ).
+
+cmp_fails_for_invalid_lhs() ->
+  ?assertError( {bad_expr, 5}, cmp( na, 5, false() ) ).
+
+cmp_fails_for_invalid_rhs() ->
+  ?assertError( {bad_expr, 5}, cmp( na, true(), 5 ) ).
+
+conj_returns_expr() ->
+  ?assertEqual( {conj, na, {true, na}, {false, na}},
+                conj( na, true(), false() ) ).
+
+conj_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, conj( y, true(), false() ) ).
+
+conj_fails_for_invalid_lhs() ->
+  ?assertError( {bad_expr, 5}, conj( na, 5, false() ) ).
+
+conj_fails_for_invalid_rhs() ->
+  ?assertError( {bad_expr, 5}, conj( na, true(), 5 ) ).
+
+disj_returns_expr() ->
+  ?assertEqual( {disj, na, {true, na}, {false, na}},
+                disj( na, true(), false() ) ).
+
+disj_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, disj( y, true(), false() ) ).
+
+disj_fails_for_invalid_lhs() ->
+  ?assertError( {bad_expr, 5}, disj( na, 5, false() ) ).
+
+disj_fails_for_invalid_rhs() ->
+  ?assertError( {bad_expr, 5}, disj( na, true(), 5 ) ).
+
 
 %%====================================================================
 %% Syntactic Sugar
@@ -688,26 +1029,26 @@ free_vars_test_() ->
 
 free_vars_for_subtracts_list_binding() ->
   E = for( t_str(), [{y, t_str(), null( t_str() )}], var( y ) ),
-  ?assertEqual( [], free_vars( E ) ).
+  ?assertEqual( [], expr_free_vars( E ) ).
 
 free_vars_for_free_var_in_list_binding() ->
   E = {hd,na,{proj,na,'',{cnd,na,{disj,na,{fix,na,{for,na,'Str',[{'','Str',{var,na,''}}],{var,na,''}}},{var,na,'\000'}},{var,na,'\000'},{var,na,'\000'}}},{var,na,'\000'}},
-  ?assertEqual( ['', '\000'], free_vars( E ) ).
+  ?assertEqual( ['', '\000'], expr_free_vars( E ) ).
 
 free_vars_fold_subtracts_acc_binding() ->
   E = fold( {x, t_str(), str( <<"blub">> )}, {y, t_str(), null( t_str() )}, var( x ) ),
-  ?assertEqual( [], free_vars( E ) ).
+  ?assertEqual( [], expr_free_vars( E ) ).
 
 free_vars_fold_subtracts_list_binding() ->
   E = fold( {x, t_str(), str( <<"blub">> )}, {y, t_str(), null( t_str() )}, var( y ) ),
-  ?assertEqual( [], free_vars( E ) ).
+  ?assertEqual( [], expr_free_vars( E ) ).
 
 free_vars_fold_free_var_in_acc() ->
   E = {cmp,na,{fix,na,{app,na,{var,na,'\000'},[{'',{append,na,{cmp,na,{var,na,'\000'},{lam,na,[],{ntv,{fix,na,{for,na,'Str',[],{fold,na,{'','Str',{var,na,''}},{'','File',{app,1,{cnd,na,{cmp,na,{proj,na,'\207',{false,{<<>>,1}}},{tl,{<<>>,1},{true,3},{false,{<<53>>,1}}}},{var,na,''},{str,na,<<>>}},[{'',{fix,{<<5>>,1},{str,na,<<>>}}}]}},{null,na,{'Fn',[{'','Str'},{'>','Str'},{'','Str'}],'Bool'}}}}}}}},{var,na,'\000'}}}]}},{var,na,'\000'}},
-  ?assertEqual( ['','\000'], free_vars( E ) ).
+  ?assertEqual( ['','\000'], expr_free_vars( E ) ).
 
 free_vars_fold_free_var_in_list_binding() ->
   E = fold( {x, t_str(), str( <<"blub">> )}, {y, t_str(), var( y )}, str( <<"bla">> ) ),
-  ?assertEqual( [y], free_vars( E ) ).
+  ?assertEqual( [y], expr_free_vars( E ) ).
 
 
