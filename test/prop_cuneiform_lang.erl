@@ -180,8 +180,17 @@ prop_expr_vars_always_produces_list_of_atom() ->
   ?FORALL( E, e(),
     begin
       V = expr_vars( E ),
-      collect( length( V ),
-               is_list( V ) andalso lists:all( fun is_atom/1, V ) )
+      case is_list( V ) of
+        true  -> collect( length( V ), lists:all( fun is_atom/1, V ) );
+        false -> false
+      end
+    end ).
+
+prop_expr_vars_always_produces_sorted_list_with_no_duplicates() ->
+  ?FORALL( E, e(),
+    begin
+      V = expr_vars( E ),
+      V =:= lists:usort( V )
     end ).
 
 
@@ -191,8 +200,17 @@ prop_expr_free_vars_always_produces_list_of_atom() ->
   ?FORALL( E, e(),
     begin
       FV = expr_free_vars( E ),
-      collect( length( FV ),
-               is_list( FV ) andalso lists:all( fun is_atom/1, FV ) )
+      case is_list( FV ) of
+        true  -> collect( length( FV ), lists:all( fun is_atom/1, FV ) );
+        false -> false
+      end
+    end ).
+
+prop_expr_free_vars_always_produces_sorted_list_with_no_duplicates() ->
+  ?FORALL( E, e(),
+    begin
+      FV = expr_free_vars( E ),
+      FV =:= lists:usort( FV )
     end ).
 
 %% Expression Size

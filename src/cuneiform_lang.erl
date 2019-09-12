@@ -566,6 +566,14 @@ xte_names( BindLst ) ->
 %% Validators
 %%====================================================================
 
+-spec validate_lang( L :: _ ) -> boolean().
+
+validate_lang( Z ) ->
+  case is_lang( Z ) of
+    true  -> Z;
+    false -> error( {bad_lang, Z} )
+  end.
+
 -spec validate_x_lst( X :: _ ) -> [x()].
 
 validate_x_lst( [] )    -> [];
@@ -631,12 +639,9 @@ validate_xt_lst( Z )     -> error( {bad_xt_lst, Z} ).
 
 -spec validate_xe( X :: _ ) -> {x(), e()}.
 
-validate_xe( Xe = {X, E} )
+validate_xe( {X, E} )
 when is_atom( X ) ->
-  case is_expr( E ) of
-    true  -> Xe;
-    false -> error( {bad_expr, E} )
-  end;
+  {X, validate_expr( E )};
 
 validate_xe( {Z, _} ) ->
   error( {bad_name, Z} );
@@ -653,37 +658,32 @@ validate_xe_lst( Z )     -> error( {bad_xe_lst, Z} ).
 
 -spec validate_xte( X :: _ ) -> {x(), t(), e()}.
 
-validate_xte( X ) ->
-  case is_xte( X ) of
-    true  -> X;
-    false -> {bad_xte, X}
-  end.
+validate_xte( {X, T, E} )
+when is_atom( X ) ->
+  {X, validate_type( T ), validate_expr( E )};
+
+validate_xte( {Z, _, _} ) ->
+  error( {bad_name, Z} );
+
+validate_xte( Z ) ->
+  error( {bad_xte, Z} ).
 
 -spec validate_xte_lst( Lst :: _ ) -> [{x(), t(), e()}].
 
 validate_xte_lst( [] )    -> [];
-validate_xte_lst( [H|T] ) -> [validate_xte( H )|validate_xte_lst( T )].
+validate_xte_lst( [H|T] ) -> [validate_xte( H )|validate_xte_lst( T )];
+validate_xte_lst( Z )     -> error( {bad_xte_lst, Z} ).
 
 
 -spec validate_body( X :: _ ) -> {ntv, e()} | {frn, s(), t(), l(), s()}.
 
-validate_body( Body = {ntv, E} ) ->
-  case is_expr( E ) of
-    true  -> Body;
-    false -> error( {bad_expr, E} )
-  end;
+validate_body( {ntv, E} ) ->
+  {ntv, validate_expr( E )};
 
-validate_body( Body = {frn, X, T, L, S} )
+validate_body( {frn, X, T, L, S} )
 when is_binary( X ),
      is_binary( S ) ->
-  case is_lang( L ) of
-    true  ->
-      case is_type( T ) of
-        true  -> Body;
-        false -> error( {bad_type, T} )
-      end;
-    false -> error( {bad_lang, L} )
-  end;
+{frn, X, validate_type( T ), validate_lang( L ), S};
 
 validate_body( {frn, X, _, _, _} )
 when not is_binary( X ) ->
