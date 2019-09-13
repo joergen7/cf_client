@@ -43,7 +43,7 @@
 -import( cuneiform_lang, [var/2, lam/3, app/3, fix/2, fut/2, str/2, file/2,
                           true/1, false/1, cmp/3, conj/3, disj/3, neg/2,
                           isnil/2, cnd/4, null/2, cons/3, hd/3, tl/3, append/3,
-                          for/4, fold/4, rcd/2] ).
+                          for/4, fold/4, rcd/2, proj/3, err/3] ).
 -import( cuneiform_lang, [l_bash/0, l_elixir/0, l_erlang/0, l_java/0,
                           l_javascript/0, l_matlab/0, l_octave/0, l_perl/0,
                           l_python/0, l_r/0, l_racket/0, l_awk/0,
@@ -158,7 +158,7 @@ t_rcd_fails_for_invalid_xt() ->
   ?assertError( {bad_xt, 5}, t_rcd( [5] ) ).
 
 t_rcd_fails_for_invalid_x() ->
-  ?assertError( {bad_name, 5}, t_rcd( [{5, t_str()}] ) ).
+  ?assertError( {bad_atom, 5}, t_rcd( [{5, t_str()}] ) ).
 
 t_rcd_fails_for_invalid_t() ->
   ?assertError( {bad_type, 5}, t_rcd( [{a, 5}] ) ).
@@ -180,7 +180,7 @@ t_fn_fails_for_invalid_xt() ->
   ?assertError( {bad_xt, 5}, t_fn( [5], t_str() ) ).
 
 t_fn_fails_for_invalid_x() ->
-  ?assertError( {bad_name, 5}, t_fn( [{5, t_bool()}], t_str() ) ).
+  ?assertError( {bad_atom, 5}, t_fn( [{5, t_bool()}], t_str() ) ).
 
 t_fn_fails_for_invalid_t() ->
   ?assertError( {bad_type, 5}, t_fn( [{x, 5}], t_str() ) ).
@@ -402,7 +402,67 @@ expr_constructor_test_() ->
     {"fold fails for invalid body expr",
      fun fold_fails_for_invalid_body_expr/0},
     {"rcd returns expr",
-     fun rcd_returns_expr/0}
+     fun rcd_returns_expr/0},
+    {"rcd fails for invalid info",
+     fun rcd_fails_for_invalid_info/0},
+    {"rcd fails for invalid xe list",
+     fun rcd_fails_for_invalid_xe_list/0},
+    {"rcd fails for invalid xe",
+     fun rcd_fails_for_invalid_xe/0},
+    {"rcd fails for invalid x",
+     fun rcd_fails_for_invalid_x/0},
+    {"rcd fails for invalid e",
+     fun rcd_fails_for_invalid_e/0},
+    {"proj returns expr",
+     fun proj_returns_expr/0},
+    {"proj fails for invalid info",
+     fun proj_fails_for_invalid_info/0},
+    {"proj fails for invalid field name",
+     fun proj_fails_for_invalid_field_name/0},
+    {"proj fails for invalid operand",
+     fun proj_fails_for_invalid_operand/0},
+    {"err run returns expr",
+     fun err_run_returns_expr/0},
+    {"err stagein returns expr",
+     fun err_stagein_returns_expr/0},
+    {"err stageout returns expr",
+     fun err_stageout_returns_expr/0},
+    {"err user returns expr",
+     fun err_user_returns_expr/0},
+    {"err fails for invalid info",
+     fun err_fails_for_invalid_info/0},
+    {"err fails for invalid type",
+     fun err_fails_for_invalid_type/0},
+    {"err fails for invalid reason",
+     fun err_fails_for_invalid_reason/0},
+    {"err run fails for invalid node",
+     fun err_run_fails_for_invalid_node/0},
+    {"err run fails for invalid appid",
+     fun err_run_fails_for_invalid_appid/0},
+    {"err run fails for invalid lamname",
+     fun err_run_fails_for_invalid_lamname/0},
+    {"err run fails for invalid script",
+     fun err_run_fails_for_invalid_script/0},
+    {"err run fails for invalid output",
+     fun err_run_fails_for_invalid_output/0},
+    {"err stagein fails for invalid node",
+     fun err_stagein_fails_for_invalid_node/0},
+    {"err stagein fails for invalid appid",
+     fun err_stagein_fails_for_invalid_appid/0},
+    {"err stagein fails for invalid lamname",
+     fun err_stagein_fails_for_invalid_lamname/0},
+    {"err stagein fails for invalid file list",
+     fun err_stagein_fails_for_invalid_file_list/0},
+    {"err stageout fails for invalid node",
+     fun err_stageout_fails_for_invalid_node/0},
+    {"err stageout fails for invalid appid",
+     fun err_stageout_fails_for_invalid_appid/0},
+    {"err stageout fails for invalid lamname",
+     fun err_stageout_fails_for_invalid_lamname/0},
+    {"err stageout fails for invalid file list",
+     fun err_stageout_fails_for_invalid_file_list/0},
+    {"err user fails for invalid msg",
+     fun err_user_fails_for_invalid_msg/0}
    ]  
   }.
 
@@ -413,14 +473,14 @@ var_fails_for_invalid_info() ->
   ?assertError( {bad_info, y}, var( y, x ) ).
 
 var_fails_for_invalid_variable_name() ->
-  ?assertError( {bad_symbol, 5}, var( na, 5 ) ).
+  ?assertError( {bad_atom, 5}, var( na, 5 ) ).
 
 lam_ntv_returns_expr() ->
   ?assertEqual( {lam, na, [{x, 'Str'}], {ntv, {var, na, x}}},
                 lam( na, [{x, t_str()}], {ntv, var( x )} ) ).
 
 lam_frn_returns_expr() ->
-  Body = {frn, <<"f">>, t_rcd( [{y, t_str()}] ), l_bash(), <<"blub">>},
+  Body = {frn, f, t_rcd( [{y, t_str()}] ), l_bash(), <<"blub">>},
   ?assertEqual( {lam, na, [{x, 'Str'}], Body},
                 lam( na, [{x, t_str()}], Body ) ).
 
@@ -434,7 +494,7 @@ lam_fails_for_invalid_xt() ->
   ?assertError( {bad_xt, 5}, lam( na, [5], {ntv, var( x )} ) ).
 
 lam_fails_for_invalid_x() ->
-  ?assertError( {bad_name, 5}, lam( na, [{5, t_str()}], {ntv, var( x )} ) ).
+  ?assertError( {bad_atom, 5}, lam( na, [{5, t_str()}], {ntv, var( x )} ) ).
 
 lam_fails_for_invalid_t() ->
   ?assertError( {bad_type, 5}, lam( na, [{x, 5}], {ntv, var( x )} ) ).
@@ -447,19 +507,19 @@ lam_ntv_fails_for_invalid_body_expr() ->
 
 lam_frn_fails_for_invalid_function_name() ->
   Body = {frn, 5, t_rcd( [{y, t_str()}] ), l_bash(), <<"blub">>},
-  ?assertError( {bad_fn_name, 5}, lam( na, [], Body ) ).
+  ?assertError( {bad_atom, 5}, lam( na, [], Body ) ).
 
 lam_frn_fails_for_invalid_return_type() ->
-  Body = {frn, <<"f">>, 5, l_bash(), <<"blub">>},
+  Body = {frn, f, 5, l_bash(), <<"blub">>},
   ?assertError( {bad_type, 5}, lam( na, [], Body ) ).
 
 lam_frn_fails_for_invalid_lang() ->
-  Body = {frn, <<"f">>, t_rcd( [{y, t_str()}] ), 5, <<"blub">>},
+  Body = {frn, f, t_rcd( [{y, t_str()}] ), 5, <<"blub">>},
   ?assertError( {bad_lang, 5}, lam( na, [], Body ) ).
 
 lam_frn_fails_for_invalid_script() ->
-  Body = {frn, <<"f">>, t_rcd( [{y, t_str()}] ), l_bash(), 5},
-  ?assertError( {bad_script, 5}, lam( na, [], Body ) ).
+  Body = {frn, f, t_rcd( [{y, t_str()}] ), l_bash(), 5},
+  ?assertError( {bad_binary, 5}, lam( na, [], Body ) ).
 
 app_returns_expr() ->
   E = app( na, lam( [{x, t_str()}], {ntv, var( x )} ),
@@ -481,7 +541,7 @@ app_fails_for_invalid_xe() ->
   ?assertError( {bad_xe, 5}, app( na, var( f ), [5] ) ).
 
 app_fails_for_invalid_x() ->
-  ?assertError( {bad_name, 5}, app( na, var( f ), [{5, true()}] ) ).
+  ?assertError( {bad_atom, 5}, app( na, var( f ), [{5, true()}] ) ).
 
 app_fails_for_invalid_e() ->
   ?assertError( {bad_expr, 5}, app( na, var( f ), [{x, 5}] ) ).
@@ -698,7 +758,7 @@ for_fails_for_invalid_xte() ->
                 for( na, t_bool(), [5], neg( var( x ) ) ) ).
 
 for_fails_for_invalid_x() ->
-  ?assertError( {bad_name, 5},
+  ?assertError( {bad_atom, 5},
                 for( na, t_bool(), [{5, t_bool(), null( t_bool() )}],
                          neg( var( x ) ) ) ).
 
@@ -737,7 +797,7 @@ fold_fails_for_invalid_acc_xte() ->
                           conj( var( acc ), var( x ) ) ) ).
 
 fold_fails_for_invalid_acc_x() ->
-  ?assertError( {bad_name, 5},
+  ?assertError( {bad_atom, 5},
                 fold( na, {5, t_bool(), true()},
                           {x, t_bool(), null( t_bool() )},
                           conj( var( acc ), var( x ) ) ) ).
@@ -761,7 +821,7 @@ fold_fails_for_invalid_list_xte() ->
                           conj( var( acc ), var( x ) ) ) ).
 
 fold_fails_for_invalid_list_x() ->
-  ?assertError( {bad_name, 5},
+  ?assertError( {bad_atom, 5},
                 fold( na, {acc, t_bool(), true()},
                           {5, t_bool(), null( t_bool() )},
                           conj( var( acc ), var( x ) ) ) ).
@@ -787,6 +847,117 @@ fold_fails_for_invalid_body_expr() ->
 rcd_returns_expr() ->
   ?assertEqual( {rcd, na, [{a, {str, na, <<"blub">>}}]},
                 rcd( na, [{a, str( <<"blub">> )}] ) ).
+
+rcd_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, rcd( y, [{a, str( <<"blub">> )}] ) ).
+
+rcd_fails_for_invalid_xe_list() ->
+  ?assertError( {bad_xe_lst, 5}, rcd( na, 5 ) ).
+
+rcd_fails_for_invalid_xe() ->
+  ?assertError( {bad_xe, 5}, rcd( na, [5] ) ).
+
+rcd_fails_for_invalid_x() ->
+  ?assertError( {bad_atom, 5}, rcd( na, [{5, str( <<"blub">> )}] ) ).
+
+rcd_fails_for_invalid_e() ->
+  ?assertError( {bad_expr, 5}, rcd( na, [{a, 5}] ) ).
+
+proj_returns_expr() ->
+  ?assertEqual( {proj, na, a, {rcd, na, [{a, {str, na, <<"blub">>}}]}},
+                proj( na, a, rcd( [{a, str( <<"blub">> )}] ) ) ).
+
+proj_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, proj( y, a, rcd( [{a, str( <<"blub">> )}] ) ) ).
+
+proj_fails_for_invalid_field_name() ->
+  ?assertError( {bad_atom, 5}, proj( na, 5, rcd( [{a, str( <<"blub">> )}] ) ) ).
+
+proj_fails_for_invalid_operand() ->
+  ?assertError( {bad_expr, 5}, proj( na, a, 5 ) ).
+
+err_run_returns_expr() ->
+  Reason = {run, <<"a@b">>, <<"ef12">>, f, <<"bla">>, <<"blub">>},
+  ?assertEqual( {err, na, 'Bool', Reason},
+                err( na, t_bool(), Reason ) ).
+
+err_stagein_returns_expr() ->
+  Reason = {stagein, <<"a@b">>, <<"ef12">>, f, [<<"a.txt">>]},
+  ?assertEqual( {err, na, 'Bool', Reason},
+                err( na, t_bool(), Reason ) ).
+
+err_stageout_returns_expr() ->
+  Reason = {stageout, <<"a@b">>, <<"ef12">>, f, [<<"a.txt">>]},
+  ?assertEqual( {err, na, 'Bool', Reason},
+                err( na, t_bool(), Reason ) ).
+
+err_user_returns_expr() ->
+  ?assertEqual( {err, na, 'Bool', {user, <<"blub">>}},
+                err( na, t_bool(), {user, <<"blub">>} ) ).
+
+err_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, err( y, t_bool(), {user, <<"blub">>} ) ).
+
+err_fails_for_invalid_type() ->
+  ?assertError( {bad_type, 5}, err( na, 5, {user, <<"blub">>} ) ).
+
+err_fails_for_invalid_reason() ->
+  ?assertError( {bad_reason, 5}, err( na, t_bool(), 5 ) ).
+
+err_run_fails_for_invalid_node() ->
+  R = {run, 5, <<"ef12">>, f, <<"bla">>, <<"blub">>},
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
+
+err_run_fails_for_invalid_appid() ->
+  R = {run, <<"a@b">>, 5, f, <<"bla">>, <<"blub">>},
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
+
+err_run_fails_for_invalid_lamname() ->
+  R = {run, <<"a@b">>, <<"ef12">>, 5, <<"bla">>, <<"blub">>},
+  ?assertError( {bad_atom, 5}, err( na, t_bool(), R ) ).
+
+err_run_fails_for_invalid_script() ->
+  R = {run, <<"a@b">>, <<"ef12">>, f, 5, <<"blub">>},
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
+
+err_run_fails_for_invalid_output() ->
+  R = {run, <<"a@b">>, <<"ef12">>, f, <<"bla">>, 5},
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
+
+err_stagein_fails_for_invalid_node() ->
+  R = {stagein, 5, <<"ef12">>, f, [<<"bla.txt">>]},
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
+
+err_stagein_fails_for_invalid_appid() ->
+  R = {stagein, <<"a@b">>, 5, f, [<<"bla.txt">>]},
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
+
+err_stagein_fails_for_invalid_lamname() ->
+  R = {stagein, <<"a@b">>, <<"ef12">>, 5, [<<"bla.txt">>]},
+  ?assertError( {bad_atom, 5}, err( na, t_bool(), R ) ).
+
+err_stagein_fails_for_invalid_file_list() ->
+  R = {stagein, <<"a@b">>, <<"ef12">>, f, 5},
+  ?assertError( {bad_file_lst, 5}, err( na, t_bool(), R ) ).
+
+err_stageout_fails_for_invalid_node() ->
+  R = {stageout, 5, <<"ef12">>, f, [<<"bla.txt">>]},
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
+
+err_stageout_fails_for_invalid_appid() ->
+  R = {stageout, <<"a@b">>, 5, f, [<<"bla.txt">>]},
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
+
+err_stageout_fails_for_invalid_lamname() ->
+  R = {stageout, <<"a@b">>, <<"ef12">>, 5, [<<"bla.txt">>]},
+  ?assertError( {bad_atom, 5}, err( na, t_bool(), R ) ).
+
+err_stageout_fails_for_invalid_file_list() ->
+  R = {stageout, <<"a@b">>, <<"ef12">>, f, 5},
+  ?assertError( {bad_file_lst, 5}, err( na, t_bool(), R ) ).
+
+err_user_fails_for_invalid_msg() ->
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), {user, 5} ) ).
 
 
 %%====================================================================
@@ -1003,7 +1174,7 @@ subst_ntv_lam_cannot_capture() ->
 
 subst_frn_lam_no_effect() ->
   E0 = lam( [{x, t_str()}],
-            {frn, <<"f">>,
+            {frn, f,
                   t_rcd( [{y, t_str()}] ),
                   l_bash(), <<"bla">>} ),
   ?assertEqual( E0, subst( E0, y, str( <<"blub">> ) ) ).
@@ -1029,7 +1200,7 @@ subst_fix_traverses() ->
 
 subst_fut_no_effect() ->
   E0 = fut( app( lam( [{x, t_bool()}],
-                      {frn, <<"f">>,
+                      {frn, f,
                             t_rcd( [{y, t_bool()}] ),
                             l_elixir(),
                             <<"bla">>} ),
@@ -1266,7 +1437,7 @@ subst_proj_propagates() ->
   ?assertEqual( E2, subst( E0, x, E1 ) ).
 
 subst_error_no_effect() ->
-  E0 = err( t_str(), <<"my message">> ),
+  E0 = err( t_str(), {user, <<"my message">>} ),
   ?assertEqual( E0, subst( E0, y, str( <<"blub">> ) ) ).
 
 

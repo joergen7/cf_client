@@ -34,7 +34,7 @@
 
 -type e()           :: {var, info(), x()}
                      | {lam, info(), [{x(), t()}], {ntv, e()}}                % binding form
-                     | {lam, info(), [{x(), t()}], {frn, s(), t(), l(), s()}}
+                     | {lam, info(), [{x(), t()}], {frn, x(), t(), l(), s()}}
                      | {app, info(), e(), [{x(), e()}]}                       % binding form
                      | {fix, info(), e()}
                      | {fut, info(), e()}
@@ -64,12 +64,12 @@
                      | {binary(), pos_integer()}.
 
 -type reason()      :: {run, Node :: binary(), AppId :: binary(),
-                             LamName :: binary(), ExtendedScript :: binary(),
+                             LamName :: x(), ExtendedScript :: binary(),
                              Output :: binary()}
                      | {stagein, Node :: binary(), AppId :: binary(),
-                                 LamName :: binary(), FileLst :: [binary()]}
+                                 LamName :: x(), FileLst :: [binary()]}
                      | {stageout, Node :: binary(), AppId :: binary(),
-                                  LamName :: binary(), FileLst :: [binary()]}
+                                  LamName :: x(), FileLst :: [binary()]}
                      | {user, Msg :: binary()}.
 
 -type x()           :: atom().

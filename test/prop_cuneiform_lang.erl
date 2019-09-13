@@ -11,15 +11,17 @@
                           is_alpha_equivalent/2,
                           is_expr/1,
                           is_lang/1,
+                          is_pattern/1,
+                          is_reason/1,
                           is_type/1,
                           is_value/1,
                           protect_expr/1,
                           rename/3,
                           subst/3,
                           validate_expr/1,
+                          validate_pattern/1,
+                          validate_reason/1,
                           validate_type/1] ).
-
--import( gen_cuneiform_lang, [e/0, t/0, x/0, info/0, l/0] ).
 
 
 %%==========================================================
@@ -94,6 +96,55 @@ prop_is_lang_true_for_lang() ->
       is_lang( L )
     end ).
 
+prop_is_pattern_total() ->
+  ?FORALL( Z, oneof( [r(), term()] ),
+    begin
+      is_boolean( is_pattern( Z ) )
+    end ).
+
+prop_is_pattern_true_for_pattern() ->
+  ?FORALL( R, r(),
+    begin
+      is_pattern( R )
+    end ).
+
+prop_validate_pattern_mirrors_is_type() ->
+  ?FORALL( Z, oneof( [r(), term()] ),
+    begin
+      V =
+        try validate_pattern( Z ) of
+          Z -> true
+        catch
+          error:_ -> false
+        end,
+      I = is_pattern( Z ),
+      V =:= I
+    end ).
+
+prop_is_reason_total() ->
+  ?FORALL( Z, oneof( [reason(), term()] ),
+    begin
+      is_boolean( is_reason( Z ) )
+    end ).
+
+prop_is_reason_true_for_reason() ->
+  ?FORALL( R, reason(),
+    begin
+      is_reason( R )
+    end ).
+
+prop_validate_reason_mirrors_is_reason() ->
+  ?FORALL( Z, oneof( [reason(), term()] ),
+    begin
+      V =
+        try validate_reason( Z ) of
+          Z -> true
+        catch
+          error:_ -> false
+        end,
+      I = is_reason( Z ),
+      V =:= I
+    end ).
 
 %% Renaming
 
@@ -154,6 +205,15 @@ prop_subst_increases_expr_size_by_multiples_of_insert_size() ->
           collect(
             DeltaS div S2,
             ( DeltaS >= 0 ) andalso ( ( DeltaS rem S2 ) =:= 0 ) )
+        end ) ) ).
+
+prop_var_is_neutral_element_of_subst() ->
+  ?FORALL( E1, e(),
+    ?FORALL( X, x(),
+      ?FORALL( E2, {var, info(), x()},
+        begin
+          E3 = subst( E1, X, E2 ),
+          is_alpha_equivalent( E1, E3 )
         end ) ) ).
 
 %% Expression Analysis

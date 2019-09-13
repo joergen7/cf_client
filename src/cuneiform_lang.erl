@@ -90,9 +90,10 @@
 %% Validators
 -export( [validate_pattern/1,
           validate_info/1,
-          validate_body/1,
           validate_expr/1,
-          validate_type/1] ).
+          validate_type/1,
+          validate_lang/1,
+          validate_reason/1] ).
 
 %% Contract Predicates
 -export( [is_pattern/1,
@@ -427,10 +428,10 @@ proj( Info, X, E ) ->
 
 -spec err( Info :: info(), T :: t(), Msg :: binary() ) -> e().
 
-err( Info, T, Msg ) when is_binary( Msg ) ->
+err( Info, T, Reason ) ->
   {err, validate_info( Info ),
         validate_type( T ),
-        {user, Msg}}.
+        validate_reason( Reason )}.
 
 
 %%====================================================================
@@ -566,6 +567,97 @@ xte_names( BindLst ) ->
 %% Validators
 %%====================================================================
 
+-spec validate_reason( R :: _ ) -> boolean().
+
+validate_reason( R = {run, Node, AppId, LamName, ExtendedScript, Output} )
+when is_binary( Node ),
+     is_binary( AppId ),
+     is_atom( LamName ),
+     is_binary( ExtendedScript ),
+     is_binary( Output ) ->
+  R;
+
+validate_reason( {run, Z, _, _, _, _} )
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
+
+validate_reason( {run, _, Z, _, _, _} )
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
+
+validate_reason( {run, _, _, Z, _, _} )
+when not is_atom( Z ) ->
+  error( {bad_atom, Z} );
+
+validate_reason( {run, _, _, _, Z, _} )
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
+
+validate_reason( {run, _, _, _, _, Z} )
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
+
+validate_reason( R = {stagein, Node, AppId, LamName, FileLst} )
+when is_binary( Node ),
+     is_binary( AppId ),
+     is_atom( LamName ),
+     is_list( FileLst ) ->
+  case lists:all( fun is_binary/1, FileLst ) of
+    true -> R;
+    false -> error( {bad_file_lst, FileLst} )
+  end;
+
+validate_reason( {stagein, Z, _, _, _} )
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
+
+validate_reason( {stagein, _, Z, _, _} )
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
+
+validate_reason( {stagein, _, _, Z, _} )
+when not is_atom( Z ) ->
+  error( {bad_atom, Z} );
+
+validate_reason( {stagein, _, _, _, Z} )
+when not is_list( Z ) ->
+  error( {bad_file_lst, Z} );
+
+validate_reason( R = {stageout, Node, AppId, LamName, FileLst} )
+when is_binary( Node ),
+     is_binary( AppId ),
+     is_atom( LamName ),
+     is_list( FileLst ) ->
+  case lists:all( fun is_binary/1, FileLst ) of
+    true -> R;
+    false -> error( {bad_file_lst, FileLst} )
+  end;
+
+validate_reason( {stageout, Z, _, _, _} )
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
+
+validate_reason( {stageout, _, Z, _, _} )
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
+
+validate_reason( {stageout, _, _, Z, _} )
+when not is_atom( Z ) ->
+  error( {bad_atom, Z} );
+
+validate_reason( {stageout, _, _, _, Z} )
+when not is_list( Z ) ->
+  error( {bad_file_lst, Z} );
+
+validate_reason( R = {user, Msg} ) when is_binary( Msg ) ->
+  R;
+
+validate_reason( {user, Z} ) ->
+  error( {bad_binary, Z} );
+
+validate_reason( Z ) ->
+  error( {bad_reason, Z} ).
+
 -spec validate_lang( L :: _ ) -> boolean().
 
 validate_lang( Z ) ->
@@ -582,7 +674,7 @@ validate_x_lst( [H|T] ) -> [validate_x( H )|validate_x_lst( T )].
 -spec validate_x( X :: _ ) -> x().
 
 validate_x( X ) when is_atom( X ) -> X;
-validate_x( X )                   -> error( {bad_symbol, X} ).
+validate_x( X )                   -> error( {bad_atom, X} ).
 
 
 -spec validate_pattern( X :: _ ) -> r().
@@ -625,7 +717,7 @@ validate_xt( Xt = {X, T} ) when is_atom( X ) ->
   end;
 
 validate_xt( {Z, _} ) ->
-  error( {bad_name, Z} );
+  error( {bad_atom, Z} );
 
 validate_xt( Z ) ->
   error( {bad_xt, Z} ).
@@ -644,7 +736,7 @@ when is_atom( X ) ->
   {X, validate_expr( E )};
 
 validate_xe( {Z, _} ) ->
-  error( {bad_name, Z} );
+  error( {bad_atom, Z} );
 
 validate_xe( Z ) ->
   error( {bad_xe, Z} ).
@@ -663,7 +755,7 @@ when is_atom( X ) ->
   {X, validate_type( T ), validate_expr( E )};
 
 validate_xte( {Z, _, _} ) ->
-  error( {bad_name, Z} );
+  error( {bad_atom, Z} );
 
 validate_xte( Z ) ->
   error( {bad_xte, Z} ).
@@ -681,17 +773,17 @@ validate_body( {ntv, E} ) ->
   {ntv, validate_expr( E )};
 
 validate_body( {frn, X, T, L, S} )
-when is_binary( X ),
+when is_atom( X ),
      is_binary( S ) ->
 {frn, X, validate_type( T ), validate_lang( L ), S};
 
 validate_body( {frn, X, _, _, _} )
-when not is_binary( X ) ->
-  error( {bad_fn_name, X} );
+when not is_atom( X ) ->
+  error( {bad_atom, X} );
 
 validate_body( {frn, _, _, _, S} )
 when not is_binary( S ) ->
-  error( {bad_script, S} );
+  error( {bad_binary, S} );
 
 validate_body( Z ) ->
   error( {bad_body, Z} ).
@@ -826,7 +918,7 @@ when is_list( ArgLst ) ->
 
 is_expr( {lam, Info, ArgLst, {frn, X, T, L, S}} )
 when is_list( ArgLst ),
-     is_binary( X ),
+     is_atom( X ),
      is_binary( S ) ->
           is_info( Info )
   andalso lists:all( fun is_xt/1, ArgLst )
@@ -930,7 +1022,7 @@ is_expr( _ ) ->
 is_reason( {run, Node, AppId, LamName, ExtendedScript, Output} )
 when is_binary( Node ),
      is_binary( AppId ),
-     is_binary( LamName ),
+     is_atom( LamName ),
      is_binary( ExtendedScript ),
      is_binary( Output ) ->
   true;
@@ -938,14 +1030,14 @@ when is_binary( Node ),
 is_reason( {stagein, Node, AppId, LamName, FileLst} )
 when is_binary( Node ),
      is_binary( AppId ),
-     is_binary( LamName ),
+     is_atom( LamName ),
      is_list( FileLst ) ->
   lists:all( fun is_binary/1, FileLst );
 
 is_reason( {stageout, Node, AppId, LamName, FileLst} )
 when is_binary( Node ),
      is_binary( AppId ),
-     is_binary( LamName ),
+     is_atom( LamName ),
      is_list( FileLst ) ->
   lists:all( fun is_binary/1, FileLst );
 
