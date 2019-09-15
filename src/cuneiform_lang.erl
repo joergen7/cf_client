@@ -445,7 +445,8 @@ err( Info, T, Reason ) ->
 -spec lst( Info :: info(), T :: t(), ELst :: [e()] ) -> e().
 
 lst( Info, T, [] )      -> null( Info, T );
-lst( Info, T, [Hd|Tl] ) -> cons( Info, Hd, lst( Info, T, Tl ) ).
+lst( Info, T, [Hd|Tl] ) -> cons( Info, Hd, lst( Info, T, Tl ) );
+lst( Info, T, Z )       -> error( {bad_element_lst, Z} ).
 
 
 -spec alet( XteLst :: [{x(), t(), e()}], EBody :: e() ) -> e().

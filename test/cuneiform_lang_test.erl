@@ -36,6 +36,7 @@
 -import( cuneiform_lang, [t_str/0, t_rcd/1, t_file/0, t_bool/0, t_lst/1,
                           t_fn/2] ).
 -import( cuneiform_lang, [alet/2, lst/2] ).
+-import( cuneiform_lang, [lst/3] ).
 -import( cuneiform_lang, [var/1, app/2, lam/2, proj/2, str/1, err/2, rcd/1,
                           fix/1, fut/1, true/0, false/0, file/1, cmp/2, conj/2,
                           disj/2, neg/1, isnil/1, cnd/3, null/1, cons/2, hd/2,
@@ -963,6 +964,46 @@ err_user_fails_for_invalid_msg() ->
 %%====================================================================
 %% Syntactic Sugar
 %%====================================================================
+
+sugar_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [{"lst returns cons chain",
+     fun lst_returns_cons_chain/0},
+    {"lst no elements returns null",
+     fun lst_no_elements_returns_null/0},
+    {"lst fails for invalid info",
+     fun lst_fails_for_invalid_info/0},
+    {"lst fails for invalid type",
+     fun lst_fails_for_invalid_type/0},
+    {"lst fails for invalid element list",
+     fun lst_fails_for_invalid_element_list/0},
+    {"lst fails for invalid element",
+     fun lst_fails_for_invalid_element/0}
+   ]
+  }.
+
+lst_returns_cons_chain() ->
+  ?assertEqual( {cons, na, {true, na}, {cons, na, {false, na}, {null, na, 'Bool'}}},
+                lst( na, t_bool(), [true(), false()] ) ).
+
+lst_no_elements_returns_null() ->
+  ?assertEqual( {null, na, 'Bool'}, lst( na, t_bool(), [] ) ).
+
+lst_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y}, lst( y, t_bool(), [true(), false()] ) ).
+
+lst_fails_for_invalid_type() ->
+  ?assertError( {bad_type, 5}, lst( na, 5, [true(), false()] ) ).
+
+lst_fails_for_invalid_element_list() ->
+  ?assertError( {bad_element_lst, 5}, lst( na, t_bool(), 5 ) ).
+
+lst_fails_for_invalid_element() ->
+  ?assertError( {bad_expr, 5}, lst( na, t_bool(), [5] ) ).
 
 %%====================================================================
 %% Pattern Constructors, Assignments, and Expansion
