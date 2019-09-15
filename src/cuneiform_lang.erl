@@ -463,7 +463,8 @@ alet( _Info, [], EBody ) ->
 alet( Info, XteLst, EBody )
 when is_list( XteLst ) ->
   app( validate_info( Info ),
-       lam( Info, [{X, T} || {X, T, _} <- validate_xte_lst( XteLst )], {ntv, EBody} ),
+       lam( Info, [{X, T} || {X, T, _} <- validate_xte_lst( XteLst )],
+                  {ntv, EBody} ),
        [{X, E} || {X, _, E} <- XteLst] );
 
 alet( _, Z, _ ) ->
