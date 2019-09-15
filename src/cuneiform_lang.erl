@@ -446,7 +446,7 @@ err( Info, T, Reason ) ->
 
 lst( Info, T, [] )      -> null( Info, T );
 lst( Info, T, [Hd|Tl] ) -> cons( Info, Hd, lst( Info, T, Tl ) );
-lst( Info, T, Z )       -> error( {bad_element_lst, Z} ).
+lst( _, _, Z )          -> error( {bad_element_lst, Z} ).
 
 
 -spec alet( XteLst :: [{x(), t(), e()}], EBody :: e() ) -> e().
@@ -460,10 +460,14 @@ alet( XteLst, EBody ) ->
 alet( _Info, [], EBody ) ->
   validate_expr( EBody );
 
-alet( Info, XteLst, EBody ) ->
+alet( Info, XteLst, EBody )
+when is_list( XteLst ) ->
   app( validate_info( Info ),
-       lam( Info, [{X, T} || {X, T, _} <- XteLst], {ntv, EBody} ),
-       [{X, E} || {X, _, E} <- XteLst] ).
+       lam( Info, [{X, T} || {X, T, _} <- validate_xte_lst( XteLst )], {ntv, EBody} ),
+       [{X, E} || {X, _, E} <- XteLst] );
+
+alet( _, Z, _ ) ->
+  error( {bad_xte_lst, Z} ).
 
 -spec asc( E :: e(), T :: t() ) -> e().
 

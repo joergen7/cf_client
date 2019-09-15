@@ -36,7 +36,7 @@
 -import( cuneiform_lang, [t_str/0, t_rcd/1, t_file/0, t_bool/0, t_lst/1,
                           t_fn/2] ).
 -import( cuneiform_lang, [alet/2, lst/2] ).
--import( cuneiform_lang, [lst/3] ).
+-import( cuneiform_lang, [lst/3, alet/3, asc/3] ).
 -import( cuneiform_lang, [var/1, app/2, lam/2, proj/2, str/1, err/2, rcd/1,
                           fix/1, fut/1, true/0, false/0, file/1, cmp/2, conj/2,
                           disj/2, neg/1, isnil/1, cnd/3, null/1, cons/2, hd/2,
@@ -982,7 +982,31 @@ sugar_test_() ->
     {"lst fails for invalid element list",
      fun lst_fails_for_invalid_element_list/0},
     {"lst fails for invalid element",
-     fun lst_fails_for_invalid_element/0}
+     fun lst_fails_for_invalid_element/0},
+    {"alet returns expr",
+     fun alet_returns_expr/0},
+    {"alet fails for invalid info",
+     fun alet_fails_for_invalid_info/0},
+    {"alet fails for invalid xte list",
+     fun alet_fails_for_invalid_xte_list/0},
+    {"alet fails for invalid xte",
+     fun alet_fails_for_invalid_xte/0},
+    {"alet fails for invalid x",
+     fun alet_fails_for_invalid_x/0},
+    {"alet fails for invalid t",
+     fun alet_fails_for_invalid_t/0},
+    {"alet fails for invalid e",
+     fun alet_fails_for_invalid_e/0},
+    {"alet fails for invalid body expr",
+     fun alet_fails_for_invalid_body_expr/0},
+    {"asc returns expr",
+     fun asc_returns_expr/0},
+    {"asc fails for invalid info",
+     fun asc_fails_for_invalid_info/0},
+    {"asc fails for invalid expr",
+     fun asc_fails_for_invalid_expr/0},
+    {"asc fails for invalid type",
+     fun asc_fails_for_invalid_type/0}
    ]
   }.
 
@@ -1004,6 +1028,55 @@ lst_fails_for_invalid_element_list() ->
 
 lst_fails_for_invalid_element() ->
   ?assertError( {bad_expr, 5}, lst( na, t_bool(), [5] ) ).
+
+alet_returns_expr() ->
+  ?assertEqual( {app, na, {lam, na, [{x, 'Str'}], {ntv, {var, na, x}}}, [{x, {str, na, <<"bla">>}}]},
+                alet( na, [{x, t_str(), str( <<"bla">> )}], var( x ) ) ).
+
+alet_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y},
+                alet( y, [{x, t_str(), str( <<"bla">> )}], var( x ) ) ).
+
+alet_fails_for_invalid_xte_list() ->
+  ?assertError( {bad_xte_lst, 5},
+                alet( na, 5, var( x ) ) ).
+
+alet_fails_for_invalid_xte() ->
+  ?assertError( {bad_xte, 5},
+                alet( na, [5], var( x ) ) ).
+
+alet_fails_for_invalid_x() ->
+  ?assertError( {bad_atom, 5},
+                alet( na, [{5, t_str(), str( <<"bla">> )}], var( x ) ) ).
+
+alet_fails_for_invalid_t() ->
+  ?assertError( {bad_type, 5},
+                alet( na, [{x, 5, str( <<"bla">> )}], var( x ) ) ).
+
+alet_fails_for_invalid_e() ->
+  ?assertError( {bad_expr, 5},
+                alet( na, [{x, t_str(), 5}], var( x ) ) ).
+
+alet_fails_for_invalid_body_expr() ->
+  ?assertError( {bad_expr, 5},
+                alet( na, [{x, t_str(), str( <<"bla">> )}], 5 ) ).
+
+asc_returns_expr() ->
+  ?assertMatch( {app, na, {lam, na, [{X, 'Str'}], {ntv, {var, na, X}}},
+                          [{X, {str, na, <<"bla">>}}]} when is_atom( X ),
+                asc( na, str( <<"bla">> ), t_str() ) ).
+
+asc_fails_for_invalid_info() ->
+  ?assertError( {bad_info, y},
+                asc( y, str( <<"bla">> ), t_str() ) ).
+
+asc_fails_for_invalid_expr() ->
+  ?assertError( {bad_expr, 5},
+                asc( na, 5, t_str() ) ).
+
+asc_fails_for_invalid_type() ->
+  ?assertError( {bad_type, 5},
+                asc( na, str( <<"bla">> ), 5 ) ).
 
 %%====================================================================
 %% Pattern Constructors, Assignments, and Expansion
