@@ -39,6 +39,7 @@
                           expr_free_vars/1,
                           expr_size/1,
                           is_alpha_equivalent/2,
+                          is_assign/1,
                           is_expr/1,
                           is_lang/1,
                           is_pattern/1,
@@ -48,6 +49,7 @@
                           protect_expr/1,
                           rename/3,
                           subst/3,
+                          validate_assign/1,
                           validate_expr/1,
                           validate_lang/1,
                           validate_pattern/1,
@@ -58,6 +60,27 @@
 %%==========================================================
 %% Properties
 %%==========================================================
+
+%% Assignments
+
+prop_validate_assign_always_returns_original() ->
+  ?FORALL( A, assign(),
+    begin
+      A =:= validate_assign( A )
+    end ).
+
+prop_is_assign_total() ->
+  ?FORALL( Z, oneof( [assign(), term()] ), 
+    begin
+      is_boolean( is_assign( Z ) )
+    end ).
+
+prop_is_assign_true_for_assign() ->
+  ?FORALL( A, assign(),
+    begin
+      is_assign( A )
+    end ).
+
 
 %% Expressions
 

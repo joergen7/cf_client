@@ -93,7 +93,8 @@
           validate_expr/1,
           validate_type/1,
           validate_lang/1,
-          validate_reason/1] ).
+          validate_reason/1,
+          validate_assign/1] ).
 
 %% Contract Predicates
 -export( [is_pattern/1,
@@ -101,7 +102,8 @@
           is_type/1,
           is_lang/1,
           is_expr/1,
-          is_reason/1] ).
+          is_reason/1,
+          is_assign/1] ).
 
 %% Renaming and Substitution
 -export( [rename/3,
@@ -416,15 +418,13 @@ alet( XteLst, EBody ) ->
 alet( _Info, [], EBody ) ->
   validate_expr( EBody );
 
-alet( Info, XteLst, EBody )
-when is_list( XteLst ) ->
-  app( validate_info( Info ),
-       lam( Info, [{X, T} || {X, T, _} <- validate_xte_lst( XteLst )],
+alet( Info, XteLst, EBody ) ->
+  validate_xte_lst( XteLst ),
+  app( Info,
+       lam( Info, [{X, T} || {X, T, _} <- XteLst],
                   {ntv, EBody} ),
-       [{X, E} || {X, _, E} <- XteLst] );
+       [{X, E} || {X, _, E} <- XteLst] ).
 
-alet( _, Z, _ ) ->
-  error( {bad_xte_lst, Z} ).
 
 -spec asc( E :: e(), T :: t() ) -> e().
 
@@ -443,16 +443,11 @@ asc( Info, E, T ) ->
 %%====================================================================
 
 -spec r_var( X :: x(), T :: t() ) -> r().
-
-r_var( X, T ) when is_atom( X ) ->
-  {r_var, X, validate_type( T )};
-
-r_var( Z, _ ) ->
-  error( {bad_atom, Z} ).
+      r_var( X, T )               -> validate_pattern( {r_var, X, T} ).
 
 
 -spec r_rcd( RLst :: [{x(), r()}] ) -> r().
-      r_rcd( RLst )                 -> {r_rcd, validate_xr_lst( RLst )}.
+      r_rcd( RLst )                 -> validate_pattern( {r_rcd, RLst} ).
 
 -spec assign( R :: r(), E :: e() ) -> assign().
       assign( R, E )               -> assign( na, R, E ).
@@ -460,10 +455,8 @@ r_var( Z, _ ) ->
 
 -spec assign( Info :: info(), R :: r(), E :: e() ) -> assign().
 
-assign( Info, R, E ) ->
-  {assign, validate_info( Info ),
-           validate_pattern( R ),
-           validate_expr( E )}.
+assign( Info, R, E ) ->                           
+  validate_assign( {assign, Info, R, E} ).
 
 
 -spec expand_closure( AssignLst, EBody ) -> e()
@@ -532,6 +525,14 @@ xte_names( BindLst ) when is_list( BindLst ) ->
 %%====================================================================
 %% Validators
 %%====================================================================
+
+-spec validate_assign( Z :: _ ) -> assign().
+
+validate_assign( A = {assign, Info, R, E} ) ->
+  validate_info( Info ),
+  validate_pattern( R ),
+  validate_expr( E ),
+  A.
 
 -spec validate_reason( R :: _ ) -> boolean().
 
@@ -649,8 +650,11 @@ validate_pattern( Z = {r_var, X, T} ) when is_atom( X ) ->
   validate_type( T ),
   Z;
 
-validate_pattern( Z = {r_rcd, RLst} ) when is_list( RLst ) ->
-  lists:foreach( fun validate_xr/1, RLst ),
+validate_pattern( {r_var, Z, _} ) ->
+  error( {bad_atom, Z} );
+
+validate_pattern( Z = {r_rcd, RLst} ) ->
+  validate_xr_lst( RLst ),
   Z;
 
 validate_pattern( Z ) ->
@@ -955,6 +959,16 @@ validate_type( Z ) ->
 %%====================================================================
 %% Contract Predicates
 %%====================================================================
+
+-spec is_assign( Z :: _ ) -> boolean().
+
+is_assign( Z ) ->
+  try validate_assign( Z ) of
+    Z -> true
+  catch
+    error:_ -> false
+  end.
+
 
 -spec is_pattern( Z :: _ ) -> boolean().
 
