@@ -1073,7 +1073,7 @@ rename( {app, Info, F, XeLst}, X1, X2 ) ->
              [{X, rename( E, X1, X2 )} || {X, E} <- XeLst] );
 
 rename( {fix, Info, E}, X1, X2 ) ->
-  fix( Info, rename( E, X1, X2 ) );
+  {fix, Info, rename( E, X1, X2 )};
 
 rename( E = {fut, _, _}, _, _ )  -> E;
 rename( E = {str, _, _}, _, _ )  -> E;
@@ -1082,22 +1082,22 @@ rename( E = {true, _}, _, _ )    -> E;
 rename( E = {false, _}, _, _ )   -> E;
 
 rename( {cmp, Info, E1, E2}, X1, X2 ) ->
-  cmp( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+  {cmp, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
 
 rename( {conj, Info, E1, E2}, X1, X2 ) ->
-  conj( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+  {conj, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
 
 rename( {disj, Info, E1, E2}, X1, X2 ) ->
-  disj( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+  {disj, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
 
 rename( {neg, Info, E}, X1, X2 ) ->
-  neg( Info, rename( E, X1, X2 ) );
+  {neg, Info, rename( E, X1, X2 )};
 
 rename( {isnil, Info, E}, X1, X2 ) ->
-  isnil( Info, rename( E, X1, X2 ) );
+  {isnil, Info, rename( E, X1, X2 )};
 
 rename( {cnd, Info, E1, E2, E3}, X1, X2 ) ->
-  cnd( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ), rename( E3, X1, X2 ) );
+  {cnd, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ), rename( E3, X1, X2 )};
 
 rename( E = {null, _, _}, _, _ ) -> E;
 

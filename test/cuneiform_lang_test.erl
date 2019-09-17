@@ -1420,6 +1420,40 @@ rename_test_() ->
    fun( _ ) -> ok end,
 
    [
+    {"rename fix traverses operand",
+     fun rename_fix_traverses_operand/0},
+    {"rename fut no effect",
+     fun rename_fut_no_effect/0},
+    {"rename str no effect",
+     fun rename_str_no_effect/0},
+    {"rename file no effect",
+     fun rename_file_no_effect/0},
+    {"rename true no effect",
+     fun rename_true_no_effect/0},
+    {"rename false no effect",
+     fun rename_false_no_effect/0},
+    {"rename cmp traverses lhs",
+     fun rename_cmp_traverses_lhs/0},
+    {"rename cmp traverses rhs",
+     fun rename_cmp_traverses_rhs/0},
+    {"rename conj traverses lhs",
+     fun rename_conj_traverses_lhs/0},
+    {"rename conj traverses rhs",
+     fun rename_conj_traverses_rhs/0},
+    {"rename disj traverses lhs",
+     fun rename_disj_traverses_lhs/0},
+    {"rename disj traverses rhs",
+     fun rename_disj_traverses_rhs/0},
+    {"rename neg traverses operand",
+     fun rename_neg_traverses_operand/0},
+    {"rename isnil traverses operand",
+     fun rename_isnil_traverses_operand/0},
+    {"rename cnd traverses condition expr",
+     fun rename_cnd_traverses_condition_expr/0},
+    {"rename cnd traverses then expr",
+     fun rename_cnd_traverses_then_expr/0},
+    {"rename cnd traverses else expr",
+     fun rename_cnd_traverses_else_expr/0},
     {"rename null no effect",
      fun rename_null_no_effect/0},
     {"rename cons traverses lhs",
@@ -1456,6 +1490,86 @@ rename_test_() ->
      fun rename_err_no_effect/0}
    ]
   }.
+
+rename_fix_traverses_operand() ->
+  E1 = fix( var( x ) ),
+  E2 = fix( var( y ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_fut_no_effect() ->
+  E = fut( str( <<"blub">> ) ),
+  ?assertEqual( E, rename( E, x, y ) ).
+
+rename_str_no_effect() ->
+  E = str( <<"blub">> ),
+  ?assertEqual( E, rename( E, x, y ) ).
+
+rename_file_no_effect() ->
+  E = file( <<"blub.txt">> ),
+  ?assertEqual( E, rename( E, x, y ) ).
+
+rename_true_no_effect() ->
+  E = true(),
+  ?assertEqual( E, rename( E, x, y ) ).
+
+rename_false_no_effect() ->
+  E = false(),
+  ?assertEqual( E, rename( E, x, y ) ).
+
+rename_cmp_traverses_lhs() ->
+  E1 = cmp( var( x ), var( z ) ),
+  E2 = cmp( var( y ), var( z ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_cmp_traverses_rhs() ->
+  E1 = cmp( var( x ), var( z ) ),
+  E2 = cmp( var( x ), var( y ) ),
+  ?assertEqual( E2, rename( E1, z, y ) ).
+
+rename_conj_traverses_lhs() ->
+  E1 = conj( var( x ), var( z ) ),
+  E2 = conj( var( y ), var( z ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_conj_traverses_rhs() ->
+  E1 = conj( var( x ), var( z ) ),
+  E2 = conj( var( x ), var( y ) ),
+  ?assertEqual( E2, rename( E1, z, y ) ).
+
+rename_disj_traverses_lhs() ->
+  E1 = disj( var( x ), var( z ) ),
+  E2 = disj( var( y ), var( z ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_disj_traverses_rhs() ->
+  E1 = disj( var( x ), var( z ) ),
+  E2 = disj( var( x ), var( y ) ),
+  ?assertEqual( E2, rename( E1, z, y ) ).
+
+rename_neg_traverses_operand() ->
+  E1 = neg( var( x ) ),
+  E2 = neg( var( y ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_isnil_traverses_operand() ->
+  E1 = isnil( var( x ) ),
+  E2 = isnil( var( y ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_cnd_traverses_condition_expr() ->
+  E1 = cnd( var( a ), var( b ), var( c ) ),
+  E2 = cnd( var( x ), var( b ), var( c ) ),
+  ?assertEqual( E2, rename( E1, a, x ) ).
+
+rename_cnd_traverses_then_expr() ->
+  E1 = cnd( var( a ), var( b ), var( c ) ),
+  E2 = cnd( var( a ), var( x ), var( c ) ),
+  ?assertEqual( E2, rename( E1, b, x ) ).
+
+rename_cnd_traverses_else_expr() ->
+  E1 = cnd( var( a ), var( b ), var( c ) ),
+  E2 = cnd( var( a ), var( b ), var( x ) ),
+  ?assertEqual( E2, rename( E1, c, x ) ).
 
 rename_null_no_effect() ->
   E = null( t_str() ),
