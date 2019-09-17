@@ -1102,30 +1102,30 @@ rename( {cnd, Info, E1, E2, E3}, X1, X2 ) ->
 rename( E = {null, _, _}, _, _ ) -> E;
 
 rename( {cons, Info, E1, E2}, X1, X2 ) ->
-  cons( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+  {cons, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
 
 rename( {hd, Info, E1, E2}, X1, X2 ) ->
-  hd( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+  {hd, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
 
 rename( {tl, Info, E1, E2}, X1, X2 ) ->
-  tl( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+  {tl, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
 
 rename( {append, Info, E1, E2}, X1, X2 ) ->
-  append( Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ) );
+  {append, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
 
 rename( {for, Info, TRet, XteLst, EBody}, X1, X2 ) ->
-  for( Info, TRet, rename_xte_lst( XteLst, X1, X2 ), rename( EBody, X1, X2 ) );
+  {for, Info, TRet, rename_xte_lst( XteLst, X1, X2 ), rename( EBody, X1, X2 )};
 
 rename( {fold, Info, Xte1, Xte2, EBody}, X1, X2 ) ->
-  fold( Info, rename_xte( Xte1, X1, X2 ),
-              rename_xte( Xte2, X1, X2 ),
-              rename( EBody, X1, X2 ) );
+  {fold, Info, rename_xte( Xte1, X1, X2 ),
+               rename_xte( Xte2, X1, X2 ),
+               rename( EBody, X1, X2 )};
 
 rename( {rcd, Info, XeLst}, X1, X2 ) ->
-  rcd( Info, [{X, rename( E, X1, X2 )} || {X, E} <- XeLst] );
+  {rcd, Info, [{X, rename( E, X1, X2 )} || {X, E} <- XeLst]};
 
 rename( {proj, Info, X, E}, X1, X2 ) ->
-  proj( Info, X, rename( E, X1, X2 ) );
+  {proj, Info, X, rename( E, X1, X2 )};
 
 rename( E={err, _, _, _}, _, _ ) -> E.
 

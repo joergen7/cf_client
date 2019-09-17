@@ -1419,7 +1419,36 @@ rename_test_() ->
    fun() -> ok end,
    fun( _ ) -> ok end,
 
-   [{"rename rcd traverses field",
+   [
+    {"rename null no effect",
+     fun rename_null_no_effect/0},
+    {"rename cons traverses lhs",
+     fun rename_cons_traverses_lhs/0},
+    {"rename cons traverses rhs",
+     fun rename_cons_traverses_rhs/0},
+    {"rename hd traverses lhs",
+     fun rename_hd_traverses_lhs/0},
+    {"rename hd traverses rhs",
+     fun rename_hd_traverses_rhs/0},
+    {"rename tl traverses lhs",
+     fun rename_tl_traverses_lhs/0},
+    {"rename tl traverses rhs",
+     fun rename_tl_traverses_rhs/0},
+    {"rename append traverses lhs",
+     fun rename_append_traverses_lhs/0},
+    {"rename append traverses rhs",
+     fun rename_append_traverses_rhs/0},
+    {"rename for alters list binding",
+     fun rename_for_alters_list_binding/0},
+    {"rename for alters body expr",
+     fun rename_for_alters_body_expr/0},
+    {"rename fold alters acc binding",
+     fun rename_fold_alters_acc_binding/0},
+    {"rename fold alters list binding",
+     fun rename_fold_alters_list_binding/0},
+    {"rename fold traverses body expr",
+     fun rename_fold_traverses_body_expr/0},
+    {"rename rcd traverses field",
      fun rename_rcd_traverses_field/0},
     {"rename proj traverses operand",
      fun rename_proj_traverses_operand/0},
@@ -1427,6 +1456,75 @@ rename_test_() ->
      fun rename_err_no_effect/0}
    ]
   }.
+
+rename_null_no_effect() ->
+  E = null( t_str() ),
+  ?assertEqual( E, rename( E, x, y ) ).
+
+rename_cons_traverses_lhs() ->
+  E1 = cons( var( x ), var( z ) ),
+  E2 = cons( var( y ), var( z ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_cons_traverses_rhs() ->
+  E1 = cons( var( x ), var( z ) ),
+  E2 = cons( var( x ), var( y ) ),
+  ?assertEqual( E2, rename( E1, z, y ) ).
+
+rename_hd_traverses_lhs() ->
+  E1 = hd( var( x ), var( z ) ),
+  E2 = hd( var( y ), var( z ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_hd_traverses_rhs() ->
+  E1 = hd( var( x ), var( z ) ),
+  E2 = hd( var( x ), var( y ) ),
+  ?assertEqual( E2, rename( E1, z, y ) ).
+
+rename_tl_traverses_lhs() ->
+  E1 = tl( var( x ), var( z ) ),
+  E2 = tl( var( y ), var( z ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_tl_traverses_rhs() ->
+  E1 = tl( var( x ), var( z ) ),
+  E2 = tl( var( x ), var( y ) ),
+  ?assertEqual( E2, rename( E1, z, y ) ).
+
+rename_append_traverses_lhs() ->
+  E1 = append( var( x ), var( z ) ),
+  E2 = append( var( y ), var( z ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_append_traverses_rhs() ->
+  E1 = append( var( x ), var( z ) ),
+  E2 = append( var( x ), var( y ) ),
+  ?assertEqual( E2, rename( E1, z, y ) ).
+
+rename_for_alters_list_binding() ->
+  E1 = for( t_bool(), [{x, t_bool(), null( t_bool() )}], neg( var( z ) ) ),
+  E2 = for( t_bool(), [{y, t_bool(), null( t_bool() )}], neg( var( z ) ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_for_alters_body_expr() ->
+  E1 = for( t_bool(), [{x, t_bool(), null( t_bool() )}], neg( var( z ) ) ),
+  E2 = for( t_bool(), [{x, t_bool(), null( t_bool() )}], neg( var( y ) ) ),
+  ?assertEqual( E2, rename( E1, z, y ) ).
+
+rename_fold_alters_acc_binding() ->
+  E1 = fold( {x, t_bool(), true()}, {z, t_bool(), null( t_bool() )}, var( a ) ),
+  E2 = fold( {y, t_bool(), true()}, {z, t_bool(), null( t_bool() )}, var( a ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_fold_alters_list_binding() ->
+  E1 = fold( {x, t_bool(), true()}, {z, t_bool(), null( t_bool() )}, var( a ) ),
+  E2 = fold( {x, t_bool(), true()}, {y, t_bool(), null( t_bool() )}, var( a ) ),
+  ?assertEqual( E2, rename( E1, z, y ) ).
+
+rename_fold_traverses_body_expr() ->
+  E1 = fold( {x, t_bool(), true()}, {z, t_bool(), null( t_bool() )}, var( a ) ),
+  E2 = fold( {x, t_bool(), true()}, {z, t_bool(), null( t_bool() )}, var( b ) ),
+  ?assertEqual( E2, rename( E1, a, b ) ).
 
 rename_rcd_traverses_field() ->
   E1 = rcd( [{a, var( x )}] ),
@@ -1856,8 +1954,7 @@ is_alpha_equivalent_test_() ->
    fun() -> ok end,
    fun( _ ) -> ok end,
 
-   [
-    {"is_alpha_equivalent lam identity functions",
+   [{"is_alpha_equivalent lam identity functions",
      fun is_alpha_equivalent_lam_identity_functions/0},
     {"is_alpha_equivalent lam free var not bound var",
      fun is_alpha_equivalent_lam_free_var_not_bound_var/0},
@@ -1903,8 +2000,7 @@ free_vars_test_() ->
    fun() -> ok end,
    fun( _ ) -> ok end,
 
-   [
-    {"free_vars for subtracts list binding",
+   [{"free_vars for subtracts list binding",
      fun free_vars_for_subtracts_list_binding/0},
     {"free_vars for free var in list binding",
      fun free_vars_for_free_var_in_list_binding/0},
