@@ -29,7 +29,7 @@
 %% -------------------------------------------------------------------
 
 -module( cuneiform_lang ).
--include_lib( "cuneiform.hrl" ).
+-include( "cuneiform.hrl" ).
 
 %%====================================================================
 %% Exports
@@ -202,10 +202,10 @@ lam( Info, ArgLst, Body ) ->
 
 -spec app( Info :: info(), F :: e(), ArgLst :: [{x(), e()}] ) -> e().
 
-app( Info, F, ArgLst ) ->
+app( Info, EFn, XeLst ) ->
   {app, validate_info( Info ),
-        validate_expr( F ),
-        validate_xe_lst( ArgLst )}.
+        validate_expr( EFn ),
+        validate_xe_lst( XeLst )}.
 
 -spec fix( E :: e() ) -> e().
       fix( E )        -> fix( na, E ).
@@ -664,13 +664,24 @@ validate_reason( {user, Z} ) ->
 validate_reason( Z ) ->
   error( {bad_reason, Z} ).
 
--spec validate_lang( L :: _ ) -> boolean().
 
-validate_lang( Z ) ->
-  case is_lang( Z ) of
-    true  -> Z;
-    false -> error( {bad_lang, Z} )
-  end.
+-spec validate_lang( Z :: _ ) -> l().
+
+validate_lang( Z = 'Awk' )        -> Z;
+validate_lang( Z = 'Bash' )       -> Z;
+validate_lang( Z = 'Elixir' )     -> Z;
+validate_lang( Z = 'Erlang' )     -> Z;
+validate_lang( Z = 'Gnuplot' )    -> Z;
+validate_lang( Z = 'Java' )       -> Z;
+validate_lang( Z = 'Javascript' ) -> Z;
+validate_lang( Z = 'Matlab' )     -> Z;
+validate_lang( Z = 'Octave' )     -> Z;
+validate_lang( Z = 'Perl' )       -> Z;
+validate_lang( Z = 'Python' )     -> Z;
+validate_lang( Z = 'R' )          -> Z;
+validate_lang( Z = 'Racket' )     -> Z;
+validate_lang( Z )                -> error( {bad_lang, Z} ).
+
 
 -spec validate_x_lst( X :: _ ) -> [x()].
 
@@ -683,21 +694,29 @@ validate_x( X ) when is_atom( X ) -> X;
 validate_x( X )                   -> error( {bad_atom, X} ).
 
 
--spec validate_pattern( X :: _ ) -> r().
+-spec validate_pattern( Z :: _ ) -> r().
 
-validate_pattern( X ) ->
-  case is_pattern( X ) of
-    true  -> X;
-    false -> error( {bad_pattern, X} )
-  end.
+validate_pattern( Z = {r_var, X, T} ) when is_atom( X ) ->
+  validate_type( T ),
+  Z;
 
--spec validate_xr( X :: _ ) -> {x(), r()}.
+validate_pattern( Z = {r_rcd, RLst} ) when is_list( RLst ) ->
+  lists:foreach( fun validate_xr/1, RLst ),
+  Z;
 
-validate_xr( X ) ->
-  case is_xr( X ) of
-    true  -> X;
-    false -> {bad_xr, X}
-  end.
+validate_pattern( Z ) ->
+  error( {bad_pattern, Z} ).
+
+
+-spec validate_xr( Z :: _ ) -> {x(), r()}.
+
+validate_xr( Z = {X, R} ) when is_atom( X ) ->
+  validate_pattern( R ),
+  Z;
+
+validate_xr( Z ) ->
+  error( {bad_xr, Z} ).
+
 
 -spec validate_xr_lst( X :: _ ) -> [{x(), r()}].
 
@@ -705,22 +724,26 @@ validate_xr_lst( [] )    -> [];
 validate_xr_lst( [H|T] ) -> [validate_xr( H )|validate_xr_lst( T )].
 
 
--spec validate_info( X :: _ ) -> info().
+-spec validate_info( Z :: _ ) -> info().
 
-validate_info( X ) ->
-  case is_info( X ) of
-    true  -> X;
-    false -> error( {bad_info, X} )
-  end.
+validate_info( Z = na ) ->
+  Z;
+
+validate_info( N ) when is_integer( N ), N > 0 ->
+  N;
+
+validate_info( Z = {B, N} ) when is_binary( B ), is_integer( N ), N > 0 ->
+  Z;
+
+validate_info( Z ) ->
+  error( {bad_info, Z} ).
 
 
 -spec validate_xt( X :: _ ) -> {x(), t()}.
 
 validate_xt( Xt = {X, T} ) when is_atom( X ) ->
-  case is_type( T ) of
-    true -> Xt;
-    false -> error( {bad_type, T} )
-  end;
+  validate_type( T ),
+  Xt;
 
 validate_xt( {Z, _} ) ->
   error( {bad_atom, Z} );
@@ -737,9 +760,10 @@ validate_xt_lst( Z )     -> error( {bad_xt_lst, Z} ).
 
 -spec validate_xe( X :: _ ) -> {x(), e()}.
 
-validate_xe( {X, E} )
+validate_xe( Z = {X, E} )
 when is_atom( X ) ->
-  {X, validate_expr( E )};
+  validate_expr( E ),
+  Z;
 
 validate_xe( {Z, _} ) ->
   error( {bad_atom, Z} );
@@ -756,9 +780,11 @@ validate_xe_lst( Z )     -> error( {bad_xe_lst, Z} ).
 
 -spec validate_xte( X :: _ ) -> {x(), t(), e()}.
 
-validate_xte( {X, T, E} )
+validate_xte( Z = {X, T, E} )
 when is_atom( X ) ->
-  {X, validate_type( T ), validate_expr( E )};
+  validate_type( T ),
+  validate_expr( E ),
+  Z;
 
 validate_xte( {Z, _, _} ) ->
   error( {bad_atom, Z} );
@@ -775,13 +801,16 @@ validate_xte_lst( Z )     -> error( {bad_xte_lst, Z} ).
 
 -spec validate_body( X :: _ ) -> {ntv, e()} | {frn, s(), t(), l(), s()}.
 
-validate_body( {ntv, E} ) ->
-  {ntv, validate_expr( E )};
+validate_body( Z = {ntv, E} ) ->
+  validate_expr( E ),
+  Z;
 
-validate_body( {frn, X, T, L, S} )
+validate_body( Z = {frn, X, T, L, S} )
 when is_atom( X ),
      is_binary( S ) ->
-{frn, X, validate_type( T ), validate_lang( L ), S};
+  validate_type( T ),
+  validate_lang( L ),
+  Z;
 
 validate_body( {frn, X, _, _, _} )
 when not is_atom( X ) ->
@@ -795,263 +824,246 @@ validate_body( Z ) ->
   error( {bad_body, Z} ).
 
 
--spec validate_expr( X :: _ ) -> e().
+-spec validate_expr( Z :: _ ) -> e().
 
-validate_expr( E ) ->
-  case is_expr( E ) of
-    true  -> E;
-    false -> error( {bad_expr, E} )
-  end.
+validate_expr( E = {var, Info, X} ) when is_atom( X ) ->
+  validate_info( Info ),
+  E;
+
+validate_expr( E = {lam, Info, XtLst, {ntv, EBody}} ) when is_list( XtLst ) ->
+  validate_info( Info ),
+  lists:foreach( fun validate_xt/1, XtLst ),
+  validate_expr( EBody ),
+  E;
+
+validate_expr( E = {lam, Info, XtLst, {frn, X, T, L, S}} )
+when is_list( XtLst ),
+     is_atom( X ),
+     is_binary( S ) ->
+  validate_info( Info ),
+  lists:foreach( fun validate_xt/1, XtLst ),
+  validate_type( T ),
+  validate_lang( L ),
+  E;
+
+validate_expr( E = {app, Info, EFn, XeLst} ) when is_list( XeLst ) ->
+  validate_info( Info ),
+  validate_expr( EFn ),
+  lists:foreach( fun validate_xe/1, XeLst ),
+  E;
+
+validate_expr( E = {fix, Info, EOp} ) ->
+  validate_info( Info ),
+  validate_expr( EOp ),
+  E;
+
+validate_expr( E = {fut, Info, EOp} ) ->
+  validate_info( Info ),
+  validate_expr( EOp ),
+  E;
+
+validate_expr( E = {str, Info, S} ) when is_binary( S ) ->
+  validate_info( Info ),
+  E;
+
+validate_expr( E = {file, Info, S} ) when is_binary( S ) ->
+  validate_info( Info ),
+  E;
+
+validate_expr( E = {true, Info} ) ->
+  validate_info( Info ),
+  E;
+
+validate_expr( E = {false, Info} ) ->
+  validate_info( Info ),
+  E;
+
+validate_expr( E = {cmp, Info, E1, E2} ) ->
+  validate_info( Info ),
+  validate_expr( E1 ),
+  validate_expr( E2 ),
+  E;
+
+validate_expr( E = {conj, Info, E1, E2} ) ->
+  validate_info( Info ),
+  validate_expr( E1 ),
+  validate_expr( E2 ),
+  E;
+
+validate_expr( E = {disj, Info, E1, E2} ) ->
+  validate_info( Info ),
+  validate_expr( E1 ),
+  validate_expr( E2 ),
+  E;
+
+validate_expr( E = {neg, Info, EOp} ) ->
+  validate_info( Info ),
+  validate_expr( EOp ),
+  E;
+
+validate_expr( E = {isnil, Info, E} ) ->
+  validate_info( Info ),
+  validate_expr( E ),
+  E;
+
+validate_expr( E = {cnd, Info, E1, E2, E3} ) ->
+  validate_info( Info ),
+  validate_expr( E1 ),
+  validate_expr( E2 ),
+  validate_expr( E3 ),
+  E;
+
+validate_expr( E = {null, Info, T} ) ->
+  validate_info( Info ),
+  validate_type( T ),
+  E;
+
+validate_expr( E = {cons, Info, E1, E2} ) ->
+  validate_info( Info ),
+  validate_expr( E1 ),
+  validate_expr( E2 ),
+  E;
+
+validate_expr( E = {hd, Info, E1, E2} ) ->
+  validate_info( Info ),
+  validate_expr( E1 ),
+  validate_expr( E2 ),
+  E;
+
+validate_expr( E = {tl, Info, E1, E2} ) ->
+  validate_info( Info ),
+  validate_expr( E1 ),
+  validate_expr( E2 ),
+  E;
+
+validate_expr( E = {append, Info, E1, E2} ) ->
+  validate_info( Info ),
+  validate_expr( E1 ),
+  validate_expr( E2 ),
+  E;
+
+validate_expr( E = {for, Info, TRet, XteLst, EBody} )
+when is_list( XteLst ) ->
+  validate_info( Info ),
+  validate_type( TRet ),
+  lists:foreach( fun validate_xte/1, XteLst ),
+  validate_expr( EBody ),
+  E;
+
+validate_expr( E = {fold, Info, AccBind, LstBind, EBody} ) ->
+  validate_info( Info ),
+  validate_xte( AccBind ),
+  validate_xte( LstBind ),
+  validate_expr( EBody ),
+  E;
+
+validate_expr( E = {rcd, Info, XeLst} ) when is_list( XeLst ) ->
+  validate_info( Info ),
+  lists:foreach( fun validate_xe/1, XeLst ),
+  E;
+
+validate_expr( E = {proj, Info, X, EOp} ) when is_atom( X ) ->
+  validate_info( Info ),
+  validate_expr( EOp ),
+  E;
+
+validate_expr( E = {err, Info, T, R} ) ->
+  validate_info( Info ),
+  validate_type( T ),
+  validate_reason( R ),
+  E;
+
+validate_expr( Z ) ->
+  error( {bad_expr, Z} ).
 
 
--spec validate_type( X :: _ ) -> t().
+-spec validate_type( Z :: _ ) -> t().
 
-validate_type( X ) ->
-  case is_type( X ) of
-    true  -> X;
-    false -> error( {bad_type, X} )
-  end.
+validate_type( T = 'Str' )  ->
+  T;
+
+validate_type( T = 'File' ) ->
+  T;
+
+validate_type( T = 'Bool' ) ->
+  T;
+
+validate_type( T = {'Fn', XtLst, TRet} ) when is_list( XtLst ) ->
+  validate_type( TRet ),
+  lists:foreach( fun validate_xt/1, XtLst ),
+  T;
+
+validate_type( T = {'Lst', TOp} ) ->
+  validate_type( TOp ),
+  T;
+
+validate_type( T = {'Rcd', XtLst} ) when is_list( XtLst ) ->
+  lists:foreach( fun validate_xt/1, XtLst ),
+  T;
+
+validate_type( Z ) ->
+  error( {bad_type, Z} ).
 
 
 %%====================================================================
 %% Contract Predicates
 %%====================================================================
 
--spec is_xr( X :: _ ) -> boolean().
-
-is_xr( {X, R} ) when is_atom( X ) -> is_pattern( R );
-is_xr( _ )                        -> false.
-
--spec is_pattern( X :: _ ) -> boolean().
-
-is_pattern( {r_var, X, T} ) when is_atom( X ) ->
-  is_type( T );
-
-is_pattern( {r_rcd, RLst} ) when is_list( RLst ) ->
-  lists:all( fun is_xr/1, RLst );
-
-is_pattern( _ ) ->
-  false.
-
-
--spec is_xt( X :: _ ) -> boolean().
-
-is_xt( {X, T} ) when is_atom( X ) -> is_type( T );
-is_xt( _ )                        -> false.
-
-
--spec is_xe( X :: _ ) -> boolean().
-
-is_xe( {X, E} ) when is_atom( X ) -> is_expr( E );
-is_xe( _ )                        -> false.
-
-
--spec is_xte( X :: _ ) -> boolean().
-
-is_xte( {X, T, E} ) when is_atom( X ) -> is_type( T ) andalso is_expr( E );
-is_xte( _ )                           -> false.
-
-
--spec is_info( X :: _ ) -> boolean().
-
-is_info( na ) ->
-  true;
-
-is_info( N ) when is_integer( N ), N > 0 ->
-  true;
-
-is_info( {B, N} ) when is_binary( B ), is_integer( N ), N > 0 ->
-  true;
-
-is_info( _Term ) ->
-  false.
-
-
--spec is_type( X :: _ ) -> boolean().
-
-is_type( 'Str' )  ->
-  true;
-
-is_type( 'File' ) ->
-  true;
-
-is_type( 'Bool' ) ->
-  true;
-
-is_type( {'Fn', ArgLst, TRet} )
-when is_list( ArgLst ) ->
-  is_type( TRet ) andalso lists:all( fun is_xt/1, ArgLst );
-
-is_type( {'Lst', T} ) -> is_type( T );
-
-is_type( {'Rcd', FieldLst} )
-when is_list( FieldLst ) ->
-  lists:all( fun is_xt/1, FieldLst );
-
-is_type( _ ) ->
-  false.
-
-
--spec is_lang( X :: _ ) -> boolean().
-
-is_lang( 'Awk' )        -> true;
-is_lang( 'Bash' )       -> true;
-is_lang( 'Elixir' )     -> true;
-is_lang( 'Erlang' )     -> true;
-is_lang( 'Gnuplot' )    -> true;
-is_lang( 'Java' )       -> true;
-is_lang( 'Javascript' ) -> true;
-is_lang( 'Matlab' )     -> true;
-is_lang( 'Octave' )     -> true;
-is_lang( 'Perl' )       -> true;
-is_lang( 'Python' )     -> true;
-is_lang( 'R' )          -> true;
-is_lang( 'Racket' )     -> true;
-is_lang( _ )            -> false.
-
-
--spec is_expr( X :: _ ) -> boolean().
-
-is_expr( {var, Info, X} )
-when is_atom( X ) ->
-  is_info( Info );
-
-is_expr( {lam, Info, ArgLst, {ntv, E}} )
-when is_list( ArgLst ) ->
-          is_info( Info )
-  andalso lists:all( fun is_xt/1, ArgLst )
-  andalso is_expr( E );
-
-is_expr( {lam, Info, ArgLst, {frn, X, T, L, S}} )
-when is_list( ArgLst ),
-     is_atom( X ),
-     is_binary( S ) ->
-          is_info( Info )
-  andalso lists:all( fun is_xt/1, ArgLst )
-  andalso is_type( T )
-  andalso is_lang( L );
-
-is_expr( {app, Info, F, EBindLst} )
-when is_list( EBindLst ) ->
-          is_info( Info )
-  andalso is_expr( F )
-  andalso lists:all( fun is_xe/1, EBindLst );
-
-is_expr( {fix, Info, E} ) ->
-  is_info( Info ) andalso is_expr( E );
-
-is_expr( {fut, Info, E} ) ->
-  is_info( Info ) andalso is_expr( E );
-
-is_expr( {str, Info, S} )
-when is_binary( S ) ->
-  is_info( Info );
-
-is_expr( {file, Info, S} )
-when is_binary( S ) ->
-  is_info( Info );
-
-is_expr( {true, Info} ) ->
-  is_info( Info );
-
-is_expr( {false, Info} ) ->
-  is_info( Info );
-
-is_expr( {cmp, Info, E1, E2} ) ->
-  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
-
-is_expr( {conj, Info, E1, E2} ) ->
-  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
-
-is_expr( {disj, Info, E1, E2} ) ->
-  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
-
-is_expr( {neg, Info, E} ) ->
-  is_info( Info ) andalso is_expr( E );
-
-is_expr( {isnil, Info, E} ) ->
-  is_info( Info ) andalso is_expr( E );
-
-is_expr( {cnd, Info, E1, E2, E3} ) ->
-          is_info( Info )
-  andalso is_expr( E1 )
-  andalso is_expr( E2 )
-  andalso is_expr( E3 );
-
-is_expr( {null, Info, T} ) ->
-  is_info( Info ) andalso is_type( T );
-
-is_expr( {cons, Info, E1, E2} ) ->
-  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
-
-is_expr( {hd, Info, E1, E2} ) ->
-  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
-
-is_expr( {tl, Info, E1, E2} ) ->
-  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
-
-is_expr( {append, Info, E1, E2} ) ->
-  is_info( Info ) andalso is_expr( E1 ) andalso is_expr( E2 );
-
-is_expr( {for, Info, TRet, TypedBindLst, EBody} )
-when is_list( TypedBindLst ) ->
-          is_info( Info )
-  andalso is_type( TRet )
-  andalso lists:all( fun is_xte/1, TypedBindLst )
-  andalso is_expr( EBody );
-
-is_expr( {fold, Info, AccBind, LstBind, EBody} ) ->
-          is_info( Info )
-  andalso is_xte( AccBind )
-  andalso is_xte( LstBind )
-  andalso is_expr( EBody );
-
-is_expr( {rcd, Info, BindLst} )
-when is_list( BindLst ) ->
-  is_info( Info ) andalso lists:all( fun is_xe/1, BindLst );
-
-is_expr( {proj, Info, X, E} )
-when is_atom( X ) ->
-  is_info( Info ) andalso is_expr( E );
-
-is_expr( {err, Info, T, R} ) ->
-          is_info( Info )
-  andalso is_type( T )
-  andalso is_reason( R );
-
-is_expr( _ ) ->
-  false.
-
-
--spec is_reason( X :: _ ) -> boolean().
-
-is_reason( {run, Node, AppId, LamName, ExtendedScript, Output} )
-when is_binary( Node ),
-     is_binary( AppId ),
-     is_atom( LamName ),
-     is_binary( ExtendedScript ),
-     is_binary( Output ) ->
-  true;
-
-is_reason( {stagein, Node, AppId, LamName, FileLst} )
-when is_binary( Node ),
-     is_binary( AppId ),
-     is_atom( LamName ),
-     is_list( FileLst ) ->
-  lists:all( fun is_binary/1, FileLst );
-
-is_reason( {stageout, Node, AppId, LamName, FileLst} )
-when is_binary( Node ),
-     is_binary( AppId ),
-     is_atom( LamName ),
-     is_list( FileLst ) ->
-  lists:all( fun is_binary/1, FileLst );
-
-is_reason( {user, Msg} ) when is_binary( Msg ) ->
-  true;
-
-is_reason( _ ) ->
-  false.
+-spec is_pattern( Z :: _ ) -> boolean().
+
+is_pattern( Z ) ->
+  try validate_pattern( Z ) of
+    Z -> true
+  catch
+    error:_ -> false
+  end.
+
+
+-spec is_info( Z :: _ ) -> boolean().
+
+is_info( Z ) ->
+  try validate_info( Z ) of
+    Z -> true
+  catch
+    error:_ -> false
+  end.
+
+-spec is_type( Z :: _ ) -> boolean().
+
+is_type( Z ) ->
+  try validate_type( Z ) of
+    Z -> true
+  catch
+    error:_ -> false
+  end.
+
+
+-spec is_lang( Z :: _ ) -> boolean().
+
+is_lang( Z ) ->
+  try validate_lang( Z ) of
+    Z -> true
+  catch
+    error:_ -> false
+  end.
+
+-spec is_expr( Z :: _ ) -> boolean().
+
+is_expr( Z ) ->
+  try validate_expr( Z ) of
+    Z -> true
+  catch
+    error:_ -> false
+  end.
+
+-spec is_reason( Z :: _ ) -> boolean().
+
+is_reason( Z ) ->
+  try validate_reason( Z ) of
+    Z -> true
+  catch
+    error:_ -> false
+  end.
 
 
 %%====================================================================

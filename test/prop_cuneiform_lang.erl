@@ -1,3 +1,33 @@
+%% -*- erlang -*-
+%%
+%% cf_client: Cuneiform client implementation
+%%
+%% Copyright 2015-2019 Jörgen Brandt <joergen@cuneiform-lang.org>
+%%
+%% Licensed under the Apache License, Version 2.0 (the "License");
+%% you may not use this file except in compliance with the License.
+%% You may obtain a copy of the License at
+%%
+%%     http://www.apache.org/licenses/LICENSE-2.0
+%%
+%% Unless required by applicable law or agreed to in writing, software
+%% distributed under the License is distributed on an "AS IS" BASIS,
+%% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+%% See the License for the specific language governing permissions and
+%% limitations under the License.
+%%
+%% -------------------------------------------------------------------
+%% @author Jörgen Brandt <joergen@cuneiform-lang.org>
+%% @version 0.1.7
+%% @copyright 2015-2019
+%%
+%%
+%%
+%%
+%%
+%% @end
+%% -------------------------------------------------------------------
+
 -module( prop_cuneiform_lang ).
 
 -include_lib( "proper/include/proper.hrl" ).
@@ -19,6 +49,7 @@
                           rename/3,
                           subst/3,
                           validate_expr/1,
+                          validate_lang/1,
                           validate_pattern/1,
                           validate_reason/1,
                           validate_type/1] ).
@@ -28,9 +59,13 @@
 %% Properties
 %%==========================================================
 
-%% Contract Predicates
-
 %% Expressions
+
+prop_validate_expr_always_returns_original() ->
+  ?FORALL( E, e(),
+    begin
+      E =:= validate_expr( E )
+    end ).
 
 prop_is_expr_total() ->
   ?FORALL( Z, oneof( [e(), term()] ), 
@@ -44,20 +79,13 @@ prop_is_expr_true_for_expr() ->
       collect( expr_category( E ), is_expr( E ) )
     end ).
 
-prop_validate_expr_mirrors_is_expr() ->
-  ?FORALL( Z, oneof( [e(), term()] ),
-    begin
-      V =
-        try validate_expr( Z ) of
-          Z -> true
-        catch
-          error:_ -> false
-        end,
-      I = is_expr( Z ),
-      V =:= I
-    end ).
-
 %% Types
+
+prop_validate_type_always_returns_original() ->
+  ?FORALL( T, t(),
+    begin
+      T =:= validate_type( T )
+    end ).
 
 prop_is_type_total() ->
   ?FORALL( Z, oneof( [t(), term()] ),
@@ -71,17 +99,12 @@ prop_is_type_true_for_type() ->
       collect( type_category( T ), is_type( T ) )
     end ).
 
-prop_validate_type_mirrors_is_type() ->
-  ?FORALL( Z, oneof( [t(), term()] ),
+%% Langs
+
+prop_validate_lang_always_returns_original() ->
+  ?FORALL( L, l(),
     begin
-      V =
-        try validate_type( Z ) of
-          Z -> true
-        catch
-          error:_ -> false
-        end,
-      I = is_type( Z ),
-      V =:= I
+      L =:= validate_lang( L )
     end ).
 
 prop_is_lang_total() ->
@@ -96,6 +119,14 @@ prop_is_lang_true_for_lang() ->
       is_lang( L )
     end ).
 
+%% Patterns
+
+prop_validate_pattern_always_returns_original() ->
+  ?FORALL( R, r(),
+    begin
+      R =:= validate_pattern( R )
+    end ).
+
 prop_is_pattern_total() ->
   ?FORALL( Z, oneof( [r(), term()] ),
     begin
@@ -108,17 +139,12 @@ prop_is_pattern_true_for_pattern() ->
       is_pattern( R )
     end ).
 
-prop_validate_pattern_mirrors_is_type() ->
-  ?FORALL( Z, oneof( [r(), term()] ),
+%% Reasons
+
+prop_validate_reason_always_returns_original() ->
+  ?FORALL( Reason, reason(),
     begin
-      V =
-        try validate_pattern( Z ) of
-          Z -> true
-        catch
-          error:_ -> false
-        end,
-      I = is_pattern( Z ),
-      V =:= I
+      Reason =:= validate_reason( Reason )
     end ).
 
 prop_is_reason_total() ->
@@ -133,18 +159,6 @@ prop_is_reason_true_for_reason() ->
       is_reason( R )
     end ).
 
-prop_validate_reason_mirrors_is_reason() ->
-  ?FORALL( Z, oneof( [reason(), term()] ),
-    begin
-      V =
-        try validate_reason( Z ) of
-          Z -> true
-        catch
-          error:_ -> false
-        end,
-      I = is_reason( Z ),
-      V =:= I
-    end ).
 
 %% Renaming
 
@@ -216,7 +230,6 @@ prop_var_is_neutral_element_of_subst() ->
           is_alpha_equivalent( E1, E3 )
         end ) ) ).
 
-%% Expression Analysis
 
 %% Alpha Equivalence
 
@@ -234,7 +247,7 @@ prop_is_alpha_equivalent_symmetric() ->
           collect( neq, true )
       end ) ).
 
-%% Variables
+%% Variable Names
 
 prop_expr_vars_always_produces_list_of_atom() ->
   ?FORALL( E, e(),
