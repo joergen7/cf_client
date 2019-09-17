@@ -421,8 +421,8 @@ alet( _Info, [], EBody ) ->
 alet( Info, XteLst, EBody ) ->
   validate_xte_lst( XteLst ),
   app( Info,
-       lam( Info, [{X, T} || {X, T, _} <- XteLst],
-                  {ntv, EBody} ),
+       {lam, Info, [{X, T} || {X, T, _} <- XteLst],
+                   {ntv, EBody}},
        [{X, E} || {X, _, E} <- XteLst] ).
 
 
@@ -435,7 +435,7 @@ asc( E, T ) ->
 
 asc( Info, E, T ) ->
   X = '#asc',
-  alet( Info, [{X, T, E}], var( Info, X ) ).
+  alet( Info, [{X, T, E}], {var, Info, X} ).
 
 
 %%====================================================================
@@ -1060,7 +1060,7 @@ rename_xte_lst( [H|T], X1, X2 ) ->
 
 -spec rename( E :: e(), X1 :: x(), X2 :: x() ) -> e().
 
-rename( {var, Info, X1}, X1, X2 ) -> var( Info, X2 );
+rename( {var, Info, X1}, X1, X2 ) -> {var, Info, X2};
 rename( E = {var, _, _}, _, _ )   -> E;
 
 rename( {lam, Info, ArgLst, {ntv, E}}, X1, X2 ) ->

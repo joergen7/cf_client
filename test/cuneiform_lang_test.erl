@@ -50,7 +50,7 @@
                           l_javascript/0, l_matlab/0, l_octave/0, l_perl/0,
                           l_python/0, l_r/0, l_racket/0, l_awk/0,
                           l_gnuplot/0] ).
--import( cuneiform_lang, [subst/3, protect_expr/1] ).
+-import( cuneiform_lang, [subst/3, protect_expr/1, rename/3] ).
 -import( cuneiform_lang, [is_alpha_equivalent/2, expr_free_vars/1] ).
 -import( cuneiform_lang, [validate_lang/1, validate_info/1] ).
 
@@ -1413,6 +1413,35 @@ validate_lang_fails_for_invalid_lang() ->
 %%====================================================================
 %% Renaming and Substitution
 %%====================================================================
+
+rename_test_() ->
+  {foreach,
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [{"rename rcd traverses field",
+     fun rename_rcd_traverses_field/0},
+    {"rename proj traverses operand",
+     fun rename_proj_traverses_operand/0},
+    {"rename err no effect",
+     fun rename_err_no_effect/0}
+   ]
+  }.
+
+rename_rcd_traverses_field() ->
+  E1 = rcd( [{a, var( x )}] ),
+  E2 = rcd( [{a, var( y )}] ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_proj_traverses_operand() ->
+  E1 = proj( a, var( x ) ),
+  E2 = proj( a, var( y ) ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_err_no_effect() ->
+  E = err( t_str(), {user, <<"bla">>} ),
+  ?assertEqual( E, rename( E, x, y ) ).
+
 
 subst_test_() ->
   {foreach,
