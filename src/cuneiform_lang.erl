@@ -151,18 +151,15 @@
       t_bool() -> 'Bool'.
 
 -spec t_rcd( ArgLst :: [{x(), t()}] ) -> t().
-
-t_rcd( ArgLst ) ->
-  {'Rcd', validate_xt_lst( ArgLst )}.
+      t_rcd( XtLst )                  -> validate_type( {'Rcd', XtLst} ).
 
 -spec t_lst( T :: t() ) -> t().
-      t_lst( T )        -> {'Lst', validate_type( T )}.
+      t_lst( T )        -> validate_type( {'Lst', T} ).
 
 -spec t_fn( ArgLst :: [{x(), t()}], TRet :: t() ) -> t().
 
-t_fn( ArgLst, TRet ) ->
-  {'Fn', validate_xt_lst( ArgLst ),
-         validate_type( TRet )}.
+t_fn( XtLst, TRet ) ->
+  validate_type( {'Fn', XtLst, TRet} ).
 
 
 %%====================================================================
@@ -173,89 +170,77 @@ t_fn( ArgLst, TRet ) ->
       var( X )        -> var( na, X ).
 
 -spec var( Info :: info(), X :: x() ) -> e().
+      var( Info, X )                  -> validate_expr( {var, Info, X} ).
 
-var( Info, X ) ->
-  {var, validate_info( Info ),
-        validate_x( X )}.
 
--spec lam( ArgLst, Body ) -> e()
-when ArgLst :: [{x(), t()}],
-     Body   :: {ntv, e()}
-             | {frn, s(), t(), l(), s()}.
+-spec lam( XtLst, Body ) -> e()
+when XtLst :: [{x(), t()}],
+     Body  :: {ntv, e()}
+            | {frn, s(), t(), l(), s()}.
 
-lam( ArgLst, Body ) ->
-  lam( na, ArgLst, Body ).
+lam( XtLst, Body ) ->
+  lam( na, XtLst, Body ).
 
--spec lam( Info, ArgLst, Body ) -> e()
-when Info   :: info(),
-     ArgLst :: [{x(), t()}],
-     Body   :: {ntv, e()}
-             | {frn, s(), t(), l(), s()}.
+-spec lam( Info, XtLst, Body ) -> e()
+when Info  :: info(),
+     XtLst :: [{x(), t()}],
+     Body  :: {ntv, e()}
+            | {frn, s(), t(), l(), s()}.
 
-lam( Info, ArgLst, Body ) ->
-  {lam, validate_info( Info ),
-        validate_xt_lst( ArgLst ),
-        validate_body( Body )}.
+lam( Info, XtLst, Body ) ->
+  validate_expr( {lam, Info, XtLst, Body} ).
 
 -spec app( F :: e(), ArgLst :: [{x(), e()}] ) -> e().
       app( F, ArgLst )                        -> app( na, F, ArgLst ).
 
--spec app( Info :: info(), F :: e(), ArgLst :: [{x(), e()}] ) -> e().
+-spec app( Info :: info(), EFn :: e(), XeLst :: [{x(), e()}] ) -> e().
 
 app( Info, EFn, XeLst ) ->
-  {app, validate_info( Info ),
-        validate_expr( EFn ),
-        validate_xe_lst( XeLst )}.
+  validate_expr( {app, Info, EFn, XeLst} ).
 
--spec fix( E :: e() ) -> e().
-      fix( E )        -> fix( na, E ).
+-spec fix( EOp :: e() ) -> e().
+      fix( EOp )        -> fix( na, EOp ).
 
--spec fix( Info :: info(), E :: e() ) -> e().
+-spec fix( Info :: info(), EOp :: e() ) -> e().
 
-fix( Info, E ) ->
-  {fix, validate_info( Info ), validate_expr( E )}.
+fix( Info, EOp ) ->
+  validate_expr( {fix, Info, EOp} ).
 
--spec fut( E :: e() ) -> e().
-      fut( E )        -> fut( na, E ).
+-spec fut( EOp :: e() ) -> e().
+      fut( EOp )        -> fut( na, EOp ).
 
--spec fut( Info :: info(), E :: e() ) -> e().
+-spec fut( Info :: info(), EOp :: e() ) -> e().
 
-fut( Info, E ) ->
-  {fut, validate_info( Info ), validate_expr( E )}.
+fut( Info, EOp ) ->
+  validate_expr( {fut, Info, EOp} ).
 
 -spec str( S :: s() ) -> e().
       str( S )        -> str( na, S ).
 
 -spec str( Info :: info(), S :: s() )    -> e().
 
-str( Info, S ) when is_binary( S ) ->
-  {str, validate_info( Info ), S};
-
-str( _, Z ) ->
-  error( {bad_binary, Z} ).
+str( Info, S ) ->
+  validate_expr( {str, Info, S} ).
 
 -spec file( S :: s() ) -> e().
       file( S ) -> file( na, S ).
 
 -spec file( Info :: info(), S :: s() ) -> e().
 
-file( Info, S ) when is_binary( S ) ->
-  {file, validate_info( Info ), S};
-
-file( _, Z ) ->
-  error( {bad_binary, Z} ).
+file( Info, S ) ->
+  validate_expr( {file, Info, S} ).
 
 -spec true() -> e().
       true() -> true( na ).
 
 -spec true( Info :: info() ) -> e().
-      true( Info )           -> {true, validate_info( Info )}.
+      true( Info )           -> validate_expr( {true, Info} ).
 
 -spec false() -> e().
       false() -> false( na ).
 
 -spec false( Info :: info() ) -> e().
-      false( Info )           -> {false, validate_info( Info )}.
+      false( Info )           -> validate_expr( {false, Info} ).
 
 -spec cmp( E1 :: e(), E2 :: e() ) -> e().
       cmp( E1, E2 )               -> cmp( na, E1, E2 ).
@@ -263,9 +248,7 @@ file( _, Z ) ->
 -spec cmp( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
 
 cmp( Info, E1, E2 ) ->
-  {cmp, validate_info( Info ),
-        validate_expr( E1 ),
-        validate_expr( E2 )}.
+  validate_expr( {cmp, Info, E1, E2} ).
 
 -spec conj( E1 :: e(), E2 :: e() ) -> e().
       conj( E1, E2 )               -> conj( na, E1, E2 ).
@@ -273,9 +256,7 @@ cmp( Info, E1, E2 ) ->
 -spec conj( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
 
 conj( Info, E1, E2 ) ->
-  {conj, validate_info( Info ),
-         validate_expr( E1 ),
-         validate_expr( E2 )}.
+  validate_expr( {conj, Info, E1, E2} ).
 
 -spec disj( E1 :: e(), E2 :: e() ) -> e().
       disj( E1, E2 )               -> disj( na, E1, E2 ).
@@ -283,9 +264,7 @@ conj( Info, E1, E2 ) ->
 -spec disj( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
 
 disj( Info, E1, E2 ) ->
-  {disj, validate_info( Info ),
-         validate_expr( E1 ),
-         validate_expr( E2 )}.
+  validate_expr( {disj, Info, E1, E2} ).
 
 -spec neg( E :: e() ) -> e().
       neg( E )        -> neg( na, E ).
@@ -293,8 +272,7 @@ disj( Info, E1, E2 ) ->
 -spec neg( Info :: info(), E :: e() ) -> e().
 
 neg( Info, E ) ->
-  {neg, validate_info( Info ),
-        validate_expr( E )}.
+  validate_expr( {neg, Info, E} ).
 
 -spec isnil( E :: e() ) -> e().
       isnil( E )        -> isnil( na, E ).
@@ -302,7 +280,7 @@ neg( Info, E ) ->
 -spec isnil( Info :: info(), E :: e() )   -> e().
 
 isnil( Info, E ) ->
-  {isnil, validate_info( Info ), validate_expr( E )}.
+  validate_expr( {isnil, Info, E} ).
 
 -spec cnd( E1 :: e(), E2 :: e(), E3 :: e() ) -> e().
       cnd( E1, E2, E3 )                      -> cnd( na, E1, E2, E3 ).
@@ -310,10 +288,7 @@ isnil( Info, E ) ->
 -spec cnd( Info :: info(), E1 :: e(), E2 :: e(), E3 :: e() ) -> e().
 
 cnd( Info, E1, E2, E3 ) ->
-  {cnd, validate_info( Info ),
-        validate_expr( E1 ),
-        validate_expr( E2 ),
-        validate_expr( E3 )}.
+  validate_expr( {cnd, Info, E1, E2, E3} ).
   
 -spec null( T :: t() ) -> e().
       null( T )        -> null( na, T ).
@@ -321,8 +296,7 @@ cnd( Info, E1, E2, E3 ) ->
 -spec null( Info :: info(), T :: t() ) -> e().
 
 null( Info, T ) ->
-  {null, validate_info( Info ),
-         validate_type( T )}.
+  validate_expr( {null, Info, T} ).
 
 -spec cons( E1 :: e(), E2 :: e() ) -> e().
       cons( E1, E2 )               -> cons( na, E1, E2 ).
@@ -330,9 +304,7 @@ null( Info, T ) ->
 -spec cons( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
 
 cons( Info, E1, E2 ) ->
-  {cons, validate_info( Info ),
-         validate_expr( E1 ),
-         validate_expr( E2 )}.
+  validate_expr( {cons, Info, E1, E2} ).
 
 -spec hd( E1 :: e(), E2 :: e() ) -> e().
       hd( E1, E2 )               -> hd( na, E1, E2 ).
@@ -340,9 +312,7 @@ cons( Info, E1, E2 ) ->
 -spec hd( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
 
 hd( Info, E1, E2 ) ->
-  {hd, validate_info( Info ),
-       validate_expr( E1 ),
-       validate_expr( E2 )}.
+  validate_expr( {hd, Info, E1, E2} ).
 
 -spec tl( E1 :: e(), E2 :: e() ) -> e().
       tl( E1, E2 )               -> tl( na, E1, E2 ).
@@ -350,9 +320,7 @@ hd( Info, E1, E2 ) ->
 -spec tl( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
 
 tl( Info, E1, E2 ) ->
-  {tl, validate_info( Info ),
-       validate_expr( E1 ),
-       validate_expr( E2 )}.
+  validate_expr( {tl, Info, E1, E2} ).
 
 -spec append( E1 :: e(), E2 :: e() ) -> e().
       append( E1, E2 )               -> append( na, E1, E2 ).
@@ -360,26 +328,21 @@ tl( Info, E1, E2 ) ->
 -spec append( Info :: info(), E1 :: e(), E2 :: e() ) -> e().
 
 append( Info, E1, E2 ) ->
-  {append, validate_info( Info ),
-           validate_expr( E1 ),
-           validate_expr( E2 )}.
+  validate_expr( {append, Info, E1, E2} ).
 
 -spec for( TRet :: t(), ArgLst :: [{x(), t(), e()}], E :: e() ) -> e().
 
 for( TRet, ArgLst, E ) ->
   for( na, TRet, ArgLst, E ).
 
--spec for( Info, TRet, ArgLst, E ) -> e()
+-spec for( Info, TRet, XteLst, EBody ) -> e()
 when Info   :: info(),
      TRet   :: t(),
-     ArgLst :: [{x(), t(), e()}],
-     E      :: e().
+     XteLst :: [{x(), t(), e()}],
+     EBody  :: e().
 
-for( Info, TRet, ArgLst, E ) ->
-  {for, validate_info( Info ),
-        validate_type( TRet ),
-        validate_xte_lst( ArgLst ),
-        validate_expr( E )}.
+for( Info, TRet, XteLst, EBody ) ->
+  validate_expr( {for, Info, TRet, XteLst, EBody} ).
 
 
 -spec fold( AccBind, ArgBind, E ) -> e()
@@ -398,10 +361,7 @@ when Info    :: info(),
      E       :: e().
 
 fold( Info, AccBind, LstBind, E ) ->
-  {fold, validate_info( Info ),
-         validate_xte( AccBind ),
-         validate_xte( LstBind ),
-         validate_expr( E )}.
+  validate_expr( {fold, Info, AccBind, LstBind, E} ).
 
 
 -spec rcd( ArgLst :: [{x(), e()}] ) -> e().
@@ -410,18 +370,16 @@ fold( Info, AccBind, LstBind, E ) ->
 -spec rcd( Info :: info(), BindLst :: [{x(), e()}] ) -> e().
 
 rcd( Info, BindLst ) ->
-  {rcd, validate_info( Info ),
-        validate_xe_lst( BindLst )}.
+  validate_expr( {rcd, Info, BindLst} ).
 
 -spec proj( X :: x(), E :: e() ) -> e().
       proj( X, E )               -> proj( na, X, E ).
 
+
 -spec proj( Info :: info(), X :: x(), E :: e() ) -> e().
 
 proj( Info, X, E ) ->
-  {proj, validate_info( Info ),
-         validate_x( X ),
-         validate_expr( E )}.
+  validate_expr( {proj, Info, X, E} ).
 
 -spec err( T :: t(), Msg :: binary() ) -> e().
       err( T, Msg )                    -> err( na, T, Msg ).
@@ -429,9 +387,7 @@ proj( Info, X, E ) ->
 -spec err( Info :: info(), T :: t(), Msg :: binary() ) -> e().
 
 err( Info, T, Reason ) ->
-  {err, validate_info( Info ),
-        validate_type( T ),
-        validate_reason( Reason )}.
+  validate_expr( {err, Info, T, Reason} ).
 
 
 %%====================================================================
@@ -488,9 +444,11 @@ asc( Info, E, T ) ->
 
 -spec r_var( X :: x(), T :: t() ) -> r().
 
-r_var( X, T ) ->
-  {r_var, validate_x( X ),
-          validate_type( T )}.
+r_var( X, T ) when is_atom( X ) ->
+  {r_var, X, validate_type( T )};
+
+r_var( Z, _ ) ->
+  error( {bad_atom, Z} ).
 
 
 -spec r_rcd( RLst :: [{x(), r()}] ) -> r().
@@ -539,9 +497,8 @@ expand_assign( {assign, Info, {r_rcd, [{X, R}|T]}, E} ) ->
 
 -spec ambiguous_names( NameLst :: [x()] ) -> [x()].
 
-ambiguous_names( NameLst ) ->
-  L = validate_x_lst( NameLst ),
-  lists:usort( L--lists:usort( L ) ).
+ambiguous_names( NameLst ) when is_list( NameLst ) ->
+  lists:usort( NameLst--lists:usort( NameLst ) ).
 
 
 -spec pattern_names( Pattern :: r() ) -> [x()].
@@ -549,24 +506,27 @@ ambiguous_names( NameLst ) ->
 pattern_names( {r_var, X, _T} ) when is_atom( X ) ->
   [X];
 
-pattern_names( {r_rcd, BindLst} ) ->
+pattern_names( {r_rcd, BindLst} ) when is_list( BindLst ) ->
   lists:flatmap( fun( {_X, R} ) -> pattern_names( R ) end,
-                 validate_xr_lst( BindLst ) ).
+                 BindLst ).
+
 
 -spec xt_names( BindLst :: [{x(), t()}] ) -> [x()].
 
-xt_names( BindLst ) ->
-  [X || {X, _T} <- validate_xt_lst( BindLst )].
+xt_names( BindLst ) when is_list( BindLst ) ->
+  [X || {X, _T} <- BindLst].
+
 
 -spec xe_names( BindLst :: [{x(), e()}] ) -> [x()].
 
-xe_names( BindLst ) ->
-  [X || {X, _E} <- validate_xe_lst( BindLst )].
+xe_names( BindLst ) when is_list( BindLst ) ->
+  [X || {X, _E} <- BindLst].
+
 
 -spec xte_names( BindLst :: [{x(), t(), e()}] ) -> [x()].
 
-xte_names( BindLst ) ->
-  [X || {X, _T, _E} <- validate_xte_lst( BindLst )].
+xte_names( BindLst ) when is_list( BindLst ) ->
+  [X || {X, _T, _E} <- BindLst].
 
 
 %%====================================================================
@@ -683,17 +643,6 @@ validate_lang( Z = 'Racket' )     -> Z;
 validate_lang( Z )                -> error( {bad_lang, Z} ).
 
 
--spec validate_x_lst( X :: _ ) -> [x()].
-
-validate_x_lst( [] )    -> [];
-validate_x_lst( [H|T] ) -> [validate_x( H )|validate_x_lst( T )].
-
--spec validate_x( X :: _ ) -> x().
-
-validate_x( X ) when is_atom( X ) -> X;
-validate_x( X )                   -> error( {bad_atom, X} ).
-
-
 -spec validate_pattern( Z :: _ ) -> r().
 
 validate_pattern( Z = {r_var, X, T} ) when is_atom( X ) ->
@@ -714,6 +663,9 @@ validate_xr( Z = {X, R} ) when is_atom( X ) ->
   validate_pattern( R ),
   Z;
 
+validate_xr( {Z, _} ) ->
+  error( {bad_atom, Z} );
+
 validate_xr( Z ) ->
   error( {bad_xr, Z} ).
 
@@ -721,7 +673,8 @@ validate_xr( Z ) ->
 -spec validate_xr_lst( X :: _ ) -> [{x(), r()}].
 
 validate_xr_lst( [] )    -> [];
-validate_xr_lst( [H|T] ) -> [validate_xr( H )|validate_xr_lst( T )].
+validate_xr_lst( [H|T] ) -> [validate_xr( H )|validate_xr_lst( T )];
+validate_xr_lst( Z )     -> error( {bad_xr_lst, Z} ).
 
 
 -spec validate_info( Z :: _ ) -> info().
@@ -799,57 +752,43 @@ validate_xte_lst( [H|T] ) -> [validate_xte( H )|validate_xte_lst( T )];
 validate_xte_lst( Z )     -> error( {bad_xte_lst, Z} ).
 
 
--spec validate_body( X :: _ ) -> {ntv, e()} | {frn, s(), t(), l(), s()}.
-
-validate_body( Z = {ntv, E} ) ->
-  validate_expr( E ),
-  Z;
-
-validate_body( Z = {frn, X, T, L, S} )
-when is_atom( X ),
-     is_binary( S ) ->
-  validate_type( T ),
-  validate_lang( L ),
-  Z;
-
-validate_body( {frn, X, _, _, _} )
-when not is_atom( X ) ->
-  error( {bad_atom, X} );
-
-validate_body( {frn, _, _, _, S} )
-when not is_binary( S ) ->
-  error( {bad_binary, S} );
-
-validate_body( Z ) ->
-  error( {bad_body, Z} ).
-
-
 -spec validate_expr( Z :: _ ) -> e().
 
 validate_expr( E = {var, Info, X} ) when is_atom( X ) ->
   validate_info( Info ),
   E;
 
-validate_expr( E = {lam, Info, XtLst, {ntv, EBody}} ) when is_list( XtLst ) ->
+validate_expr( {var, _, Z} ) ->
+  error( {bad_atom, Z} );
+
+validate_expr( E = {lam, Info, XtLst, {ntv, EBody}} ) ->
   validate_info( Info ),
-  lists:foreach( fun validate_xt/1, XtLst ),
+  validate_xt_lst( XtLst ),
   validate_expr( EBody ),
   E;
 
 validate_expr( E = {lam, Info, XtLst, {frn, X, T, L, S}} )
-when is_list( XtLst ),
-     is_atom( X ),
+when is_atom( X ),
      is_binary( S ) ->
   validate_info( Info ),
-  lists:foreach( fun validate_xt/1, XtLst ),
+  validate_xt_lst( XtLst ),
   validate_type( T ),
   validate_lang( L ),
   E;
 
-validate_expr( E = {app, Info, EFn, XeLst} ) when is_list( XeLst ) ->
+validate_expr( {lam, _, _, {frn, Z, _, _, _}} ) when not is_atom( Z ) ->
+  error( {bad_atom, Z} );
+
+validate_expr( {lam, _, _, {frn, _, _, _, Z}} ) when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
+
+validate_expr( {lam, _, _, Z} ) ->
+  error( {bad_body, Z} );
+
+validate_expr( E = {app, Info, EFn, XeLst} )->
   validate_info( Info ),
   validate_expr( EFn ),
-  lists:foreach( fun validate_xe/1, XeLst ),
+  validate_xe_lst( XeLst ),
   E;
 
 validate_expr( E = {fix, Info, EOp} ) ->
@@ -866,9 +805,15 @@ validate_expr( E = {str, Info, S} ) when is_binary( S ) ->
   validate_info( Info ),
   E;
 
+validate_expr( {str, _, Z} ) ->
+  error( {bad_binary, Z} );
+
 validate_expr( E = {file, Info, S} ) when is_binary( S ) ->
   validate_info( Info ),
   E;
+
+validate_expr( {file, _, Z} ) ->
+  error( {bad_binary, Z} );
 
 validate_expr( E = {true, Info} ) ->
   validate_info( Info ),
@@ -942,11 +887,10 @@ validate_expr( E = {append, Info, E1, E2} ) ->
   validate_expr( E2 ),
   E;
 
-validate_expr( E = {for, Info, TRet, XteLst, EBody} )
-when is_list( XteLst ) ->
+validate_expr( E = {for, Info, TRet, XteLst, EBody} ) ->
   validate_info( Info ),
   validate_type( TRet ),
-  lists:foreach( fun validate_xte/1, XteLst ),
+  validate_xte_lst( XteLst ),
   validate_expr( EBody ),
   E;
 
@@ -957,15 +901,18 @@ validate_expr( E = {fold, Info, AccBind, LstBind, EBody} ) ->
   validate_expr( EBody ),
   E;
 
-validate_expr( E = {rcd, Info, XeLst} ) when is_list( XeLst ) ->
+validate_expr( E = {rcd, Info, XeLst} ) ->
   validate_info( Info ),
-  lists:foreach( fun validate_xe/1, XeLst ),
+  validate_xe_lst( XeLst ),
   E;
 
 validate_expr( E = {proj, Info, X, EOp} ) when is_atom( X ) ->
   validate_info( Info ),
   validate_expr( EOp ),
   E;
+
+validate_expr( {proj, _, Z, _} ) ->
+  error( {bad_atom, Z} );
 
 validate_expr( E = {err, Info, T, R} ) ->
   validate_info( Info ),
@@ -988,17 +935,17 @@ validate_type( T = 'File' ) ->
 validate_type( T = 'Bool' ) ->
   T;
 
-validate_type( T = {'Fn', XtLst, TRet} ) when is_list( XtLst ) ->
+validate_type( T = {'Fn', XtLst, TRet} ) ->
+  validate_xt_lst( XtLst ),
   validate_type( TRet ),
-  lists:foreach( fun validate_xt/1, XtLst ),
   T;
 
 validate_type( T = {'Lst', TOp} ) ->
   validate_type( TOp ),
   T;
 
-validate_type( T = {'Rcd', XtLst} ) when is_list( XtLst ) ->
-  lists:foreach( fun validate_xt/1, XtLst ),
+validate_type( T = {'Rcd', XtLst} ) ->
+  validate_xt_lst( XtLst ),
   T;
 
 validate_type( Z ) ->
