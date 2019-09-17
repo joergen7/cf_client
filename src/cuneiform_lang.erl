@@ -901,9 +901,9 @@ validate_expr( E = {neg, Info, EOp} ) ->
   validate_expr( EOp ),
   E;
 
-validate_expr( E = {isnil, Info, E} ) ->
+validate_expr( E = {isnil, Info, EOp} ) ->
   validate_info( Info ),
-  validate_expr( E ),
+  validate_expr( EOp ),
   E;
 
 validate_expr( E = {cnd, Info, E1, E2, E3} ) ->
