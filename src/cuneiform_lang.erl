@@ -1063,14 +1063,14 @@ rename_xte_lst( [H|T], X1, X2 ) ->
 rename( {var, Info, X1}, X1, X2 ) -> {var, Info, X2};
 rename( E = {var, _, _}, _, _ )   -> E;
 
-rename( {lam, Info, ArgLst, {ntv, E}}, X1, X2 ) ->
-  lam( Info, rename_xt_lst( ArgLst, X1, X2 ), {ntv, rename( E, X1, X2 )} );
+rename( {lam, Info, XtLst, {ntv, E}}, X1, X2 ) ->
+  {lam, Info, rename_xt_lst( XtLst, X1, X2 ), {ntv, rename( E, X1, X2 )}};
 
 rename( E = {lam, _, _, {frn, _, _, _, _}}, _, _ ) -> E;
 
 rename( {app, Info, F, XeLst}, X1, X2 ) ->
-  app( Info, rename( F, X1, X2 ),
-             [{X, rename( E, X1, X2 )} || {X, E} <- XeLst] );
+  {app, Info, rename( F, X1, X2 ),
+               [{X, rename( E, X1, X2 )} || {X, E} <- XeLst]};
 
 rename( {fix, Info, E}, X1, X2 ) ->
   {fix, Info, rename( E, X1, X2 )};

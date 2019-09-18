@@ -53,6 +53,10 @@
 -import( cuneiform_lang, [subst/3, protect_expr/1, rename/3] ).
 -import( cuneiform_lang, [is_alpha_equivalent/2, expr_free_vars/1] ).
 -import( cuneiform_lang, [validate_lang/1, validate_info/1] ).
+-import( cuneiform_lang, [ambiguous_names/1, pattern_names/1, xt_names/1,
+                          xe_names/1, xte_names/1] ).
+-import( cuneiform_lang, [is_expr/1, is_type/1, is_lang/1, is_reason/1,
+                          is_info/1, is_pattern/1, is_assign/1] ).
 
 
 %%====================================================================
@@ -1271,6 +1275,63 @@ ambiguous_variable_binding_returns_no_error() ->
 %% Name Helpers
 %%====================================================================
 
+ambiguous_names_test_() ->
+  {foreach,
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [{"ambiguous_names empty list returns empty list",
+     fun ambiguous_names_empty_list_returns_empty_list/0},
+    {"ambiguous_names list distinct elements returns emtpy list",
+     fun ambiguous_names_list_distinct_elements_returns_empty_list/0},
+    {"ambiguous_names list duplicate elements returns duplicate element",
+     fun ambiguous_names_list_duplicate_elements_returns_duplicate_element/0}
+   ]
+  }.
+
+ambiguous_names_empty_list_returns_empty_list() ->
+  ?assertEqual( [], ambiguous_names( [] ) ).
+
+ambiguous_names_list_distinct_elements_returns_empty_list() ->
+  ?assertEqual( [], ambiguous_names( [a, b] ) ).
+
+ambiguous_names_list_duplicate_elements_returns_duplicate_element() ->
+  ?assertEqual( [b], ambiguous_names( [a, b, b] ) ).
+
+
+name_extract_test_() ->
+  {foreach,
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [{"pattern_names var returns var name",
+     fun pattern_names_var_returns_var_name/0},
+    {"pattern_names traverses rcd field",
+     fun pattern_names_traverses_rcd_field/0},
+    {"xt_names extracts x",
+     fun xt_names_extracts_x/0},
+    {"xe_names extracts x",
+     fun xe_names_extracts_x/0},
+    {"xte_names extracts x",
+     fun xte_names_extracts_x/0}
+   ]
+  }.
+
+pattern_names_var_returns_var_name() ->
+  ?assertEqual( [x], pattern_names( r_var( x, t_str() ) ) ).
+
+pattern_names_traverses_rcd_field() ->
+  ?assertEqual( [x], pattern_names( r_rcd( [{a, r_var( x, t_str() )}] ) ) ).
+
+xt_names_extracts_x() ->
+  ?assertEqual( [x], xt_names( [{x, t_str()}] ) ).
+
+xe_names_extracts_x() ->
+  ?assertEqual( [x], xe_names( [{x, str( <<"bla">> )}] ) ).
+
+xte_names_extracts_x() ->
+  ?assertEqual( [x], xte_names( [{x, t_str(), str( <<"bla">> )}] ) ).
+
 %%====================================================================
 %% Validators
 %%====================================================================
@@ -1410,6 +1471,85 @@ validate_lang_fails_for_invalid_lang() ->
 %% Contract Predicates
 %%====================================================================
 
+predicate_test_() ->
+  {foreach,
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [{"is_expr expr returns true",
+     fun is_expr_expr_returns_true/0},
+    {"is_expr any returns false",
+     fun is_expr_any_returns_false/0},
+    {"is_type type returns true",
+     fun is_type_type_returns_true/0},
+    {"is_type any returns false",
+     fun is_type_any_returns_false/0},
+    {"is_lang lang returns true",
+     fun is_lang_lang_returns_true/0},
+    {"is_lang any returns false",
+     fun is_lang_any_returns_false/0},
+    {"is_reason reason returns true",
+     fun is_reason_reason_returns_true/0},
+    {"is_reason any returns false",
+     fun is_reason_any_returns_false/0},
+    {"is_info info returns true",
+     fun is_info_info_returns_true/0},
+    {"is_info any returns false",
+     fun is_info_any_returns_false/0},
+    {"is_pattern pattern returns true",
+     fun is_pattern_pattern_returns_true/0},
+    {"is_pattern any returns false",
+     fun is_pattern_any_returns_false/0},
+    {"is_assign assign returns true",
+     fun is_assign_assign_returns_true/0},
+    {"is_assign any returns false",
+     fun is_assign_any_returns_false/0}
+   ]
+  }.
+
+is_expr_expr_returns_true() ->
+  ?assert( is_expr( str( <<"bla">> ) ) ).
+
+is_expr_any_returns_false() ->
+  ?assertNot( is_expr( 5 ) ).
+
+is_type_type_returns_true() ->
+  ?assert( is_type( t_str() ) ).
+
+is_type_any_returns_false() ->
+  ?assertNot( is_type( 5 ) ).
+
+is_lang_lang_returns_true() ->
+  ?assert( is_lang( l_bash() ) ).
+
+is_lang_any_returns_false() ->
+  ?assertNot( is_lang( 5 ) ).
+
+is_reason_reason_returns_true() ->
+  ?assert( is_reason( {user, <<"blub">>} ) ).
+
+is_reason_any_returns_false() ->
+  ?assertNot( is_reason( 5 ) ).
+
+is_info_info_returns_true() ->
+  ?assert( is_info( na ) ).
+
+is_info_any_returns_false() ->
+  ?assertNot( is_info( y ) ).
+
+is_pattern_pattern_returns_true() ->
+  ?assert( is_pattern( r_var( x, t_str() ) ) ).
+
+is_pattern_any_returns_false() ->
+  ?assertNot( is_pattern( 5 ) ).
+
+is_assign_assign_returns_true() ->
+  ?assert( is_assign( assign( r_var( x, t_str() ), str( <<"blub">> ) ) ) ).
+
+is_assign_any_returns_false() ->
+  ?assertNot( is_assign( 5 ) ).
+
+
 %%====================================================================
 %% Renaming and Substitution
 %%====================================================================
@@ -1419,7 +1559,18 @@ rename_test_() ->
    fun() -> ok end,
    fun( _ ) -> ok end,
 
-   [
+   [{"rename var alters matching var",
+     fun rename_var_alters_matching_var/0},
+    {"rename var unrelated no effect",
+     fun rename_var_unrelated_no_effect/0},
+    {"rename lam ntv traverses body expr",
+     fun rename_lam_ntv_traverses_body_expr/0},
+    {"rename lam frn no effect",
+     fun rename_lam_frn_no_effect/0},
+    {"rename app traverses function expr",
+     fun rename_app_traverses_function_expr/0},
+    {"rename app traverses argument expr",
+     fun rename_app_traverses_argument_expr/0},
     {"rename fix traverses operand",
      fun rename_fix_traverses_operand/0},
     {"rename fut no effect",
@@ -1490,6 +1641,34 @@ rename_test_() ->
      fun rename_err_no_effect/0}
    ]
   }.
+
+rename_var_alters_matching_var() ->
+  E1 = var( x ),
+  E2 = var( y ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_var_unrelated_no_effect() ->
+  E = var( x ),
+  ?assertEqual( E, rename( E, a, b ) ).
+
+rename_lam_ntv_traverses_body_expr() ->
+  E1 = lam( [{x, t_str()}, {z, t_bool()}], {ntv, var( x )} ),
+  E2 = lam( [{y, t_str()}, {z, t_bool()}], {ntv, var( y )} ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
+
+rename_lam_frn_no_effect() ->
+  E = lam( [{x, t_str()}], {frn, f, t_rcd( [{y, t_str()}] ), l_bash(), <<"blub">>} ),
+  ?assertEqual( E, rename( E, x, y ) ).
+
+rename_app_traverses_function_expr() ->
+  E1 = app( var( f ), [{x, var( x )}] ),
+  E2 = app( var( g ), [{x, var( x )}] ),
+  ?assertEqual( E2, rename( E1, f, g ) ).
+
+rename_app_traverses_argument_expr() ->
+  E1 = app( var( f ), [{x, var( x )}] ),
+  E2 = app( var( f ), [{x, var( y )}] ),
+  ?assertEqual( E2, rename( E1, x, y ) ).
 
 rename_fix_traverses_operand() ->
   E1 = fix( var( x ) ),
