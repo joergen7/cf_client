@@ -383,10 +383,10 @@ rcd( Info, BindLst ) ->
 proj( Info, X, E ) ->
   validate_expr( {proj, Info, X, E} ).
 
--spec err( T :: t(), Msg :: binary() ) -> e().
-      err( T, Msg )                    -> err( na, T, Msg ).
+-spec err( T :: t(), Reason :: reason() ) -> e().
+      err( T, Msg )                         -> err( na, T, Msg ).
 
--spec err( Info :: info(), T :: t(), Msg :: binary() ) -> e().
+-spec err( Info :: info(), T :: t(), Reason :: reason() ) -> e().
 
 err( Info, T, Reason ) ->
   validate_expr( {err, Info, T, Reason} ).
@@ -534,7 +534,7 @@ validate_assign( A = {assign, Info, R, E} ) ->
   validate_expr( E ),
   A.
 
--spec validate_reason( R :: _ ) -> boolean().
+-spec validate_reason( R :: _ ) -> reason().
 
 validate_reason( R = {run, Node, AppId, LamName, ExtendedScript, Output} )
 when is_binary( Node ),
@@ -1144,22 +1144,22 @@ protect_name( X ) ->
 protect_expr( E = {var, _, _} )                    -> E;
 
 protect_expr( {lam, Info, [], {ntv, EBody}} ) ->
-  lam( Info, [], {ntv, protect_expr( EBody )} );
+  {lam, Info, [], {ntv, protect_expr( EBody )}};
 
 protect_expr( {lam, Info, [{X1, T}|XtLst], {ntv, EBody}} ) ->
-  {lam, _, XtLst1, {ntv, EBody1}} = protect_expr( lam( Info, XtLst, {ntv, EBody} ) ),
+  {lam, _, XtLst1, {ntv, EBody1}} = protect_expr( {lam, Info, XtLst, {ntv, EBody}} ),
   X2 = protect_name( X1 ),
   EBody2 = rename( EBody1, X1, X2 ),
-  lam( Info, [{X2, T}|XtLst1], {ntv, EBody2} );
+  {lam, Info, [{X2, T}|XtLst1], {ntv, EBody2}};
 
 protect_expr( E = {lam, _, _, {frn, _, _, _, _}} ) -> E;
 
 protect_expr( {app, Info, EFn, XeLst} ) ->
-  app( Info, protect_expr( EFn ),
-             [{X, protect_expr( E )} || {X, E} <- XeLst] );
+  {app, Info, protect_expr( EFn ),
+              [{X, protect_expr( E )} || {X, E} <- XeLst]};
 
 protect_expr( {fix, Info, E} ) ->
-  fix( Info, protect_expr( E ) );
+  {fix, Info, protect_expr( E )};
 
 protect_expr( E = {fut, _, _} )                    -> E;
 protect_expr( E = {str, _, _} )                    -> E;
@@ -1168,59 +1168,59 @@ protect_expr( E = {true, _} )                      -> E;
 protect_expr( E = {false, _} )                     -> E;
 
 protect_expr( {cmp, Info, E1, E2} ) ->
-  cmp( Info, protect_expr( E1 ), protect_expr( E2 ) );
+  {cmp, Info, protect_expr( E1 ), protect_expr( E2 )};
 
 protect_expr( {conj, Info, E1, E2} ) ->
-  conj( Info, protect_expr( E1 ), protect_expr( E2 ) );
+  {conj, Info, protect_expr( E1 ), protect_expr( E2 )};
 
 protect_expr( {disj, Info, E1, E2} ) ->
-  disj( Info, protect_expr( E1 ), protect_expr( E2 ) );
+  {disj, Info, protect_expr( E1 ), protect_expr( E2 )};
 
 protect_expr( {neg, Info, E} ) ->
-  neg( Info, protect_expr( E ) );
+  {neg, Info, protect_expr( E )};
 
 protect_expr( {isnil, Info, E} ) ->
-  isnil( Info, protect_expr( E ) );
+  {isnil, Info, protect_expr( E )};
 
 protect_expr( {cnd, Info, E1, E2, E3} ) ->
-  cnd( Info, protect_expr( E1 ), protect_expr( E2 ), protect_expr( E3 ) );
+  {cnd, Info, protect_expr( E1 ), protect_expr( E2 ), protect_expr( E3 )};
 
 protect_expr( E = {null, _, _} )                   -> E;
 
 protect_expr( {cons, Info, E1, E2} ) ->
-  cons( Info, protect_expr( E1 ), protect_expr( E2 ) );
+  {cons, Info, protect_expr( E1 ), protect_expr( E2 )};
 
 protect_expr( {hd, Info, E1, E2} ) ->
-  hd( Info, protect_expr( E1 ), protect_expr( E2 ) );
+  {hd, Info, protect_expr( E1 ), protect_expr( E2 )};
 
 protect_expr( {tl, Info, E1, E2} ) ->
-  tl( Info, protect_expr( E1 ), protect_expr( E2 ) );
+  {tl, Info, protect_expr( E1 ), protect_expr( E2 )};
 
 protect_expr( {append, Info, E1, E2} ) ->
-  append( Info, protect_expr( E1 ), protect_expr( E2 ) );
+  {append, Info, protect_expr( E1 ), protect_expr( E2 )};
 
 protect_expr( {for, Info, TRet, [], EBody} ) ->
-  for( Info, TRet, [], protect_expr( EBody ) );
+  {for, Info, TRet, [], protect_expr( EBody )};
 
 protect_expr( {for, Info, TRet, [{X1, T, E1}|XteLst], EBody} ) ->
-  {for, _, _, XteLst1, EBody1} = protect_expr( for( Info, TRet, XteLst, EBody ) ),
+  {for, _, _, XteLst1, EBody1} = protect_expr( {for, Info, TRet, XteLst, EBody} ),
   X2 = protect_name( X1 ),
   E2 = protect_expr( E1 ),
   EBody2 = rename( EBody1, X1, X2 ),
-  for( Info, TRet, [{X2, T, E2}|XteLst1], EBody2 );
+  {for, Info, TRet, [{X2, T, E2}|XteLst1], EBody2};
 
 protect_expr( {fold, Info, {X1, T1, E1}, {X2, T2, E2}, EBody} ) ->
   X3 = protect_name( X1 ),
   X4 = protect_name( X2 ),
-  fold( Info, {X3, T1, protect_expr( E1 )},
-              {X4, T2, protect_expr( E2 )},
-              rename( rename( protect_expr( EBody ), X1, X3 ), X2, X4 ) );
+  {fold, Info, {X3, T1, protect_expr( E1 )},
+                {X4, T2, protect_expr( E2 )},
+                rename( rename( protect_expr( EBody ), X1, X3 ), X2, X4 )};
 
 protect_expr( {rcd, Info, XeLst} ) ->
-  rcd( Info, [{X, protect_expr( E )} || {X, E} <- XeLst] );
+  {rcd, Info, [{X, protect_expr( E )} || {X, E} <- XeLst]};
 
 protect_expr( {proj, Info, X, E} ) ->
-  proj( Info, X, protect_expr( E ) );
+  {proj, Info, X, protect_expr( E )};
 
 protect_expr( E = {err, _, _, _} )                 -> E.
 
@@ -1233,17 +1233,17 @@ subst_protected( {var, _, X1}, X1, E1 ) ->
 subst_protected( E = {var, _, _}, _, _ )    -> E;
 
 subst_protected( {lam, Info, XtLst, {ntv, EBody}}, X1, E1 ) ->
-  lam( Info, XtLst, {ntv, subst_protected( EBody, X1, E1)} );
+  {lam, Info, XtLst, {ntv, subst_protected( EBody, X1, E1)}};
 
 subst_protected( E = {lam, _, _, {frn, _, _, _, _}}, _, _ ) ->
   E;
 
 subst_protected( {app, Info, EFn, XeLst}, X1, E1 ) ->
-  app( Info, subst_protected( EFn, X1, E1 ),
-             [{X, subst_protected( E, X1, E1 )} || {X, E} <- XeLst] );
+  {app, Info, subst_protected( EFn, X1, E1 ),
+              [{X, subst_protected( E, X1, E1 )} || {X, E} <- XeLst]};
 
 subst_protected( {fix, Info, E}, X1, E1 ) ->
-  fix( Info, subst_protected( E, X1, E1 ) );
+  {fix, Info, subst_protected( E, X1, E1 )};
 
 subst_protected( E = {fut, _, _}, _, _ )    -> E;
 subst_protected( E = {str, _, _}, _, _ )    -> E;
@@ -1252,61 +1252,61 @@ subst_protected( E = {true, _}, _, _ )      -> E;
 subst_protected( E = {false, _}, _, _ )     -> E;
 
 subst_protected( {cmp, Info, ELeft, ERight}, X1, E1 ) ->
-  cmp( Info, subst_protected( ELeft, X1, E1 ),
-             subst_protected( ERight, X1, E1 ) );
+  {cmp, Info, subst_protected( ELeft, X1, E1 ),
+              subst_protected( ERight, X1, E1 )};
 
 subst_protected( {conj, Info, ELeft, ERight}, X1, E1 ) ->
-  conj( Info, subst_protected( ELeft, X1, E1 ),
-              subst_protected( ERight, X1, E1 ) );
+  {conj, Info, subst_protected( ELeft, X1, E1 ),
+               subst_protected( ERight, X1, E1 )};
 
 subst_protected( {disj, Info, ELeft, ERight}, X1, E1 ) ->
-  disj( Info, subst_protected( ELeft, X1, E1 ),
-              subst_protected( ERight, X1, E1 ) );
+  {disj, Info, subst_protected( ELeft, X1, E1 ),
+               subst_protected( ERight, X1, E1 )};
 
 subst_protected( {neg, Info, E}, X1, E1 ) ->
-  neg( Info, subst_protected( E, X1, E1 ) );
+  {neg, Info, subst_protected( E, X1, E1 )};
 
 subst_protected( {isnil, Info, E}, X1, E1 ) ->
-  isnil( Info, subst_protected( E, X1, E1 ) );
+  {isnil, Info, subst_protected( E, X1, E1 )};
 
 subst_protected( {cnd, Info, EA, EB, EC}, X1, E1 ) ->
-  cnd( Info, subst_protected( EA, X1, E1 ),
-             subst_protected( EB, X1, E1 ),
-             subst_protected( EC, X1, E1 ) );
+  {cnd, Info, subst_protected( EA, X1, E1 ),
+              subst_protected( EB, X1, E1 ),
+              subst_protected( EC, X1, E1 )};
 
 subst_protected( E = {null, _, _}, _, _ )   -> E;
 
 subst_protected( {cons, Info, ELeft, ERight}, X1, E1 ) ->
-  cons( Info, subst_protected( ELeft, X1, E1 ),
-              subst_protected( ERight, X1, E1 ) );
+  {cons, Info, subst_protected( ELeft, X1, E1 ),
+               subst_protected( ERight, X1, E1 )};
 
 subst_protected( {hd, Info, ELeft, ERight}, X1, E1 ) ->
-  hd( Info, subst_protected( ELeft, X1, E1 ),
-            subst_protected( ERight, X1, E1 ) );
+  {hd, Info, subst_protected( ELeft, X1, E1 ),
+             subst_protected( ERight, X1, E1 )};
 
 subst_protected( {tl, Info, ELeft, ERight}, X1, E1 ) ->
-  tl( Info, subst_protected( ELeft, X1, E1 ),
-            subst_protected( ERight, X1, E1 ) );
+  {tl, Info, subst_protected( ELeft, X1, E1 ),
+             subst_protected( ERight, X1, E1 )};
 
 subst_protected( {append, Info, ELeft, ERight}, X1, E1 ) ->
-  append( Info, subst_protected( ELeft, X1, E1 ),
-                subst_protected( ERight, X1, E1 ) );
+  {append, Info, subst_protected( ELeft, X1, E1 ),
+                 subst_protected( ERight, X1, E1 )};
 
 subst_protected( {for, Info, TRet, XteLst, EBody}, X1, E1 ) ->
-  for( Info, TRet,
-             [{X, T, subst_protected( E, X1, E1 )} || {X, T, E} <- XteLst],
-             subst_protected( EBody, X1, E1 ) );
+  {for, Info, TRet,
+              [{X, T, subst_protected( E, X1, E1 )} || {X, T, E} <- XteLst],
+              subst_protected( EBody, X1, E1 )};
 
 subst_protected( {fold, Info, {XA, TA, EA}, {XB, TB, EB}, EBody}, X1, E1 ) ->
-  fold( Info, {XA, TA, subst_protected( EA, X1, E1 )},
-              {XB, TB, subst_protected( EB, X1, E1 )},
-              subst_protected( EBody, X1, E1 ) );
+  {fold, Info, {XA, TA, subst_protected( EA, X1, E1 )},
+               {XB, TB, subst_protected( EB, X1, E1 )},
+               subst_protected( EBody, X1, E1 )};
 
 subst_protected( {rcd, Info, XeLst}, X1, E1 ) ->
-  rcd( Info, [{X, subst_protected( E, X1, E1 )} || {X, E} <- XeLst] );
+  {rcd, Info, [{X, subst_protected( E, X1, E1 )} || {X, E} <- XeLst]};
 
 subst_protected( {proj, Info, X, E}, X1, E1 ) ->
-  proj( Info, X, subst_protected( E, X1, E1 ) );
+  {proj, Info, X, subst_protected( E, X1, E1 )};
 
 subst_protected( E = {err, _, _, _}, _, _ ) -> E.
 
