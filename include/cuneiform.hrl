@@ -72,7 +72,7 @@
                                   LamName :: x(), FileLst :: [binary()]}
                      | {user, Msg :: binary()}.
 
--type x()           :: atom().
+-type x()           :: binary().
 
 -type s()           :: binary().
 

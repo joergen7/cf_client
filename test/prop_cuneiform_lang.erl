@@ -272,12 +272,12 @@ prop_is_alpha_equivalent_symmetric() ->
 
 %% Variable Names
 
-prop_expr_vars_always_produces_list_of_atom() ->
+prop_expr_vars_always_produces_list_of_x() ->
   ?FORALL( E, e(),
     begin
       V = expr_vars( E ),
       case is_list( V ) of
-        true  -> collect( length( V ), lists:all( fun is_atom/1, V ) );
+        true  -> collect( length( V ), lists:all( fun is_binary/1, V ) );
         false -> false
       end
     end ).
@@ -292,12 +292,12 @@ prop_expr_vars_always_produces_sorted_list_with_no_duplicates() ->
 
 %% Free Variables
 
-prop_expr_free_vars_always_produces_list_of_atom() ->
+prop_expr_free_vars_always_produces_list_of_x() ->
   ?FORALL( E, e(),
     begin
       FV = expr_free_vars( E ),
       case is_list( FV ) of
-        true  -> collect( length( FV ), lists:all( fun is_atom/1, FV ) );
+        true  -> collect( length( FV ), lists:all( fun is_binary/1, FV ) );
         false -> false
       end
     end ).

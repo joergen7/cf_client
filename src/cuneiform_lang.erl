@@ -434,7 +434,7 @@ asc( E, T ) ->
 -spec asc( Info :: info(), E :: e(), T :: t() ) -> e().
 
 asc( Info, E, T ) ->
-  X = '#asc',
+  X = <<"#asc">>,
   alet( Info, [{X, T, E}], {var, Info, X} ).
 
 
@@ -496,7 +496,7 @@ ambiguous_names( NameLst ) when is_list( NameLst ) ->
 
 -spec pattern_names( Pattern :: r() ) -> [x()].
 
-pattern_names( {r_var, X, _T} ) when is_atom( X ) ->
+pattern_names( {r_var, X, _T} ) when is_binary( X ) ->
   [X];
 
 pattern_names( {r_rcd, BindLst} ) when is_list( BindLst ) ->
@@ -539,7 +539,7 @@ validate_assign( A = {assign, Info, R, E} ) ->
 validate_reason( R = {run, Node, AppId, LamName, ExtendedScript, Output} )
 when is_binary( Node ),
      is_binary( AppId ),
-     is_atom( LamName ),
+     is_binary( LamName ),
      is_binary( ExtendedScript ),
      is_binary( Output ) ->
   R;
@@ -553,8 +553,8 @@ when not is_binary( Z ) ->
   error( {bad_binary, Z} );
 
 validate_reason( {run, _, _, Z, _, _} )
-when not is_atom( Z ) ->
-  error( {bad_atom, Z} );
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
 
 validate_reason( {run, _, _, _, Z, _} )
 when not is_binary( Z ) ->
@@ -567,7 +567,7 @@ when not is_binary( Z ) ->
 validate_reason( R = {stagein, Node, AppId, LamName, FileLst} )
 when is_binary( Node ),
      is_binary( AppId ),
-     is_atom( LamName ),
+     is_binary( LamName ),
      is_list( FileLst ) ->
   case lists:all( fun is_binary/1, FileLst ) of
     true -> R;
@@ -583,8 +583,8 @@ when not is_binary( Z ) ->
   error( {bad_binary, Z} );
 
 validate_reason( {stagein, _, _, Z, _} )
-when not is_atom( Z ) ->
-  error( {bad_atom, Z} );
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
 
 validate_reason( {stagein, _, _, _, Z} )
 when not is_list( Z ) ->
@@ -593,7 +593,7 @@ when not is_list( Z ) ->
 validate_reason( R = {stageout, Node, AppId, LamName, FileLst} )
 when is_binary( Node ),
      is_binary( AppId ),
-     is_atom( LamName ),
+     is_binary( LamName ),
      is_list( FileLst ) ->
   case lists:all( fun is_binary/1, FileLst ) of
     true -> R;
@@ -609,8 +609,8 @@ when not is_binary( Z ) ->
   error( {bad_binary, Z} );
 
 validate_reason( {stageout, _, _, Z, _} )
-when not is_atom( Z ) ->
-  error( {bad_atom, Z} );
+when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
 
 validate_reason( {stageout, _, _, _, Z} )
 when not is_list( Z ) ->
@@ -646,12 +646,12 @@ validate_lang( Z )                -> error( {bad_lang, Z} ).
 
 -spec validate_pattern( Z :: _ ) -> r().
 
-validate_pattern( Z = {r_var, X, T} ) when is_atom( X ) ->
+validate_pattern( Z = {r_var, X, T} ) when is_binary( X ) ->
   validate_type( T ),
   Z;
 
 validate_pattern( {r_var, Z, _} ) ->
-  error( {bad_atom, Z} );
+  error( {bad_binary, Z} );
 
 validate_pattern( Z = {r_rcd, RLst} ) ->
   validate_xr_lst( RLst ),
@@ -663,12 +663,12 @@ validate_pattern( Z ) ->
 
 -spec validate_xr( Z :: _ ) -> {x(), r()}.
 
-validate_xr( Z = {X, R} ) when is_atom( X ) ->
+validate_xr( Z = {X, R} ) when is_binary( X ) ->
   validate_pattern( R ),
   Z;
 
 validate_xr( {Z, _} ) ->
-  error( {bad_atom, Z} );
+  error( {bad_binary, Z} );
 
 validate_xr( Z ) ->
   error( {bad_xr, Z} ).
@@ -698,12 +698,12 @@ validate_info( Z ) ->
 
 -spec validate_xt( X :: _ ) -> {x(), t()}.
 
-validate_xt( Xt = {X, T} ) when is_atom( X ) ->
+validate_xt( Xt = {X, T} ) when is_binary( X ) ->
   validate_type( T ),
   Xt;
 
 validate_xt( {Z, _} ) ->
-  error( {bad_atom, Z} );
+  error( {bad_binary, Z} );
 
 validate_xt( Z ) ->
   error( {bad_xt, Z} ).
@@ -718,12 +718,12 @@ validate_xt_lst( Z )     -> error( {bad_xt_lst, Z} ).
 -spec validate_xe( X :: _ ) -> {x(), e()}.
 
 validate_xe( Z = {X, E} )
-when is_atom( X ) ->
+when is_binary( X ) ->
   validate_expr( E ),
   Z;
 
 validate_xe( {Z, _} ) ->
-  error( {bad_atom, Z} );
+  error( {bad_binary, Z} );
 
 validate_xe( Z ) ->
   error( {bad_xe, Z} ).
@@ -738,13 +738,13 @@ validate_xe_lst( Z )     -> error( {bad_xe_lst, Z} ).
 -spec validate_xte( X :: _ ) -> {x(), t(), e()}.
 
 validate_xte( Z = {X, T, E} )
-when is_atom( X ) ->
+when is_binary( X ) ->
   validate_type( T ),
   validate_expr( E ),
   Z;
 
 validate_xte( {Z, _, _} ) ->
-  error( {bad_atom, Z} );
+  error( {bad_binary, Z} );
 
 validate_xte( Z ) ->
   error( {bad_xte, Z} ).
@@ -758,12 +758,12 @@ validate_xte_lst( Z )     -> error( {bad_xte_lst, Z} ).
 
 -spec validate_expr( Z :: _ ) -> e().
 
-validate_expr( E = {var, Info, X} ) when is_atom( X ) ->
+validate_expr( E = {var, Info, X} ) when is_binary( X ) ->
   validate_info( Info ),
   E;
 
 validate_expr( {var, _, Z} ) ->
-  error( {bad_atom, Z} );
+  error( {bad_binary, Z} );
 
 validate_expr( E = {lam, Info, XtLst, {ntv, EBody}} ) ->
   validate_info( Info ),
@@ -772,7 +772,7 @@ validate_expr( E = {lam, Info, XtLst, {ntv, EBody}} ) ->
   E;
 
 validate_expr( E = {lam, Info, XtLst, {frn, X, T, L, S}} )
-when is_atom( X ),
+when is_binary( X ),
      is_binary( S ) ->
   validate_info( Info ),
   validate_xt_lst( XtLst ),
@@ -780,8 +780,8 @@ when is_atom( X ),
   validate_lang( L ),
   E;
 
-validate_expr( {lam, _, _, {frn, Z, _, _, _}} ) when not is_atom( Z ) ->
-  error( {bad_atom, Z} );
+validate_expr( {lam, _, _, {frn, Z, _, _, _}} ) when not is_binary( Z ) ->
+  error( {bad_binary, Z} );
 
 validate_expr( {lam, _, _, {frn, _, _, _, Z}} ) when not is_binary( Z ) ->
   error( {bad_binary, Z} );
@@ -910,13 +910,13 @@ validate_expr( E = {rcd, Info, XeLst} ) ->
   validate_xe_lst( XeLst ),
   E;
 
-validate_expr( E = {proj, Info, X, EOp} ) when is_atom( X ) ->
+validate_expr( E = {proj, Info, X, EOp} ) when is_binary( X ) ->
   validate_info( Info ),
   validate_expr( EOp ),
   E;
 
 validate_expr( {proj, _, Z, _} ) ->
-  error( {bad_atom, Z} );
+  error( {bad_binary, Z} );
 
 validate_expr( E = {err, Info, T, R} ) ->
   validate_info( Info ),
@@ -1132,11 +1132,10 @@ rename( E={err, _, _, _}, _, _ ) -> E.
 
 -spec protect_name( x() ) -> x().
 
-protect_name( X ) ->
-  Y = atom_to_list( X ),
+protect_name( Y ) ->
   [Z|_] = string:split( Y, "$" ),
-  N = integer_to_list( erlang:unique_integer( [positive] ) ),
-  list_to_atom( Z++[36|N] ).
+  N = integer_to_binary( erlang:unique_integer( [positive] ) ),
+  <<Z/binary, $$, N/binary>>.
 
 
 -spec protect_expr( E :: e() ) -> e().
@@ -1313,7 +1312,7 @@ subst_protected( E = {err, _, _, _}, _, _ ) -> E.
 
 -spec subst( e(), x(), e() ) -> e().
 
-subst( E, X1, E1 ) ->
+subst( E, X1, E1 ) when is_binary( X1 ) ->
   E2 = protect_expr( E ),
   subst_protected( E2, X1, E1 ).
 

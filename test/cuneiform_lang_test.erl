@@ -155,8 +155,8 @@ t_bool_returns_type() ->
   ?assertEqual( 'Bool', t_bool() ).
 
 t_rcd_returns_type()  ->
-  ?assertEqual( {'Rcd', [{a, 'Str'}, {b, 'File'}]},
-                t_rcd( [{a, t_str()}, {b, t_file()}] ) ).
+  ?assertEqual( {'Rcd', [{<<"a">>, 'Str'}, {<<"b">>, 'File'}]},
+                t_rcd( [{<<"a">>, t_str()}, {<<"b">>, t_file()}] ) ).
 
 t_rcd_fails_for_invalid_xt_list() ->
   ?assertError( {bad_xt_lst, 5}, t_rcd( 5 ) ).
@@ -165,10 +165,10 @@ t_rcd_fails_for_invalid_xt() ->
   ?assertError( {bad_xt, 5}, t_rcd( [5] ) ).
 
 t_rcd_fails_for_invalid_x() ->
-  ?assertError( {bad_atom, 5}, t_rcd( [{5, t_str()}] ) ).
+  ?assertError( {bad_binary, 5}, t_rcd( [{5, t_str()}] ) ).
 
 t_rcd_fails_for_invalid_t() ->
-  ?assertError( {bad_type, 5}, t_rcd( [{a, 5}] ) ).
+  ?assertError( {bad_type, 5}, t_rcd( [{<<"a">>, 5}] ) ).
 
 t_lst_returns_type() ->
   ?assertEqual( {'Lst', 'Str'}, t_lst( t_str() ) ).
@@ -177,8 +177,8 @@ t_lst_fails_for_invalid_type() ->
   ?assertError( {bad_type, 5}, t_lst( 5 ) ).
 
 t_fn_returns_type() ->
-  ?assertEqual( {'Fn', [{x, 'Str'}, {y, 'File'}], 'Bool'},
-                t_fn( [{x, t_str()}, {y, t_file()}], t_bool() ) ).
+  ?assertEqual( {'Fn', [{<<"x">>, 'Str'}, {<<"y">>, 'File'}], 'Bool'},
+                t_fn( [{<<"x">>, t_str()}, {<<"y">>, t_file()}], t_bool() ) ).
 
 t_fn_fails_for_invalid_xt_list() ->
   ?assertError( {bad_xt_lst, 5}, t_fn( 5, t_str() ) ).
@@ -187,13 +187,13 @@ t_fn_fails_for_invalid_xt() ->
   ?assertError( {bad_xt, 5}, t_fn( [5], t_str() ) ).
 
 t_fn_fails_for_invalid_x() ->
-  ?assertError( {bad_atom, 5}, t_fn( [{5, t_bool()}], t_str() ) ).
+  ?assertError( {bad_binary, 5}, t_fn( [{5, t_bool()}], t_str() ) ).
 
 t_fn_fails_for_invalid_t() ->
-  ?assertError( {bad_type, 5}, t_fn( [{x, 5}], t_str() ) ).
+  ?assertError( {bad_type, 5}, t_fn( [{<<"x">>, 5}], t_str() ) ).
 
 t_fn_fails_for_invalid_return_type() ->
-  ?assertError( {bad_type, 5}, t_fn( [{x, t_bool()}], 5 ) ).
+  ?assertError( {bad_type, 5}, t_fn( [{<<"x">>, t_bool()}], 5 ) ).
 
 
 %%====================================================================
@@ -478,37 +478,37 @@ expr_constructor_test_() ->
   }.
 
 var_returns_expr() ->
-  ?assertEqual( {var, na, x}, var( na, x ) ).
+  ?assertEqual( {var, na, <<"x">>}, var( na, <<"x">> ) ).
 
 var_fails_for_invalid_info() ->
-  ?assertError( {bad_info, y}, var( y, x ) ).
+  ?assertError( {bad_info, y}, var( y, <<"x">> ) ).
 
 var_fails_for_invalid_variable_name() ->
-  ?assertError( {bad_atom, 5}, var( na, 5 ) ).
+  ?assertError( {bad_binary, 5}, var( na, 5 ) ).
 
 lam_ntv_returns_expr() ->
-  ?assertEqual( {lam, na, [{x, 'Str'}], {ntv, {var, na, x}}},
-                lam( na, [{x, t_str()}], {ntv, var( x )} ) ).
+  ?assertEqual( {lam, na, [{<<"x">>, 'Str'}], {ntv, {var, na, <<"x">>}}},
+                lam( na, [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ) ).
 
 lam_frn_returns_expr() ->
-  Body = {frn, f, t_rcd( [{y, t_str()}] ), l_bash(), <<"blub">>},
-  ?assertEqual( {lam, na, [{x, 'Str'}], Body},
-                lam( na, [{x, t_str()}], Body ) ).
+  Body = {frn, <<"f">>, t_rcd( [{<<"y">>, t_str()}] ), l_bash(), <<"blub">>},
+  ?assertEqual( {lam, na, [{<<"x">>, 'Str'}], Body},
+                lam( na, [{<<"x">>, t_str()}], Body ) ).
 
 lam_fails_for_invalid_info() ->
-  ?assertError( {bad_info, y}, lam( y, [], {ntv, var( x )} ) ).
+  ?assertError( {bad_info, y}, lam( y, [], {ntv, var( <<"x">> )} ) ).
 
 lam_fails_for_invalid_xt_list() ->
-  ?assertError( {bad_xt_lst, 5}, lam( na, 5, {ntv, var( x )} ) ).
+  ?assertError( {bad_xt_lst, 5}, lam( na, 5, {ntv, var( <<"x">> )} ) ).
 
 lam_fails_for_invalid_xt() ->
-  ?assertError( {bad_xt, 5}, lam( na, [5], {ntv, var( x )} ) ).
+  ?assertError( {bad_xt, 5}, lam( na, [5], {ntv, var( <<"x">> )} ) ).
 
 lam_fails_for_invalid_x() ->
-  ?assertError( {bad_atom, 5}, lam( na, [{5, t_str()}], {ntv, var( x )} ) ).
+  ?assertError( {bad_binary, 5}, lam( na, [{5, t_str()}], {ntv, var( <<"x">> )} ) ).
 
 lam_fails_for_invalid_t() ->
-  ?assertError( {bad_type, 5}, lam( na, [{x, 5}], {ntv, var( x )} ) ).
+  ?assertError( {bad_type, 5}, lam( na, [{<<"x">>, 5}], {ntv, var( <<"x">> )} ) ).
 
 lam_fails_for_invalid_body() ->
   ?assertError( {bad_body, 5}, lam( na, [], 5 ) ).
@@ -517,45 +517,45 @@ lam_ntv_fails_for_invalid_body_expr() ->
   ?assertError( {bad_expr, 5}, lam( na, [], {ntv, 5} ) ).
 
 lam_frn_fails_for_invalid_function_name() ->
-  Body = {frn, 5, t_rcd( [{y, t_str()}] ), l_bash(), <<"blub">>},
-  ?assertError( {bad_atom, 5}, lam( na, [], Body ) ).
+  Body = {frn, 5, t_rcd( [{<<"y">>, t_str()}] ), l_bash(), <<"blub">>},
+  ?assertError( {bad_binary, 5}, lam( na, [], Body ) ).
 
 lam_frn_fails_for_invalid_return_type() ->
-  Body = {frn, f, 5, l_bash(), <<"blub">>},
+  Body = {frn, <<"f">>, 5, l_bash(), <<"blub">>},
   ?assertError( {bad_type, 5}, lam( na, [], Body ) ).
 
 lam_frn_fails_for_invalid_lang() ->
-  Body = {frn, f, t_rcd( [{y, t_str()}] ), 5, <<"blub">>},
+  Body = {frn, <<"f">>, t_rcd( [{<<"y">>, t_str()}] ), 5, <<"blub">>},
   ?assertError( {bad_lang, 5}, lam( na, [], Body ) ).
 
 lam_frn_fails_for_invalid_script() ->
-  Body = {frn, f, t_rcd( [{y, t_str()}] ), l_bash(), 5},
+  Body = {frn, <<"f">>, t_rcd( [{<<"y">>, t_str()}] ), l_bash(), 5},
   ?assertError( {bad_binary, 5}, lam( na, [], Body ) ).
 
 app_returns_expr() ->
-  E = app( na, lam( [{x, t_str()}], {ntv, var( x )} ),
-               [{x, str( <<"bla">> )}] ),
-  ?assertEqual( {app, na, {lam, na, [{x, 'Str'}], {ntv, {var, na, x}}},
-                          [{x, {str, na, <<"bla">>}}]},
+  E = app( na, lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
+               [{<<"x">>, str( <<"bla">> )}] ),
+  ?assertEqual( {app, na, {lam, na, [{<<"x">>, 'Str'}], {ntv, {var, na, <<"x">>}}},
+                          [{<<"x">>, {str, na, <<"bla">>}}]},
                 E ).
 
 app_fails_for_invalid_info() ->
-  ?assertError( {bad_info, y}, app( y, var( f ), [] ) ).
+  ?assertError( {bad_info, y}, app( y, var( <<"f">> ), [] ) ).
 
 app_fails_for_invalid_function_expr() ->
   ?assertError( {bad_expr, 5}, app( na, 5, [] ) ).
 
 app_fails_for_invalid_xe_list() ->
-  ?assertError( {bad_xe_lst, 5}, app( na, var( f ), 5 ) ).
+  ?assertError( {bad_xe_lst, 5}, app( na, var( <<"f">> ), 5 ) ).
 
 app_fails_for_invalid_xe() ->
-  ?assertError( {bad_xe, 5}, app( na, var( f ), [5] ) ).
+  ?assertError( {bad_xe, 5}, app( na, var( <<"f">> ), [5] ) ).
 
 app_fails_for_invalid_x() ->
-  ?assertError( {bad_atom, 5}, app( na, var( f ), [{5, true()}] ) ).
+  ?assertError( {bad_binary, 5}, app( na, var( <<"f">> ), [{5, true()}] ) ).
 
 app_fails_for_invalid_e() ->
-  ?assertError( {bad_expr, 5}, app( na, var( f ), [{x, 5}] ) ).
+  ?assertError( {bad_expr, 5}, app( na, var( <<"f">> ), [{<<"x">>, 5}] ) ).
 
 fix_returns_expr() ->
   ?assertEqual( {fix, na, {true, na}}, fix( na, true() ) ).
@@ -745,122 +745,122 @@ append_fails_for_invalid_rhs() ->
   ?assertError( {bad_expr, 5}, append( na, null( t_bool() ), 5 ) ).
 
 for_returns_expr() ->
-  ?assertEqual( {for, na, 'Bool', [{x, 'Bool', {null, na, 'Bool'}}],
-                          {neg, na, {var, na, x}}},
-                for( na, t_bool(), [{x, t_bool(), null( t_bool() )}],
-                         neg( var( x ) ) ) ).
+  ?assertEqual( {for, na, 'Bool', [{<<"x">>, 'Bool', {null, na, 'Bool'}}],
+                          {neg, na, {var, na, <<"x">>}}},
+                for( na, t_bool(), [{<<"x">>, t_bool(), null( t_bool() )}],
+                         neg( var( <<"x">> ) ) ) ).
 
 for_fails_for_invalid_info() ->
   ?assertError( {bad_info, y},
-                for( y, t_bool(), [{x, t_bool(), null( t_bool() )}],
-                        neg( var( x ) ) ) ).
+                for( y, t_bool(), [{<<"x">>, t_bool(), null( t_bool() )}],
+                        neg( var( <<"x">> ) ) ) ).
 
 for_fails_for_invalid_type() ->
   ?assertError( {bad_type, 5},
-                for( na, 5, [{x, t_bool(), null( t_bool() )}],
-                         neg( var( x ) ) ) ).
+                for( na, 5, [{<<"x">>, t_bool(), null( t_bool() )}],
+                         neg( var( <<"x">> ) ) ) ).
 
 for_fails_for_invalid_xte_list() ->
   ?assertError( {bad_xte_lst, 5},
-                for( na, t_bool(), 5, neg( var( x ) ) ) ).
+                for( na, t_bool(), 5, neg( var( <<"x">> ) ) ) ).
 
 for_fails_for_invalid_xte() ->
   ?assertError( {bad_xte, 5},
-                for( na, t_bool(), [5], neg( var( x ) ) ) ).
+                for( na, t_bool(), [5], neg( var( <<"x">> ) ) ) ).
 
 for_fails_for_invalid_x() ->
-  ?assertError( {bad_atom, 5},
+  ?assertError( {bad_binary, 5},
                 for( na, t_bool(), [{5, t_bool(), null( t_bool() )}],
-                         neg( var( x ) ) ) ).
+                         neg( var( <<"x">> ) ) ) ).
 
 for_fails_for_invalid_t() ->
   ?assertError( {bad_type, 5},
-                for( na, t_bool(), [{x, 5, null( t_bool() )}],
-                         neg( var( x ) ) ) ).
+                for( na, t_bool(), [{<<"x">>, 5, null( t_bool() )}],
+                         neg( var( <<"x">> ) ) ) ).
 
 for_fails_for_invalid_e() ->
   ?assertError( {bad_expr, 5},
-                for( na, t_bool(), [{x, t_bool(), 5}],
-                         neg( var( x ) ) ) ).
+                for( na, t_bool(), [{<<"x">>, t_bool(), 5}],
+                         neg( var( <<"x">> ) ) ) ).
 
 for_fails_for_invalid_body_expr() ->
   ?assertError( {bad_expr, 5},
-                for( na, t_bool(), [{x, t_bool(), null( t_bool() )}], 5 ) ).
+                for( na, t_bool(), [{<<"x">>, t_bool(), null( t_bool() )}], 5 ) ).
 
 fold_returns_expr() ->
-  ?assertEqual( {fold, na, {acc, 'Bool', {true, na}},
-                           {x, 'Bool', {null, na, 'Bool'}},
-                           {conj, na, {var, na, acc}, {var, na, x}}},
-                fold( na, {acc, t_bool(), true()},
-                          {x, t_bool(), null( t_bool() )},
-                          conj( var( acc ), var( x ) ) ) ).
+  ?assertEqual( {fold, na, {<<"acc">>, 'Bool', {true, na}},
+                           {<<"x">>, 'Bool', {null, na, 'Bool'}},
+                           {conj, na, {var, na, <<"acc">>}, {var, na, <<"x">>}}},
+                fold( na, {<<"acc">>, t_bool(), true()},
+                          {<<"x">>, t_bool(), null( t_bool() )},
+                          conj( var( <<"acc">> ), var( <<"x">> ) ) ) ).
 
 fold_fails_for_invalid_info() ->
   ?assertError( {bad_info, y},
-                fold( y, {acc, t_bool(), true()},
-                         {x, t_bool(), null( t_bool() )},
-                         conj( var( acc ), var( x ) ) ) ).
+                fold( y, {<<"acc">>, t_bool(), true()},
+                         {<<"x">>, t_bool(), null( t_bool() )},
+                         conj( var( <<"acc">> ), var( <<"x">> ) ) ) ).
 
 fold_fails_for_invalid_acc_xte() ->
   ?assertError( {bad_xte, 5},
                 fold( na, 5,
-                          {x, t_bool(), null( t_bool() )},
-                          conj( var( acc ), var( x ) ) ) ).
+                          {<<"x">>, t_bool(), null( t_bool() )},
+                          conj( var( <<"acc">> ), var( <<"x">> ) ) ) ).
 
 fold_fails_for_invalid_acc_x() ->
-  ?assertError( {bad_atom, 5},
+  ?assertError( {bad_binary, 5},
                 fold( na, {5, t_bool(), true()},
-                          {x, t_bool(), null( t_bool() )},
-                          conj( var( acc ), var( x ) ) ) ).
+                          {<<"x">>, t_bool(), null( t_bool() )},
+                          conj( var( <<"acc">> ), var( <<"x">> ) ) ) ).
 
 fold_fails_for_invalid_acc_t() ->
   ?assertError( {bad_type, 5},
-                fold( na, {acc, 5, true()},
-                          {x, t_bool(), null( t_bool() )},
-                          conj( var( acc ), var( x ) ) ) ).
+                fold( na, {<<"acc">>, 5, true()},
+                          {<<"x">>, t_bool(), null( t_bool() )},
+                          conj( var( <<"acc">> ), var( <<"x">> ) ) ) ).
 
 fold_fails_for_invalid_acc_e() ->
   ?assertError( {bad_expr, 5},
-                fold( na, {acc, t_bool(), 5},
-                          {x, t_bool(), null( t_bool() )},
-                          conj( var( acc ), var( x ) ) ) ).
+                fold( na, {<<"acc">>, t_bool(), 5},
+                          {<<"x">>, t_bool(), null( t_bool() )},
+                          conj( var( <<"acc">> ), var( <<"x">> ) ) ) ).
 
 fold_fails_for_invalid_list_xte() ->
   ?assertError( {bad_xte, 5},
-                fold( na, {acc, t_bool(), true()},
+                fold( na, {<<"acc">>, t_bool(), true()},
                           5,
-                          conj( var( acc ), var( x ) ) ) ).
+                          conj( var( <<"acc">> ), var( <<"x">> ) ) ) ).
 
 fold_fails_for_invalid_list_x() ->
-  ?assertError( {bad_atom, 5},
-                fold( na, {acc, t_bool(), true()},
+  ?assertError( {bad_binary, 5},
+                fold( na, {<<"acc">>, t_bool(), true()},
                           {5, t_bool(), null( t_bool() )},
-                          conj( var( acc ), var( x ) ) ) ).
+                          conj( var( <<"acc">> ), var( <<"x">> ) ) ) ).
 
 fold_fails_for_invalid_list_t() ->
   ?assertError( {bad_type, 5},
-                fold( na, {acc, t_bool(), true()},
-                          {x, 5, null( t_bool() )},
-                          conj( var( acc ), var( x ) ) ) ).
+                fold( na, {<<"acc">>, t_bool(), true()},
+                          {<<"x">>, 5, null( t_bool() )},
+                          conj( var( <<"acc">> ), var( <<"x">> ) ) ) ).
 
 fold_fails_for_invalid_list_e() ->
   ?assertError( {bad_expr, 5},
-                fold( na, {acc, t_bool(), true()},
-                          {x, t_bool(), 5},
-                          conj( var( acc ), var( x ) ) ) ).
+                fold( na, {<<"acc">>, t_bool(), true()},
+                          {<<"x">>, t_bool(), 5},
+                          conj( var( <<"acc">> ), var( <<"x">> ) ) ) ).
 
 fold_fails_for_invalid_body_expr() ->
   ?assertError( {bad_expr, 5},
-                fold( na, {acc, t_bool(), true()},
-                          {x, t_bool(), null( t_bool() )},
+                fold( na, {<<"acc">>, t_bool(), true()},
+                          {<<"x">>, t_bool(), null( t_bool() )},
                           5 ) ).
 
 rcd_returns_expr() ->
-  ?assertEqual( {rcd, na, [{a, {str, na, <<"blub">>}}]},
-                rcd( na, [{a, str( <<"blub">> )}] ) ).
+  ?assertEqual( {rcd, na, [{<<"a">>, {str, na, <<"blub">>}}]},
+                rcd( na, [{<<"a">>, str( <<"blub">> )}] ) ).
 
 rcd_fails_for_invalid_info() ->
-  ?assertError( {bad_info, y}, rcd( y, [{a, str( <<"blub">> )}] ) ).
+  ?assertError( {bad_info, y}, rcd( y, [{<<"a">>, str( <<"blub">> )}] ) ).
 
 rcd_fails_for_invalid_xe_list() ->
   ?assertError( {bad_xe_lst, 5}, rcd( na, 5 ) ).
@@ -869,36 +869,36 @@ rcd_fails_for_invalid_xe() ->
   ?assertError( {bad_xe, 5}, rcd( na, [5] ) ).
 
 rcd_fails_for_invalid_x() ->
-  ?assertError( {bad_atom, 5}, rcd( na, [{5, str( <<"blub">> )}] ) ).
+  ?assertError( {bad_binary, 5}, rcd( na, [{5, str( <<"blub">> )}] ) ).
 
 rcd_fails_for_invalid_e() ->
-  ?assertError( {bad_expr, 5}, rcd( na, [{a, 5}] ) ).
+  ?assertError( {bad_expr, 5}, rcd( na, [{<<"a">>, 5}] ) ).
 
 proj_returns_expr() ->
-  ?assertEqual( {proj, na, a, {rcd, na, [{a, {str, na, <<"blub">>}}]}},
-                proj( na, a, rcd( [{a, str( <<"blub">> )}] ) ) ).
+  ?assertEqual( {proj, na, <<"a">>, {rcd, na, [{<<"a">>, {str, na, <<"blub">>}}]}},
+                proj( na, <<"a">>, rcd( [{<<"a">>, str( <<"blub">> )}] ) ) ).
 
 proj_fails_for_invalid_info() ->
-  ?assertError( {bad_info, y}, proj( y, a, rcd( [{a, str( <<"blub">> )}] ) ) ).
+  ?assertError( {bad_info, y}, proj( y, <<"a">>, rcd( [{<<"a">>, str( <<"blub">> )}] ) ) ).
 
 proj_fails_for_invalid_field_name() ->
-  ?assertError( {bad_atom, 5}, proj( na, 5, rcd( [{a, str( <<"blub">> )}] ) ) ).
+  ?assertError( {bad_binary, 5}, proj( na, 5, rcd( [{<<"a">>, str( <<"blub">> )}] ) ) ).
 
 proj_fails_for_invalid_operand() ->
-  ?assertError( {bad_expr, 5}, proj( na, a, 5 ) ).
+  ?assertError( {bad_expr, 5}, proj( na, <<"a">>, 5 ) ).
 
 err_run_returns_expr() ->
-  Reason = {run, <<"a@b">>, <<"ef12">>, f, <<"bla">>, <<"blub">>},
+  Reason = {run, <<"a@b">>, <<"ef12">>, <<"f">>, <<"bla">>, <<"blub">>},
   ?assertEqual( {err, na, 'Bool', Reason},
                 err( na, t_bool(), Reason ) ).
 
 err_stagein_returns_expr() ->
-  Reason = {stagein, <<"a@b">>, <<"ef12">>, f, [<<"a.txt">>]},
+  Reason = {stagein, <<"a@b">>, <<"ef12">>, <<"f">>, [<<"a.txt">>]},
   ?assertEqual( {err, na, 'Bool', Reason},
                 err( na, t_bool(), Reason ) ).
 
 err_stageout_returns_expr() ->
-  Reason = {stageout, <<"a@b">>, <<"ef12">>, f, [<<"a.txt">>]},
+  Reason = {stageout, <<"a@b">>, <<"ef12">>, <<"f">>, [<<"a.txt">>]},
   ?assertEqual( {err, na, 'Bool', Reason},
                 err( na, t_bool(), Reason ) ).
 
@@ -916,63 +916,63 @@ err_fails_for_invalid_reason() ->
   ?assertError( {bad_reason, 5}, err( na, t_bool(), 5 ) ).
 
 err_run_fails_for_invalid_node() ->
-  R = {run, 5, <<"ef12">>, f, <<"bla">>, <<"blub">>},
+  R = {run, 5, <<"ef12">>, <<"f">>, <<"bla">>, <<"blub">>},
   ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_run_fails_for_invalid_appid() ->
-  R = {run, <<"a@b">>, 5, f, <<"bla">>, <<"blub">>},
+  R = {run, <<"a@b">>, 5, <<"f">>, <<"bla">>, <<"blub">>},
   ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_run_fails_for_invalid_lamname() ->
   R = {run, <<"a@b">>, <<"ef12">>, 5, <<"bla">>, <<"blub">>},
-  ?assertError( {bad_atom, 5}, err( na, t_bool(), R ) ).
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_run_fails_for_invalid_script() ->
-  R = {run, <<"a@b">>, <<"ef12">>, f, 5, <<"blub">>},
+  R = {run, <<"a@b">>, <<"ef12">>, <<"f">>, 5, <<"blub">>},
   ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_run_fails_for_invalid_output() ->
-  R = {run, <<"a@b">>, <<"ef12">>, f, <<"bla">>, 5},
+  R = {run, <<"a@b">>, <<"ef12">>, <<"f">>, <<"bla">>, 5},
   ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_stagein_fails_for_invalid_node() ->
-  R = {stagein, 5, <<"ef12">>, f, [<<"bla.txt">>]},
+  R = {stagein, 5, <<"ef12">>, <<"f">>, [<<"bla.txt">>]},
   ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_stagein_fails_for_invalid_appid() ->
-  R = {stagein, <<"a@b">>, 5, f, [<<"bla.txt">>]},
+  R = {stagein, <<"a@b">>, 5, <<"f">>, [<<"bla.txt">>]},
   ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_stagein_fails_for_invalid_lamname() ->
   R = {stagein, <<"a@b">>, <<"ef12">>, 5, [<<"bla.txt">>]},
-  ?assertError( {bad_atom, 5}, err( na, t_bool(), R ) ).
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_stagein_fails_for_invalid_file_list() ->
-  R = {stagein, <<"a@b">>, <<"ef12">>, f, 5},
+  R = {stagein, <<"a@b">>, <<"ef12">>, <<"f">>, 5},
   ?assertError( {bad_file_lst, 5}, err( na, t_bool(), R ) ).
 
 err_stagein_fails_for_invalid_file() ->
-  R = {stagein, <<"a@b">>, <<"ef12">>, f, [5]},
+  R = {stagein, <<"a@b">>, <<"ef12">>, <<"f">>, [5]},
   ?assertError( {bad_file_lst, [5]}, err( na, t_bool(), R ) ).
 
 err_stageout_fails_for_invalid_node() ->
-  R = {stageout, 5, <<"ef12">>, f, [<<"bla.txt">>]},
+  R = {stageout, 5, <<"ef12">>, <<"f">>, [<<"bla.txt">>]},
   ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_stageout_fails_for_invalid_appid() ->
-  R = {stageout, <<"a@b">>, 5, f, [<<"bla.txt">>]},
+  R = {stageout, <<"a@b">>, 5, <<"f">>, [<<"bla.txt">>]},
   ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_stageout_fails_for_invalid_lamname() ->
   R = {stageout, <<"a@b">>, <<"ef12">>, 5, [<<"bla.txt">>]},
-  ?assertError( {bad_atom, 5}, err( na, t_bool(), R ) ).
+  ?assertError( {bad_binary, 5}, err( na, t_bool(), R ) ).
 
 err_stageout_fails_for_invalid_file_list() ->
-  R = {stageout, <<"a@b">>, <<"ef12">>, f, 5},
+  R = {stageout, <<"a@b">>, <<"ef12">>, <<"f">>, 5},
   ?assertError( {bad_file_lst, 5}, err( na, t_bool(), R ) ).
 
 err_stageout_fails_for_invalid_file() ->
-  R = {stageout, <<"a@b">>, <<"ef12">>, f, [5]},
+  R = {stageout, <<"a@b">>, <<"ef12">>, <<"f">>, [5]},
   ?assertError( {bad_file_lst, [5]}, err( na, t_bool(), R ) ).
 
 err_user_fails_for_invalid_msg() ->
@@ -1048,40 +1048,41 @@ lst_fails_for_invalid_element() ->
   ?assertError( {bad_expr, 5}, lst( na, t_bool(), [5] ) ).
 
 alet_returns_expr() ->
-  ?assertEqual( {app, na, {lam, na, [{x, 'Str'}], {ntv, {var, na, x}}}, [{x, {str, na, <<"bla">>}}]},
-                alet( na, [{x, t_str(), str( <<"bla">> )}], var( x ) ) ).
+  ?assertEqual( {app, na, {lam, na, [{<<"x">>, 'Str'}], {ntv, {var, na, <<"x">>}}},
+                          [{<<"x">>, {str, na, <<"bla">>}}]},
+                alet( na, [{<<"x">>, t_str(), str( <<"bla">> )}], var( <<"x">> ) ) ).
 
 alet_fails_for_invalid_info() ->
   ?assertError( {bad_info, y},
-                alet( y, [{x, t_str(), str( <<"bla">> )}], var( x ) ) ).
+                alet( y, [{<<"x">>, t_str(), str( <<"bla">> )}], var( <<"x">> ) ) ).
 
 alet_fails_for_invalid_xte_list() ->
   ?assertError( {bad_xte_lst, 5},
-                alet( na, 5, var( x ) ) ).
+                alet( na, 5, var( <<"x">> ) ) ).
 
 alet_fails_for_invalid_xte() ->
   ?assertError( {bad_xte, 5},
-                alet( na, [5], var( x ) ) ).
+                alet( na, [5], var( <<"x">> ) ) ).
 
 alet_fails_for_invalid_x() ->
-  ?assertError( {bad_atom, 5},
-                alet( na, [{5, t_str(), str( <<"bla">> )}], var( x ) ) ).
+  ?assertError( {bad_binary, 5},
+                alet( na, [{5, t_str(), str( <<"bla">> )}], var( <<"x">> ) ) ).
 
 alet_fails_for_invalid_t() ->
   ?assertError( {bad_type, 5},
-                alet( na, [{x, 5, str( <<"bla">> )}], var( x ) ) ).
+                alet( na, [{<<"x">>, 5, str( <<"bla">> )}], var( <<"x">> ) ) ).
 
 alet_fails_for_invalid_e() ->
   ?assertError( {bad_expr, 5},
-                alet( na, [{x, t_str(), 5}], var( x ) ) ).
+                alet( na, [{<<"x">>, t_str(), 5}], var( <<"x">> ) ) ).
 
 alet_fails_for_invalid_body_expr() ->
   ?assertError( {bad_expr, 5},
-                alet( na, [{x, t_str(), str( <<"bla">> )}], 5 ) ).
+                alet( na, [{<<"x">>, t_str(), str( <<"bla">> )}], 5 ) ).
 
 asc_returns_expr() ->
   ?assertMatch( {app, na, {lam, na, [{X, 'Str'}], {ntv, {var, na, X}}},
-                          [{X, {str, na, <<"bla">>}}]} when is_atom( X ),
+                          [{X, {str, na, <<"bla">>}}]} when is_binary( X ),
                 asc( na, str( <<"bla">> ), t_str() ) ).
 
 asc_fails_for_invalid_info() ->
@@ -1117,8 +1118,8 @@ lst2_abbreviates_lst3() ->
                 lst( t_str(), [] ) ).
 
 let2_abbreviates_let3() ->
-  ?assertEqual( alet( na, [{x, t_str(), str( <<"bla">> )}], var( x ) ),
-                alet( [{x, t_str(), str( <<"bla">> )}], var( x ) ) ).
+  ?assertEqual( alet( na, [{<<"x">>, t_str(), str( <<"bla">> )}], var( <<"x">> ) ),
+                alet( [{<<"x">>, t_str(), str( <<"bla">> )}], var( <<"x">> ) ) ).
 
 asc2_abbreviates_asc3() ->
   ?assertEqual( asc( na, str( <<"bla">> ), t_str() ),
@@ -1136,7 +1137,7 @@ pattern_constructor_test_() ->
 
    [{"r_var returns pattern",
      fun r_var_returns_pattern/0},
-    {"r_var fails for invalid x",
+    {"r_var fails for invalid name",
      fun r_var_fails_for_invalid_name/0},
     {"r_var fails for invalid t",
      fun r_var_fails_for_invalid_type/0},
@@ -1154,17 +1155,17 @@ pattern_constructor_test_() ->
   }.
 
 r_var_returns_pattern() ->
-  ?assertEqual( {r_var, x, 'Str'}, r_var( x, t_str() ) ).
+  ?assertEqual( {r_var, <<"x">>, 'Str'}, r_var( <<"x">>, t_str() ) ).
 
 r_var_fails_for_invalid_name() ->
-  ?assertError( {bad_atom, 5}, r_var( 5, t_str() ) ).
+  ?assertError( {bad_binary, 5}, r_var( 5, t_str() ) ).
 
 r_var_fails_for_invalid_type() ->
-  ?assertError( {bad_type, 5}, r_var( x, 5 ) ).
+  ?assertError( {bad_type, 5}, r_var( <<"x">>, 5 ) ).
 
 r_rcd_returns_pattern() ->
-  ?assertEqual( {r_rcd, [{a, {r_var, x, 'Str'}}]},
-                r_rcd( [{a, r_var( x, t_str() )}] ) ).
+  ?assertEqual( {r_rcd, [{<<"a">>, {r_var, <<"x">>, 'Str'}}]},
+                r_rcd( [{<<"a">>, r_var( <<"x">>, t_str() )}] ) ).
 
 r_rcd_fails_for_invalid_xr_list() ->
   ?assertError( {bad_xr_lst, 5}, r_rcd( 5 ) ).
@@ -1173,10 +1174,10 @@ r_rcd_fails_for_invalid_xr() ->
   ?assertError( {bad_xr, 5}, r_rcd( [5] ) ).
 
 r_rcd_fails_for_invalid_x() ->
-  ?assertError( {bad_atom, 5}, r_rcd( [{5, r_var( x, t_str() )}] ) ).
+  ?assertError( {bad_binary, 5}, r_rcd( [{5, r_var( <<"x">>, t_str() )}] ) ).
 
 r_rcd_fails_for_invalid_r() ->
-  ?assertError( {bad_pattern, 5}, r_rcd( [{a, 5}] ) ).
+  ?assertError( {bad_pattern, 5}, r_rcd( [{<<"a">>, 5}] ) ).
 
 
 assign_test_() ->
@@ -1197,12 +1198,12 @@ assign_test_() ->
   }.
 
 assign_returns_assign() ->
-  ?assertEqual( {assign, na, {r_var, x, 'Str'}, {str, na, <<"bla">>}},
-                assign( na, r_var( x, t_str() ), str( <<"bla">> ) ) ).
+  ?assertEqual( {assign, na, {r_var, <<"x">>, 'Str'}, {str, na, <<"bla">>}},
+                assign( na, r_var( <<"x">>, t_str() ), str( <<"bla">> ) ) ).
 
 assign_fails_for_invalid_info() ->
   ?assertError( {bad_info, y},
-                assign( y, r_var( x, t_str() ), str( <<"bla">> ) ) ).
+                assign( y, r_var( <<"x">>, t_str() ), str( <<"bla">> ) ) ).
 
 assign_fails_for_invalid_pattern() ->
   ?assertError( {bad_pattern, 5},
@@ -1210,7 +1211,7 @@ assign_fails_for_invalid_pattern() ->
 
 assign_fails_for_invalid_expr() ->
   ?assertError( {bad_expr, 5},
-                assign( na, r_var( x, t_str() ), 5 ) ).
+                assign( na, r_var( <<"x">>, t_str() ), 5 ) ).
 
 
 
@@ -1220,53 +1221,58 @@ expand_closure_test_() ->
    fun() -> ok end,
    fun( _ ) -> ok end,
 
-   [fun assign_variable_pattern/0,
-    fun last_assignment_binds_innermost/0,
-    fun empty_record_pattern_is_neutral/0,
-    fun assignment_resolution_propagates_to_record_fields/0,
-    fun ambiguous_variable_binding_returns_no_error/0
+   [{"assign variable pattern",
+     fun assign_variable_pattern/0},
+    {"last assignment binds innermost",
+     fun last_assignment_binds_innermost/0},
+    {"empty record pattern is neutral",
+     fun empty_record_pattern_is_neutral/0},
+    {"assignment resolution propagates to record fields",
+     fun assignment_resolution_propagates_to_record_fields/0},
+    {"ambiguous variable binding returns no error",
+     fun ambiguous_variable_binding_returns_no_error/0}
    ]
   }.
 
 assign_variable_pattern() ->
-  AssignLst = [assign( r_var( x, t_str() ), var( y ) )],
-  EBody = var( z ),
-  Closure = app( lam( [{x, t_str()}], {ntv, var( z )} ),
-                 [{x, var( y )}] ),
+  AssignLst = [assign( r_var( <<"x">>, t_str() ), var( <<"y">> ) )],
+  EBody = var( <<"z">> ),
+  Closure = app( lam( [{<<"x">>, t_str()}], {ntv, var( <<"z">> )} ),
+                 [{<<"x">>, var( <<"y">> )}] ),
   ?assertEqual( Closure, expand_closure( AssignLst, EBody ) ).
 
 last_assignment_binds_innermost() ->
-  AssignLst = [assign( r_var( x1, t_str() ), var( y1 ) ),
-               assign( r_var( x2, t_str() ), var( y2 ) )],
-  EBody = var( z ),
-  Closure = app( lam( [{x1, t_str()}],
-                      {ntv, app( lam( [{x2, t_str()}],
-                                      {ntv, var( z )} ),
-                                 [{x2, var( y2 )}] )} ),
-                 [{x1, var( y1 )}] ),
+  AssignLst = [assign( r_var( <<"x1">>, t_str() ), var( <<"y1">> ) ),
+               assign( r_var( <<"x2">>, t_str() ), var( <<"y2">> ) )],
+  EBody = var( <<"z">> ),
+  Closure = app( lam( [{<<"x1">>, t_str()}],
+                      {ntv, app( lam( [{<<"x2">>, t_str()}],
+                                      {ntv, var( <<"z">> )} ),
+                                 [{<<"x2">>, var( <<"y2">> )}] )} ),
+                 [{<<"x1">>, var( <<"y1">> )}] ),
   ?assertEqual( Closure, expand_closure( AssignLst, EBody ) ).
 
 empty_record_pattern_is_neutral() ->
-  AssignLst = [assign( r_rcd( [] ), var( x ) )],
-  EBody = var( y ),
+  AssignLst = [assign( r_rcd( [] ), var( <<"x">> ) )],
+  EBody = var( <<"y">> ),
   ?assertEqual( EBody, expand_closure( AssignLst, EBody ) ).
 
 assignment_resolution_propagates_to_record_fields() ->
-  AssignLst = [assign( r_rcd( [{a, r_var( x, t_str() )}] ),
-               var( y ) )],
-  EBody = var( z ),
-  Closure = app( lam( [{x, t_str()}],
-                      {ntv, var( z )} ),
-                 [{x, proj( a, var( y ) )}] ),
+  AssignLst = [assign( r_rcd( [{<<"a">>, r_var( <<"x">>, t_str() )}] ),
+               var( <<"y">> ) )],
+  EBody = var( <<"z">> ),
+  Closure = app( lam( [{<<"x">>, t_str()}],
+                      {ntv, var( <<"z">> )} ),
+                 [{<<"x">>, proj( <<"a">>, var( <<"y">> ) )}] ),
   ?assertEqual( Closure, expand_closure( AssignLst, EBody ) ).
 
 ambiguous_variable_binding_returns_no_error() ->
-  AssignLst = [assign( r_rcd( [{a, r_var( x, t_str() )},
-                               {b, r_var( x, t_str() )}] ),
-                       var( m ) )],
-  EBody = var( x ),
-  Closure = alet( [{x, t_str(), proj( a, var( m ) )},
-                   {x, t_str(), proj( b, var( m ) )}], EBody ),
+  AssignLst = [assign( r_rcd( [{<<"a">>, r_var( <<"x">>, t_str() )},
+                               {<<"b">>, r_var( <<"x">>, t_str() )}] ),
+                       var( <<"m">> ) )],
+  EBody = var( <<"x">> ),
+  Closure = alet( [{<<"x">>, t_str(), proj( <<"a">>, var( <<"m">> ) )},
+                   {<<"x">>, t_str(), proj( <<"b">>, var( <<"m">> ) )}], EBody ),
   ?assertEqual( Closure,
                 expand_closure( AssignLst, EBody ) ).
 
@@ -1293,10 +1299,10 @@ ambiguous_names_empty_list_returns_empty_list() ->
   ?assertEqual( [], ambiguous_names( [] ) ).
 
 ambiguous_names_list_distinct_elements_returns_empty_list() ->
-  ?assertEqual( [], ambiguous_names( [a, b] ) ).
+  ?assertEqual( [], ambiguous_names( [<<"a">>, <<"b">>] ) ).
 
 ambiguous_names_list_duplicate_elements_returns_duplicate_element() ->
-  ?assertEqual( [b], ambiguous_names( [a, b, b] ) ).
+  ?assertEqual( [<<"b">>], ambiguous_names( [<<"a">>, <<"b">>, <<"b">>] ) ).
 
 
 name_extract_test_() ->
@@ -1318,19 +1324,19 @@ name_extract_test_() ->
   }.
 
 pattern_names_var_returns_var_name() ->
-  ?assertEqual( [x], pattern_names( r_var( x, t_str() ) ) ).
+  ?assertEqual( [<<"x">>], pattern_names( r_var( <<"x">>, t_str() ) ) ).
 
 pattern_names_traverses_rcd_field() ->
-  ?assertEqual( [x], pattern_names( r_rcd( [{a, r_var( x, t_str() )}] ) ) ).
+  ?assertEqual( [<<"x">>], pattern_names( r_rcd( [{<<"a">>, r_var( <<"x">>, t_str() )}] ) ) ).
 
 xt_names_extracts_x() ->
-  ?assertEqual( [x], xt_names( [{x, t_str()}] ) ).
+  ?assertEqual( [<<"x">>], xt_names( [{<<"x">>, t_str()}] ) ).
 
 xe_names_extracts_x() ->
-  ?assertEqual( [x], xe_names( [{x, str( <<"bla">> )}] ) ).
+  ?assertEqual( [<<"x">>], xe_names( [{<<"x">>, str( <<"bla">> )}] ) ).
 
 xte_names_extracts_x() ->
-  ?assertEqual( [x], xte_names( [{x, t_str(), str( <<"bla">> )}] ) ).
+  ?assertEqual( [<<"x">>], xte_names( [{<<"x">>, t_str(), str( <<"bla">> )}] ) ).
 
 %%====================================================================
 %% Validators
@@ -1538,13 +1544,13 @@ is_info_any_returns_false() ->
   ?assertNot( is_info( y ) ).
 
 is_pattern_pattern_returns_true() ->
-  ?assert( is_pattern( r_var( x, t_str() ) ) ).
+  ?assert( is_pattern( r_var( <<"x">>, t_str() ) ) ).
 
 is_pattern_any_returns_false() ->
   ?assertNot( is_pattern( 5 ) ).
 
 is_assign_assign_returns_true() ->
-  ?assert( is_assign( assign( r_var( x, t_str() ), str( <<"blub">> ) ) ) ).
+  ?assert( is_assign( assign( r_var( <<"x">>, t_str() ), str( <<"blub">> ) ) ) ).
 
 is_assign_any_returns_false() ->
   ?assertNot( is_assign( 5 ) ).
@@ -1643,195 +1649,196 @@ rename_test_() ->
   }.
 
 rename_var_alters_matching_var() ->
-  E1 = var( x ),
-  E2 = var( y ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = var( <<"x">> ),
+  E2 = var( <<"y">> ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_var_unrelated_no_effect() ->
-  E = var( x ),
-  ?assertEqual( E, rename( E, a, b ) ).
+  E = var( <<"x">> ),
+  ?assertEqual( E, rename( E, <<"a">>, <<"b">> ) ).
 
 rename_lam_ntv_traverses_body_expr() ->
-  E1 = lam( [{x, t_str()}, {z, t_bool()}], {ntv, var( x )} ),
-  E2 = lam( [{y, t_str()}, {z, t_bool()}], {ntv, var( y )} ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = lam( [{<<"x">>, t_str()}, {<<"z">>, t_bool()}], {ntv, var( <<"x">> )} ),
+  E2 = lam( [{<<"y">>, t_str()}, {<<"z">>, t_bool()}], {ntv, var( <<"y">> )} ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_lam_frn_no_effect() ->
-  E = lam( [{x, t_str()}], {frn, f, t_rcd( [{y, t_str()}] ), l_bash(), <<"blub">>} ),
-  ?assertEqual( E, rename( E, x, y ) ).
+  E = lam( [{<<"x">>, t_str()}],
+           {frn, <<"f">>, t_rcd( [{<<"y">>, t_str()}] ), l_bash(), <<"blub">>} ),
+  ?assertEqual( E, rename( E, <<"x">>, <<"y">> ) ).
 
 rename_app_traverses_function_expr() ->
-  E1 = app( var( f ), [{x, var( x )}] ),
-  E2 = app( var( g ), [{x, var( x )}] ),
-  ?assertEqual( E2, rename( E1, f, g ) ).
+  E1 = app( var( <<"f">> ), [{<<"x">>, var( <<"x">> )}] ),
+  E2 = app( var( <<"g">> ), [{<<"x">>, var( <<"x">> )}] ),
+  ?assertEqual( E2, rename( E1, <<"f">>, <<"g">> ) ).
 
 rename_app_traverses_argument_expr() ->
-  E1 = app( var( f ), [{x, var( x )}] ),
-  E2 = app( var( f ), [{x, var( y )}] ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = app( var( <<"f">> ), [{<<"x">>, var( <<"x">> )}] ),
+  E2 = app( var( <<"f">> ), [{<<"x">>, var( <<"y">> )}] ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_fix_traverses_operand() ->
-  E1 = fix( var( x ) ),
-  E2 = fix( var( y ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = fix( var( <<"x">> ) ),
+  E2 = fix( var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_fut_no_effect() ->
   E = fut( str( <<"blub">> ) ),
-  ?assertEqual( E, rename( E, x, y ) ).
+  ?assertEqual( E, rename( E, <<"x">>, <<"y">> ) ).
 
 rename_str_no_effect() ->
   E = str( <<"blub">> ),
-  ?assertEqual( E, rename( E, x, y ) ).
+  ?assertEqual( E, rename( E, <<"x">>, <<"y">> ) ).
 
 rename_file_no_effect() ->
   E = file( <<"blub.txt">> ),
-  ?assertEqual( E, rename( E, x, y ) ).
+  ?assertEqual( E, rename( E, <<"x">>, <<"y">> ) ).
 
 rename_true_no_effect() ->
   E = true(),
-  ?assertEqual( E, rename( E, x, y ) ).
+  ?assertEqual( E, rename( E, <<"x">>, <<"y">> ) ).
 
 rename_false_no_effect() ->
   E = false(),
-  ?assertEqual( E, rename( E, x, y ) ).
+  ?assertEqual( E, rename( E, <<"x">>, <<"y">> ) ).
 
 rename_cmp_traverses_lhs() ->
-  E1 = cmp( var( x ), var( z ) ),
-  E2 = cmp( var( y ), var( z ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = cmp( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = cmp( var( <<"y">> ), var( <<"z">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_cmp_traverses_rhs() ->
-  E1 = cmp( var( x ), var( z ) ),
-  E2 = cmp( var( x ), var( y ) ),
-  ?assertEqual( E2, rename( E1, z, y ) ).
+  E1 = cmp( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = cmp( var( <<"x">> ), var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"z">>, <<"y">> ) ).
 
 rename_conj_traverses_lhs() ->
-  E1 = conj( var( x ), var( z ) ),
-  E2 = conj( var( y ), var( z ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = conj( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = conj( var( <<"y">> ), var( <<"z">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_conj_traverses_rhs() ->
-  E1 = conj( var( x ), var( z ) ),
-  E2 = conj( var( x ), var( y ) ),
-  ?assertEqual( E2, rename( E1, z, y ) ).
+  E1 = conj( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = conj( var( <<"x">> ), var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"z">>, <<"y">> ) ).
 
 rename_disj_traverses_lhs() ->
-  E1 = disj( var( x ), var( z ) ),
-  E2 = disj( var( y ), var( z ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = disj( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = disj( var( <<"y">> ), var( <<"z">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_disj_traverses_rhs() ->
-  E1 = disj( var( x ), var( z ) ),
-  E2 = disj( var( x ), var( y ) ),
-  ?assertEqual( E2, rename( E1, z, y ) ).
+  E1 = disj( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = disj( var( <<"x">> ), var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"z">>, <<"y">> ) ).
 
 rename_neg_traverses_operand() ->
-  E1 = neg( var( x ) ),
-  E2 = neg( var( y ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = neg( var( <<"x">> ) ),
+  E2 = neg( var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_isnil_traverses_operand() ->
-  E1 = isnil( var( x ) ),
-  E2 = isnil( var( y ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = isnil( var( <<"x">> ) ),
+  E2 = isnil( var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_cnd_traverses_condition_expr() ->
-  E1 = cnd( var( a ), var( b ), var( c ) ),
-  E2 = cnd( var( x ), var( b ), var( c ) ),
-  ?assertEqual( E2, rename( E1, a, x ) ).
+  E1 = cnd( var( <<"a">> ), var( <<"b">> ), var( <<"c">> ) ),
+  E2 = cnd( var( <<"x">> ), var( <<"b">> ), var( <<"c">> ) ),
+  ?assertEqual( E2, rename( E1, <<"a">>, <<"x">> ) ).
 
 rename_cnd_traverses_then_expr() ->
-  E1 = cnd( var( a ), var( b ), var( c ) ),
-  E2 = cnd( var( a ), var( x ), var( c ) ),
-  ?assertEqual( E2, rename( E1, b, x ) ).
+  E1 = cnd( var( <<"a">> ), var( <<"b">> ), var( <<"c">> ) ),
+  E2 = cnd( var( <<"a">> ), var( <<"x">> ), var( <<"c">> ) ),
+  ?assertEqual( E2, rename( E1, <<"b">>, <<"x">> ) ).
 
 rename_cnd_traverses_else_expr() ->
-  E1 = cnd( var( a ), var( b ), var( c ) ),
-  E2 = cnd( var( a ), var( b ), var( x ) ),
-  ?assertEqual( E2, rename( E1, c, x ) ).
+  E1 = cnd( var( <<"a">> ), var( <<"b">> ), var( <<"c">> ) ),
+  E2 = cnd( var( <<"a">> ), var( <<"b">> ), var( <<"x">> ) ),
+  ?assertEqual( E2, rename( E1, <<"c">>, <<"x">> ) ).
 
 rename_null_no_effect() ->
   E = null( t_str() ),
-  ?assertEqual( E, rename( E, x, y ) ).
+  ?assertEqual( E, rename( E, <<"x">>, <<"y">> ) ).
 
 rename_cons_traverses_lhs() ->
-  E1 = cons( var( x ), var( z ) ),
-  E2 = cons( var( y ), var( z ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = cons( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = cons( var( <<"y">> ), var( <<"z">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_cons_traverses_rhs() ->
-  E1 = cons( var( x ), var( z ) ),
-  E2 = cons( var( x ), var( y ) ),
-  ?assertEqual( E2, rename( E1, z, y ) ).
+  E1 = cons( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = cons( var( <<"x">> ), var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"z">>, <<"y">> ) ).
 
 rename_hd_traverses_lhs() ->
-  E1 = hd( var( x ), var( z ) ),
-  E2 = hd( var( y ), var( z ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = hd( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = hd( var( <<"y">> ), var( <<"z">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_hd_traverses_rhs() ->
-  E1 = hd( var( x ), var( z ) ),
-  E2 = hd( var( x ), var( y ) ),
-  ?assertEqual( E2, rename( E1, z, y ) ).
+  E1 = hd( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = hd( var( <<"x">> ), var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"z">>, <<"y">> ) ).
 
 rename_tl_traverses_lhs() ->
-  E1 = tl( var( x ), var( z ) ),
-  E2 = tl( var( y ), var( z ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = tl( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = tl( var( <<"y">> ), var( <<"z">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_tl_traverses_rhs() ->
-  E1 = tl( var( x ), var( z ) ),
-  E2 = tl( var( x ), var( y ) ),
-  ?assertEqual( E2, rename( E1, z, y ) ).
+  E1 = tl( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = tl( var( <<"x">> ), var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"z">>, <<"y">> ) ).
 
 rename_append_traverses_lhs() ->
-  E1 = append( var( x ), var( z ) ),
-  E2 = append( var( y ), var( z ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = append( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = append( var( <<"y">> ), var( <<"z">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_append_traverses_rhs() ->
-  E1 = append( var( x ), var( z ) ),
-  E2 = append( var( x ), var( y ) ),
-  ?assertEqual( E2, rename( E1, z, y ) ).
+  E1 = append( var( <<"x">> ), var( <<"z">> ) ),
+  E2 = append( var( <<"x">> ), var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"z">>, <<"y">> ) ).
 
 rename_for_alters_list_binding() ->
-  E1 = for( t_bool(), [{x, t_bool(), null( t_bool() )}], neg( var( z ) ) ),
-  E2 = for( t_bool(), [{y, t_bool(), null( t_bool() )}], neg( var( z ) ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = for( t_bool(), [{<<"x">>, t_bool(), null( t_bool() )}], neg( var( <<"z">> ) ) ),
+  E2 = for( t_bool(), [{<<"y">>, t_bool(), null( t_bool() )}], neg( var( <<"z">> ) ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_for_alters_body_expr() ->
-  E1 = for( t_bool(), [{x, t_bool(), null( t_bool() )}], neg( var( z ) ) ),
-  E2 = for( t_bool(), [{x, t_bool(), null( t_bool() )}], neg( var( y ) ) ),
-  ?assertEqual( E2, rename( E1, z, y ) ).
+  E1 = for( t_bool(), [{<<"x">>, t_bool(), null( t_bool() )}], neg( var( <<"z">> ) ) ),
+  E2 = for( t_bool(), [{<<"x">>, t_bool(), null( t_bool() )}], neg( var( <<"y">> ) ) ),
+  ?assertEqual( E2, rename( E1, <<"z">>, <<"y">> ) ).
 
 rename_fold_alters_acc_binding() ->
-  E1 = fold( {x, t_bool(), true()}, {z, t_bool(), null( t_bool() )}, var( a ) ),
-  E2 = fold( {y, t_bool(), true()}, {z, t_bool(), null( t_bool() )}, var( a ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = fold( {<<"x">>, t_bool(), true()}, {<<"z">>, t_bool(), null( t_bool() )}, var( <<"a">> ) ),
+  E2 = fold( {<<"y">>, t_bool(), true()}, {<<"z">>, t_bool(), null( t_bool() )}, var( <<"a">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_fold_alters_list_binding() ->
-  E1 = fold( {x, t_bool(), true()}, {z, t_bool(), null( t_bool() )}, var( a ) ),
-  E2 = fold( {x, t_bool(), true()}, {y, t_bool(), null( t_bool() )}, var( a ) ),
-  ?assertEqual( E2, rename( E1, z, y ) ).
+  E1 = fold( {<<"x">>, t_bool(), true()}, {<<"z">>, t_bool(), null( t_bool() )}, var( <<"a">> ) ),
+  E2 = fold( {<<"x">>, t_bool(), true()}, {<<"y">>, t_bool(), null( t_bool() )}, var( <<"a">> ) ),
+  ?assertEqual( E2, rename( E1, <<"z">>, <<"y">> ) ).
 
 rename_fold_traverses_body_expr() ->
-  E1 = fold( {x, t_bool(), true()}, {z, t_bool(), null( t_bool() )}, var( a ) ),
-  E2 = fold( {x, t_bool(), true()}, {z, t_bool(), null( t_bool() )}, var( b ) ),
-  ?assertEqual( E2, rename( E1, a, b ) ).
+  E1 = fold( {<<"x">>, t_bool(), true()}, {<<"z">>, t_bool(), null( t_bool() )}, var( <<"a">> ) ),
+  E2 = fold( {<<"x">>, t_bool(), true()}, {<<"z">>, t_bool(), null( t_bool() )}, var( <<"b">> ) ),
+  ?assertEqual( E2, rename( E1, <<"a">>, <<"b">> ) ).
 
 rename_rcd_traverses_field() ->
-  E1 = rcd( [{a, var( x )}] ),
-  E2 = rcd( [{a, var( y )}] ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = rcd( [{<<"a">>, var( <<"x">> )}] ),
+  E2 = rcd( [{<<"a">>, var( <<"y">> )}] ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_proj_traverses_operand() ->
-  E1 = proj( a, var( x ) ),
-  E2 = proj( a, var( y ) ),
-  ?assertEqual( E2, rename( E1, x, y ) ).
+  E1 = proj( <<"a">>, var( <<"x">> ) ),
+  E2 = proj( <<"a">>, var( <<"y">> ) ),
+  ?assertEqual( E2, rename( E1, <<"x">>, <<"y">> ) ).
 
 rename_err_no_effect() ->
   E = err( t_str(), {user, <<"bla">>} ),
-  ?assertEqual( E, rename( E, x, y ) ).
+  ?assertEqual( E, rename( E, <<"x">>, <<"y">> ) ).
 
 
 subst_test_() ->
@@ -1849,7 +1856,7 @@ subst_test_() ->
      fun subst_ntv_lam_shadows/0},
     {"subst ntv lam cannot capture",
      fun subst_ntv_lam_cannot_capture/0},
-    {"subst frn function no effect",
+    {"subst frn lam no effect",
      fun subst_frn_lam_no_effect/0},
     {"subst app traverses function position",
      fun subst_app_traverses_function_position/0},
@@ -1938,299 +1945,299 @@ subst_test_() ->
 
 
 subst_free_var() ->
-  E0 = var( x ),
+  E0 = var( <<"x">> ),
   E1 = str( <<"blub">> ),
-  ?assertEqual( E1, subst( E0, x, E1 ) ).
+  ?assertEqual( E1, subst( E0, <<"x">>, E1 ) ).
 
 subst_unrelated_var() ->
-  E0 = var( x ),
+  E0 = var( <<"x">> ),
   E1 = str( <<"blub">> ),
-  ?assertEqual( E0, subst( E0, y, E1 ) ).
+  ?assertEqual( E0, subst( E0, <<"y">>, E1 ) ).
 
 subst_ntv_lam_traverses_body() ->
-  E0 = lam( [], {ntv, var( x )} ),
+  E0 = lam( [], {ntv, var( <<"x">> )} ),
   E1 = str( <<"blub">> ),
   E2 = lam( [], {ntv, E1} ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_ntv_lam_shadows() ->
-  E0 = lam( [{x, t_str()}], {ntv, var( x )} ),
+  E0 = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
   E1 = str( <<"blub">> ),
-  ?assert( is_alpha_equivalent( E0, subst( E0, x, E1 ) ) ).
+  ?assert( is_alpha_equivalent( E0, subst( E0, <<"x">>, E1 ) ) ).
 
 subst_ntv_lam_cannot_capture() ->
-  E0 = lam( [{x, t_str()}], {ntv, var( y )} ),
-  E1 = lam( [{x, t_str()}], {ntv, var( x )} ),
-  E2 = subst( E0, y, var( x ) ),
+  E0 = lam( [{<<"x">>, t_str()}], {ntv, var( <<"y">> )} ),
+  E1 = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
+  E2 = subst( E0, <<"y">>, var( <<"x">> ) ),
   ?assertNot( is_alpha_equivalent( E1, E2 ) ).
 
 subst_frn_lam_no_effect() ->
-  E0 = lam( [{x, t_str()}],
-            {frn, f,
-                  t_rcd( [{y, t_str()}] ),
+  E0 = lam( [{<<"x">>, t_str()}],
+            {frn, <<"f">>,
+                  t_rcd( [{<<"y">>, t_str()}] ),
                   l_awk(), <<"bla">>} ),
-  ?assertEqual( E0, subst( E0, y, str( <<"blub">> ) ) ).
+  ?assertEqual( E0, subst( E0, <<"y">>, str( <<"blub">> ) ) ).
 
 subst_app_traverses_function_position() ->
-  E0 = app( var( f ), [] ),
+  E0 = app( var( <<"f">> ), [] ),
   E1 = lam( [], {ntv, str( <<"blub">> )} ),
   E2 = app( E1, [] ),
-  ?assertEqual( E2, subst( E0, f, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"f">>, E1 ) ).
 
 subst_app_traverses_argument_position() ->
-  ELam = lam( [{x, t_str()}], {ntv, var( x )} ),
-  E0 = app( ELam, [{x, var( y )}] ),
+  ELam = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
+  E0 = app( ELam, [{<<"x">>, var( <<"y">> )}] ),
   E1 = str( <<"blub">> ),
-  E2 = app( ELam, [{x, E1}] ),
-  ?assert( is_alpha_equivalent( E2, subst( E0, y, E1 ) ) ).
+  E2 = app( ELam, [{<<"x">>, E1}] ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, <<"y">>, E1 ) ) ).
 
 subst_fix_traverses() ->
-  E0 = fix( lam( [{f, t_fn( [], t_str() )}], {ntv, var( x )} ) ),
+  E0 = fix( lam( [{<<"f">>, t_fn( [], t_str() )}], {ntv, var( <<"x">> )} ) ),
   E1 = str( <<"blub">> ),
-  E2 = fix( lam( [{f, t_fn( [], t_str() )}], {ntv, E1} ) ),
-  ?assert( is_alpha_equivalent( E2, subst( E0, x, E1 ) ) ).
+  E2 = fix( lam( [{<<"f">>, t_fn( [], t_str() )}], {ntv, E1} ) ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, <<"x">>, E1 ) ) ).
 
 subst_fut_no_effect() ->
-  E0 = fut( app( lam( [{x, t_bool()}],
-                      {frn, f,
-                            t_rcd( [{y, t_bool()}] ),
+  E0 = fut( app( lam( [{<<"x">>, t_bool()}],
+                      {frn, <<"f">>,
+                            t_rcd( [{<<"y">>, t_bool()}] ),
                             l_elixir(),
                             <<"bla">>} ),
-                 [{x, true()}] ) ),
-  ?assertEqual( E0, subst( E0, x, false() ) ).
+                 [{<<"x">>, true()}] ) ),
+  ?assertEqual( E0, subst( E0, <<"x">>, false() ) ).
 
 subst_str_no_effect() ->
   E0 = str( <<"blub">> ),
-  ?assertEqual( E0, subst( E0, x, false() ) ).
+  ?assertEqual( E0, subst( E0, <<"x">>, false() ) ).
 
 subst_file_no_effect() ->
   E0 = file( <<"blub.txt">> ),
-  ?assertEqual( E0, subst( E0, x, false() ) ).
+  ?assertEqual( E0, subst( E0, <<"x">>, false() ) ).
 
 subst_true_no_effect() ->
   E0 = true(),
-  ?assertEqual( E0, subst( E0, x, false() ) ).
+  ?assertEqual( E0, subst( E0, <<"x">>, false() ) ).
 
 subst_false_no_effect() ->
   E0 = false(),
-  ?assertEqual( E0, subst( E0, x, false() ) ).
+  ?assertEqual( E0, subst( E0, <<"x">>, false() ) ).
 
 subst_cmp_traverses_lhs() ->
-  E0 = cmp( var( x ), str( <<"blub">> ) ),
+  E0 = cmp( var( <<"x">> ), str( <<"blub">> ) ),
   E1 = str( <<"bla">> ),
   E2 = cmp( E1, str( <<"blub">> ) ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_cmp_traverses_rhs() ->
-  E0 = cmp( str( <<"blub">> ), var( x ) ),
+  E0 = cmp( str( <<"blub">> ), var( <<"x">> ) ),
   E1 = str( <<"bla">> ),
   E2 = cmp( str( <<"blub">> ), E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_conj_traverses_lhs() ->
-  E0 = conj( var( x ), str( <<"blub">> ) ),
+  E0 = conj( var( <<"x">> ), str( <<"blub">> ) ),
   E1 = str( <<"bla">> ),
   E2 = conj( E1, str( <<"blub">> ) ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_conj_traverses_rhs() ->
-  E0 = conj( str( <<"blub">> ), var( x ) ),
+  E0 = conj( str( <<"blub">> ), var( <<"x">> ) ),
   E1 = str( <<"bla">> ),
   E2 = conj( str( <<"blub">> ), E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_disj_traverses_lhs() ->
-  E0 = disj( var( x ), str( <<"blub">> ) ),
+  E0 = disj( var( <<"x">> ), str( <<"blub">> ) ),
   E1 = str( <<"bla">> ),
   E2 = disj( E1, str( <<"blub">> ) ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_disj_traverses_rhs() ->
-  E0 = disj( str( <<"blub">> ), var( x ) ),
+  E0 = disj( str( <<"blub">> ), var( <<"x">> ) ),
   E1 = str( <<"bla">> ),
   E2 = disj( str( <<"blub">> ), E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_neg_traverses() ->
-  E0 = neg( var( x ) ),
+  E0 = neg( var( <<"x">> ) ),
   E1 = str( <<"bla">> ),
   E2 = neg( E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_isnil_traverses() ->
-  E0 = isnil( var( x ) ),
+  E0 = isnil( var( <<"x">> ) ),
   E1 = str( <<"bla">> ),
   E2 = isnil( E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_cnd_traverses_if_position() ->
-  E0 = cnd( var( x ), str( <<"bla">> ), str( <<"blub">> ) ),
+  E0 = cnd( var( <<"x">> ), str( <<"bla">> ), str( <<"blub">> ) ),
   E1 = str( <<"foo">> ),
   E2 = cnd( E1, str( <<"bla">> ), str( <<"blub">> ) ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_cnd_traverses_then_position() ->
-  E0 = cnd( str( <<"bla">> ), var( x ), str( <<"blub">> ) ),
+  E0 = cnd( str( <<"bla">> ), var( <<"x">> ), str( <<"blub">> ) ),
   E1 = str( <<"foo">> ),
   E2 = cnd( str( <<"bla">> ), E1, str( <<"blub">> ) ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_cnd_traverses_else_position() ->
-  E0 = cnd( str( <<"bla">> ), str( <<"blub">> ), var( x ) ),
+  E0 = cnd( str( <<"bla">> ), str( <<"blub">> ), var( <<"x">> ) ),
   E1 = str( <<"foo">> ),
   E2 = cnd( str( <<"bla">> ), str( <<"blub">> ), E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_null_no_effect() ->
   E0 = null( t_str() ),
-  ?assertEqual( E0, subst( E0, y, str( <<"blub">> ) ) ).
+  ?assertEqual( E0, subst( E0, <<"y">>, str( <<"blub">> ) ) ).
 
 subst_cons_traverses_lhs() ->
-  E0 = cons( var( x ), str( <<"blub">> ) ),
+  E0 = cons( var( <<"x">> ), str( <<"blub">> ) ),
   E1 = str( <<"bla">> ),
   E2 = cons( E1, str( <<"blub">> ) ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_cons_traverses_rhs() ->
-  E0 = cons( str( <<"blub">> ), var( x ) ),
+  E0 = cons( str( <<"blub">> ), var( <<"x">> ) ),
   E1 = str( <<"bla">> ),
   E2 = cons( str( <<"blub">> ), E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_hd_traverses_lhs() ->
-  E0 = hd( var( x ), str( <<"blub">> ) ),
+  E0 = hd( var( <<"x">> ), str( <<"blub">> ) ),
   E1 = str( <<"bla">> ),
   E2 = hd( E1, str( <<"blub">> ) ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_hd_traverses_rhs() ->
-  E0 = hd( str( <<"blub">> ), var( x ) ),
+  E0 = hd( str( <<"blub">> ), var( <<"x">> ) ),
   E1 = str( <<"bla">> ),
   E2 = hd( str( <<"blub">> ), E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_tl_traverses_lhs() ->
-  E0 = tl( var( x ), str( <<"blub">> ) ),
+  E0 = tl( var( <<"x">> ), str( <<"blub">> ) ),
   E1 = str( <<"bla">> ),
   E2 = tl( E1, str( <<"blub">> ) ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_tl_traverses_rhs() ->
-  E0 = tl( str( <<"blub">> ), var( x ) ),
+  E0 = tl( str( <<"blub">> ), var( <<"x">> ) ),
   E1 = str( <<"bla">> ),
   E2 = tl( str( <<"blub">> ), E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_append_traverses_lhs() ->
-  E0 = append( var( x ), str( <<"blub">> ) ),
+  E0 = append( var( <<"x">> ), str( <<"blub">> ) ),
   E1 = str( <<"bla">> ),
   E2 = append( E1, str( <<"blub">> ) ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_append_traverses_rhs() ->
-  E0 = append( str( <<"blub">> ), var( x ) ),
+  E0 = append( str( <<"blub">> ), var( <<"x">> ) ),
   E1 = str( <<"bla">> ),
   E2 = append( str( <<"blub">> ), E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_for_traverses_list_binding() ->
-  E0 = for( t_str(), [{x, t_str(), var( l )}], var( x ) ),
+  E0 = for( t_str(), [{<<"x">>, t_str(), var( <<"l">> )}], var( <<"x">> ) ),
   E1 = lst( t_str(), [str( <<"bla">> ), str( <<"blub">> )] ),
-  E2 = for( t_str(), [{x, t_str(), E1}], var( x ) ),
-  ?assert( is_alpha_equivalent( E2, subst( E0, l, E1 ) ) ).
+  E2 = for( t_str(), [{<<"x">>, t_str(), E1}], var( <<"x">> ) ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, <<"l">>, E1 ) ) ).
 
 subst_for_traverses_body() ->
-  E0 = for( t_str(), [{x, t_str(), null( t_str() )}], var( y ) ),
+  E0 = for( t_str(), [{<<"x">>, t_str(), null( t_str() )}], var( <<"y">> ) ),
   E1 = str( <<"blub">> ),
-  E2 = for( t_str(), [{x, t_str(), null( t_str() )}], E1 ),
-  ?assert( is_alpha_equivalent( E2, subst( E0, y, E1 ) ) ).
+  E2 = for( t_str(), [{<<"x">>, t_str(), null( t_str() )}], E1 ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, <<"y">>, E1 ) ) ).
 
 subst_for_list_binding_shadows() ->
-  E0 = for( t_str(), [{x, t_str(), null( t_str() )}], var( x ) ),
-  ?assert( is_alpha_equivalent( E0, subst( E0, x, var( y ) ) ) ).
+  E0 = for( t_str(), [{<<"x">>, t_str(), null( t_str() )}], var( <<"x">> ) ),
+  ?assert( is_alpha_equivalent( E0, subst( E0, <<"x">>, var( <<"y">> ) ) ) ).
 
 subst_for_list_binding_cannot_capture() ->
-  E0 = for( t_str(), [{x, t_str(), null( t_str() )}], var( y ) ),
-  E1 = for( t_str(), [{x, t_str(), null( t_str() )}], var( x ) ),
-  ?assert( not is_alpha_equivalent( E1, subst( E0, y, var( x ) ) ) ).
+  E0 = for( t_str(), [{<<"x">>, t_str(), null( t_str() )}], var( <<"y">> ) ),
+  E1 = for( t_str(), [{<<"x">>, t_str(), null( t_str() )}], var( <<"x">> ) ),
+  ?assert( not is_alpha_equivalent( E1, subst( E0, <<"y">>, var( <<"x">> ) ) ) ).
 
 subst_fold_traverses_acc_binding() ->
-  E0 = fold( {acc, t_str(), var( s )},
-             {x, t_str(), null( t_str() )},
-             var( x ) ),
+  E0 = fold( {<<"acc">>, t_str(), var( <<"s">> )},
+             {<<"x">>, t_str(), null( t_str() )},
+             var( <<"x">> ) ),
   E1 = str( <<"blub">> ),
-  E2 = fold( {acc, t_str(), E1},
-             {x, t_str(), null( t_str() )},
-             var( x ) ),
-  ?assert( is_alpha_equivalent( E2, subst( E0, s, E1 ) ) ).
+  E2 = fold( {<<"acc">>, t_str(), E1},
+             {<<"x">>, t_str(), null( t_str() )},
+             var( <<"x">> ) ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, <<"s">>, E1 ) ) ).
 
 subst_fold_traverses_list_binding() ->
-  E0 = fold( {acc, t_str(), str( <<"bla">> )},
-             {x, t_str(), var( l )},
-             var( x ) ),
+  E0 = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
+             {<<"x">>, t_str(), var( <<"l">> )},
+             var( <<"x">> ) ),
   E1 = null( t_str() ),
-  E2 = fold( {acc, t_str(), str( <<"bla">> )},
-             {x, t_str(), E1},
-             var( x ) ),
-  ?assert( is_alpha_equivalent( E2, subst( E0, l, E1 ) ) ).
+  E2 = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
+             {<<"x">>, t_str(), E1},
+             var( <<"x">> ) ),
+  ?assert( is_alpha_equivalent( E2, subst( E0, <<"l">>, E1 ) ) ).
 
 subst_fold_traverses_body() ->
-  E0 = fold( {acc, t_str(), str( <<"bla">> )},
-             {x, t_str(), null( t_str() )},
-             var( y ) ),
+  E0 = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
+             {<<"x">>, t_str(), null( t_str() )},
+             var( <<"y">> ) ),
   E1 = str( <<"blub">> ),
-  E2 = fold( {acc, t_str(), str( <<"bla">> )},
-             {x, t_str(), null( t_str() )},
+  E2 = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
+             {<<"x">>, t_str(), null( t_str() )},
              E1 ),
-  ?assert( is_alpha_equivalent( E2, subst( E0, y, E1 ) ) ).
+  ?assert( is_alpha_equivalent( E2, subst( E0, <<"y">>, E1 ) ) ).
 
 subst_fold_acc_binding_shadows() ->
-  E0 = fold( {acc, t_str(), str( <<"bla">> )},
-             {x, t_str(), null( t_str() )},
-             var( acc ) ),
+  E0 = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
+             {<<"x">>, t_str(), null( t_str() )},
+             var( <<"acc">> ) ),
   E1 = str( <<"blub">> ),
-  ?assert( is_alpha_equivalent( E0, subst( E0, y, E1 ) ) ).
+  ?assert( is_alpha_equivalent( E0, subst( E0, <<"y">>, E1 ) ) ).
 
 subst_fold_acc_binding_cannot_capture() ->
-  E0 = fold( {acc, t_str(), str( <<"bla">> )},
-             {x, t_str(), null( t_str() )},
-             var( y ) ),
-  E2 = fold( {acc, t_str(), str( <<"bla">> )},
-             {x, t_str(), null( t_str() )},
-             var( acc ) ),
-  ?assertNot( is_alpha_equivalent( E2, subst( E0, y, var( acc ) ) ) ).
+  E0 = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
+             {<<"x">>, t_str(), null( t_str() )},
+             var( <<"y">> ) ),
+  E2 = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
+             {<<"x">>, t_str(), null( t_str() )},
+             var( <<"acc">> ) ),
+  ?assertNot( is_alpha_equivalent( E2, subst( E0, <<"y">>, var( <<"acc">> ) ) ) ).
 
 subst_fold_list_binding_shadows() ->
-  E0 = fold( {acc, t_str(), str( <<"bla">> )},
-             {x, t_str(), null( t_str() )},
-             var( x ) ),
+  E0 = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
+             {<<"x">>, t_str(), null( t_str() )},
+             var( <<"x">> ) ),
   E1 = str( <<"blub">> ),
-  ?assert( is_alpha_equivalent( E0, subst( E0, y, E1 ) ) ).
+  ?assert( is_alpha_equivalent( E0, subst( E0, <<"y">>, E1 ) ) ).
 
 subst_fold_list_binding_cannot_capture() ->
-  E0 = fold( {acc, t_str(), str( <<"bla">> )},
-             {x, t_str(), null( t_str() )},
-             var( y ) ),
-  E2 = fold( {acc, t_str(), str( <<"bla">> )},
-             {x, t_str(), null( t_str() )},
-             var( x ) ),
-  ?assertNot( is_alpha_equivalent( E2, subst( E0, y, var( x ) ) ) ).
+  E0 = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
+             {<<"x">>, t_str(), null( t_str() )},
+             var( <<"y">> ) ),
+  E2 = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
+             {<<"x">>, t_str(), null( t_str() )},
+             var( <<"x">> ) ),
+  ?assertNot( is_alpha_equivalent( E2, subst( E0, <<"y">>, var( <<"x">> ) ) ) ).
 
 subst_rcd_propagates() ->
-  E0 = rcd( [{a, var( x )}] ),
+  E0 = rcd( [{<<"a">>, var( <<"x">> )}] ),
   E1 = str( <<"blub">> ),
-  E2 = rcd( [{a, E1}] ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  E2 = rcd( [{<<"a">>, E1}] ),
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_proj_propagates() ->
-  E0 = proj( a, var( x ) ),
-  E1 = rcd( [{a, str( <<"blub">> )}] ),
-  E2 = proj( a, E1 ),
-  ?assertEqual( E2, subst( E0, x, E1 ) ).
+  E0 = proj( <<"a">>, var( <<"x">> ) ),
+  E1 = rcd( [{<<"a">>, str( <<"blub">> )}] ),
+  E2 = proj( <<"a">>, E1 ),
+  ?assertEqual( E2, subst( E0, <<"x">>, E1 ) ).
 
 subst_error_no_effect() ->
   E0 = err( t_str(), {user, <<"my message">>} ),
-  ?assertEqual( E0, subst( E0, y, str( <<"blub">> ) ) ).
+  ?assertEqual( E0, subst( E0, <<"y">>, str( <<"blub">> ) ) ).
 
 
 
@@ -2261,23 +2268,23 @@ is_alpha_equivalent_test_() ->
   }.
 
 is_alpha_equivalent_lam_identity_functions() ->
-  E1 = lam( [{x, t_str()}], {ntv, var( x )} ),
-  E2 = lam( [{y, t_str()}], {ntv, var( y )} ),
+  E1 = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
+  E2 = lam( [{<<"y">>, t_str()}], {ntv, var( <<"y">> )} ),
   ?assert( is_alpha_equivalent( E1, E2 ) ).
 
 is_alpha_equivalent_lam_free_var_not_bound_var() ->
-  E1 = lam( [{x, t_str()}], {ntv, var( x )} ),
-  E2 = lam( [{y, t_str()}], {ntv, var( x )} ),
+  E1 = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
+  E2 = lam( [{<<"y">>, t_str()}], {ntv, var( <<"x">> )} ),
   ?assertNot( is_alpha_equivalent( E1, E2 ) ).
 
 is_alpha_equivalent_for_renamed_list_binding() ->
-  E1 = for( t_str(), [{x, t_str(), null( t_str() )}], var( x ) ),
-  E2 = for( t_str(), [{y, t_str(), null( t_str() )}], var( y ) ),
+  E1 = for( t_str(), [{<<"x">>, t_str(), null( t_str() )}], var( <<"x">> ) ),
+  E2 = for( t_str(), [{<<"y">>, t_str(), null( t_str() )}], var( <<"y">> ) ),
   ?assert( is_alpha_equivalent( E1, E2 ) ).
 
 is_alpha_equivalent_for_free_var_not_bound_var() ->
-  E1 = for( t_str(), [{x, t_str(), null( t_str() )}], var( x ) ),
-  E2 = for( t_str(), [{y, t_str(), null( t_str() )}], var( x ) ),
+  E1 = for( t_str(), [{<<"x">>, t_str(), null( t_str() )}], var( <<"x">> ) ),
+  E2 = for( t_str(), [{<<"y">>, t_str(), null( t_str() )}], var( <<"x">> ) ),
   ?assertNot( is_alpha_equivalent( E1, E2 ) ).
 
 is_alpha_equivalent_null() ->
@@ -2309,27 +2316,31 @@ free_vars_test_() ->
   }.
 
 free_vars_for_subtracts_list_binding() ->
-  E = for( t_str(), [{y, t_str(), null( t_str() )}], var( y ) ),
+  E = for( t_str(), [{<<"y">>, t_str(), null( t_str() )}], var( <<"y">> ) ),
   ?assertEqual( [], expr_free_vars( E ) ).
 
 free_vars_for_free_var_in_list_binding() ->
-  E = {hd,na,{proj,na,'',{cnd,na,{disj,na,{fix,na,{for,na,'Str',[{'','Str',{var,na,''}}],{var,na,''}}},{var,na,'\000'}},{var,na,'\000'},{var,na,'\000'}}},{var,na,'\000'}},
-  ?assertEqual( ['', '\000'], expr_free_vars( E ) ).
+  E = {hd,na,{proj,na,<<"b">>,{cnd,na,{disj,na,{fix,na,{for,na,'Str',[{<<"b">>,'Str',{var,na,<<"b">>}}],{var,na,<<"b">>}}},{var,na,<<"a">>}},{var,na,<<"a">>},{var,na,<<"a">>}}},{var,na,<<"a">>}},
+  ?assertEqual( [<<"a">>, <<"b">>], expr_free_vars( E ) ).
 
 free_vars_fold_subtracts_acc_binding() ->
-  E = fold( {x, t_str(), str( <<"blub">> )}, {y, t_str(), null( t_str() )}, var( x ) ),
+  E = fold( {<<"x">>, t_str(), str( <<"blub">> )}, {<<"y">>, t_str(), null( t_str() )}, var( <<"x">> ) ),
   ?assertEqual( [], expr_free_vars( E ) ).
 
 free_vars_fold_subtracts_list_binding() ->
-  E = fold( {x, t_str(), str( <<"blub">> )}, {y, t_str(), null( t_str() )}, var( y ) ),
+  E = fold( {<<"x">>, t_str(), str( <<"blub">> )},
+            {<<"y">>, t_str(), null( t_str() )},
+            var( <<"y">> ) ),
   ?assertEqual( [], expr_free_vars( E ) ).
 
 free_vars_fold_free_var_in_acc() ->
-  E = {cmp,na,{fix,na,{app,na,{var,na,'\000'},[{'',{append,na,{cmp,na,{var,na,'\000'},{lam,na,[],{ntv,{fix,na,{for,na,'Str',[],{fold,na,{'','Str',{var,na,''}},{'','File',{app,1,{cnd,na,{cmp,na,{proj,na,'\207',{false,{<<>>,1}}},{tl,{<<>>,1},{true,3},{false,{<<53>>,1}}}},{var,na,''},{str,na,<<>>}},[{'',{fix,{<<5>>,1},{str,na,<<>>}}}]}},{null,na,{'Fn',[{'','Str'},{'>','Str'},{'','Str'}],'Bool'}}}}}}}},{var,na,'\000'}}}]}},{var,na,'\000'}},
-  ?assertEqual( ['','\000'], expr_free_vars( E ) ).
+  E = {cmp,na,{fix,na,{app,na,{var,na,<<"a">>},[{<<"b">>,{append,na,{cmp,na,{var,na,<<"a">>},{lam,na,[],{ntv,{fix,na,{for,na,'Str',[],{fold,na,{<<"b">>,'Str',{var,na,<<"b">>}},{<<"b">>,'File',{app,1,{cnd,na,{cmp,na,{proj,na,'\207',{false,{<<>>,1}}},{tl,{<<>>,1},{true,3},{false,{<<53>>,1}}}},{var,na,<<"b">>},{str,na,<<>>}},[{<<"b">>,{fix,{<<5>>,1},{str,na,<<>>}}}]}},{null,na,{'Fn',[{<<"b">>,'Str'},{'>','Str'},{<<"b">>,'Str'}],'Bool'}}}}}}}},{var,na,<<"a">>}}}]}},{var,na,<<"a">>}},
+  ?assertEqual( [<<"a">>,<<"b">>], expr_free_vars( E ) ).
 
 free_vars_fold_free_var_in_list_binding() ->
-  E = fold( {x, t_str(), str( <<"blub">> )}, {y, t_str(), var( y )}, str( <<"bla">> ) ),
-  ?assertEqual( [y], expr_free_vars( E ) ).
+  E = fold( {<<"x">>, t_str(), str( <<"blub">> )},
+            {<<"y">>, t_str(), var( <<"y">> )},
+            str( <<"bla">> ) ),
+  ?assertEqual( [<<"y">>], expr_free_vars( E ) ).
 
 
