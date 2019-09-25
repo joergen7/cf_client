@@ -43,7 +43,7 @@
                           xte_names/1,
                           xe_names/1] ).
 
--export( [type/1, type/2] ).
+-export( [type/1, type/2, is_type_comparable/1, is_type_equivalent/2] ).
 
 
 
@@ -74,14 +74,17 @@ type( Gamma, {lam, Info, ArgLst, {ntv, EBody}} ) ->                             
     [] ->
       Gamma1 = maps:from_list( ArgLst ),
       Gamma2 = maps:merge( Gamma, Gamma1 ),
-      type( Gamma2, EBody );
+      case type( Gamma2, EBody ) of
+        {ok, TBody} -> {ok, t_fn( ArgLst, TBody )};
+        {error, R}  -> {error, R}
+      end;
 
     Lst ->
       {error, {ambiguous_name, Info, Lst}}
 
   end;
 
-type( _Gamma, {lam_frn, Info, ArgLst, {frn, _FName, TRet, Lang, _SBody}} ) ->   % t-lambda-frn
+type( _Gamma, {lam, Info, ArgLst, {frn, _FName, TRet, Lang, _SBody}} ) ->       % t-lambda-frn
 
   {'Rcd', FieldLst} = TRet,
   NameLst = xt_names( ArgLst )++xt_names( FieldLst ),
@@ -106,10 +109,10 @@ type( _Gamma, {lam_frn, Info, ArgLst, {frn, _FName, TRet, Lang, _SBody}} ) ->   
               []              -> throw( {awk_frn_fn_no_arg, Info} )
             end,
 
-          case lists:keyfind( result, 1, FieldLst ) of
-            {result, 'File'} -> ok;
-            {result, T2}     -> throw( {awk_frn_fn_result_field_no_file, Info, T2} );
-            false            -> throw( {awk_frn_fn_no_result_field, Info} )
+          case lists:keyfind( <<"result">>, 1, FieldLst ) of
+            {_, 'File'} -> ok;
+            {_, T2}     -> throw( {awk_frn_fn_result_field_no_file, Info, T2} );
+            false       -> throw( {awk_frn_fn_no_result_field, Info} )
           end;
             
         _ ->
@@ -147,11 +150,12 @@ type( Gamma, {fix, Info, E} ) ->                                                
     {ok, T4={'Fn', [], _}} ->
       {error, {fix_fn_no_arg, Info, {E, T4}}};
 
-    {ok, {'Fn', [Arg1|ArgLst], TRet}} ->
-      TFix = t_fn( ArgLst, TRet ),
-      case Arg1 of
-        {_, TFix} -> {ok, TFix};
-        {X, T1}   -> {error, {fix_fn_arg_type_mismatch, Info, {X, TFix, T1}}}
+    {ok, {'Fn', [Xt|XtLst], TRet}} ->
+      TFix = t_fn( XtLst, TRet ),
+      {X, TArg} = Xt,
+      case is_type_equivalent( TFix, TArg ) of
+        true  -> {ok, TFix};
+        false -> {error, {fix_fn_arg_type_mismatch, Info, {X, TFix, TArg}}}
       end;
 
     {ok, T5} ->
@@ -159,8 +163,8 @@ type( Gamma, {fix, Info, E} ) ->                                                
 
   end;
 
-type( _Gamma, {fut, _Info, {app, _, {lam, _, _, {frn, _, TRet, _, _}}, _}} ) ->
-  {ok, TRet};
+type( Gamma, {fut, _Info, E} ) ->
+  type( Gamma, E );
 
 type( _Gamma, {err, _Info, T, _Reason} ) ->
   {ok, T};
@@ -178,25 +182,21 @@ type( _Gamma, {false, _Info} ) ->                                               
   {ok, t_bool()};
 
 type( Gamma, {cmp, Info, E1, E2} ) ->                                           % T-cmp
-
   case type( Gamma, E1 ) of
-
-    {ok, T1} ->
-      case type( Gamma, E2 ) of
-
-        {ok, T2} ->
-          case is_comparable( T1, T2 ) of
-            true  -> {ok, t_bool()};
-            false -> {error, {cmp_incomparable, Info, {E1, T1, E2, T2}}}
-          end;
-
-        {error, Reason2} ->
-          {error, Reason2}
-
-      end;
-
-    {error, Reason1} ->
-      {error, Reason1}
+    {error, Reason1} -> {error, Reason1};
+    {ok, T1}         ->
+      case is_type_comparable( T1 ) of
+        false -> {error, {cmp_no_comparable_type, Info, {E1, T1}}};
+        true  ->
+          case type( Gamma, E2 ) of
+            {error, Reason2} -> {error, Reason2};
+            {ok, T2}         ->
+              case is_type_equivalent( T1, T2 ) of
+                true  -> {ok, t_bool()};
+                false -> {error, {cmp_lhs_and_rhs_incomparable, Info, {E1, T1, E2, T2}}}
+              end
+          end
+      end
   end;
 
 type( Gamma, {conj, Info, E1, E2} ) ->                                          % T-conj
@@ -266,22 +266,19 @@ type( Gamma, {isnil, Info, E} ) ->                                              
   end;
 
 type( Gamma, {cnd, Info, E1, E2, E3} ) ->                                       % T-if
-
   case type( Gamma, E1 ) of
-
     {ok, 'Bool'} ->
       case type( Gamma, E2 ) of
-
-        {ok, T2} ->
+        {error, Reason2} -> {error, Reason2};
+        {ok, T2}         ->
           case type( Gamma, E3 ) of
-            {ok, T2}         -> {ok, T2};
-            {ok, T3}         -> {error, {cnd_result_type_mismatch, Info, {T2, T3}}};
-            {error, Reason3} -> {error, Reason3}
-          end;
-        
-        {error, Reason2} ->
-          {error, Reason2}
-
+            {error, Reason3} -> {error, Reason3};
+            {ok, T3}         ->
+              case is_type_equivalent( T2, T3 ) of
+                false -> {error, {cnd_result_type_mismatch, Info, {E2, T2, E3, T3}}};
+                true  -> {ok, T2}
+              end
+          end
       end;
 
     {ok, T1} ->
@@ -298,18 +295,17 @@ type( _Gamma, {null, _Info, T} ) ->                                             
 type( Gamma, {cons, Info, E1, E2} ) ->                                          % T-cons
 
   case type( Gamma, E1 ) of
-
-    {ok, T1} ->
+    {error, Reason} -> {error, Reason};
+    {ok, T1}        ->
       case type( Gamma, E2 ) of
-        {ok, {'Lst', T1}} -> {ok, {'Lst', T1}};
-        {ok, {'Lst', T2}} -> {error, {cons_element_type_mismatch, Info, {T2, E1, T1}}};
+        {ok, {'Lst', T2}} ->
+          case is_type_equivalent( T1, T2 ) of
+            false -> {error, {cons_element_type_mismatch, Info, {T2, E1, T1}}};
+            true  -> {ok, {'Lst', T2}}
+          end;
         {ok, T2}          -> {error, {cons_no_list, Info, {E2, T2}}};
         {error, Reason1}  -> {error, Reason1}
-      end;
-
-    {error, Reason} ->
-      {error, Reason}
-
+      end
   end;
 
 type( Gamma, {hd, Info, E1, E2} ) ->                                            % T-hd
@@ -317,9 +313,12 @@ type( Gamma, {hd, Info, E1, E2} ) ->                                            
   case type( Gamma, E1 ) of
     {ok, {'Lst', T1}} ->
       case type( Gamma, E2 ) of
-        {ok, T1}         -> {ok, T1};
-        {ok, T2}         -> {error, {hd_type_mismatch, Info, {T1, E2, T2}}};
-        {error, Reason2} -> {error, Reason2}
+        {error, Reason2} -> {error, Reason2};
+        {ok, T2}         ->
+          case is_type_equivalent( T1, T2 ) of
+            false -> {error, {hd_type_mismatch, Info, {T1, E2, T2}}};
+            true  -> {ok, T1}
+          end
       end;
     {ok, T1}          -> {error, {hd_no_list, Info, {E1, T1}}};
     {error, Reason1}  -> {error, Reason1}
@@ -330,9 +329,12 @@ type( Gamma, {tl, Info, E1, E2} ) ->                                            
   case type( Gamma, E1 ) of
     {ok, {'Lst', T1}} ->
       case type( Gamma, E2 ) of
-        {ok, T1}         -> {ok, T1};
-        {ok, T2}         -> {error, {tl_type_mismatch, Info, {T1, E2, T2}}};
-        {error, Reason2} -> {error, Reason2}
+        {error, Reason2} -> {error, Reason2};
+        {ok, T2}         ->
+          case is_type_equivalent( T1, T2 ) of
+            false -> {error, {tl_type_mismatch, Info, {T1, E2, T2}}};
+            true  -> {ok, T1}
+          end
       end;
     {ok, T5}          -> {error, {tl_no_list, Info, {E1, T5}}};
     {error, Reason1}  -> {error, Reason1}
@@ -344,8 +346,11 @@ type( Gamma, {append, Info, E1, E2} ) ->                                        
 
     {ok, {'Lst', T1}} ->
       case type( Gamma, E2 ) of
-        {ok, {'Lst', T1}} -> {ok, t_lst( T1 )};
-        {ok, {'Lst', T2}} -> {error, {append_element_type_mismatch, Info, {T1, T2}}};
+        {ok, {'Lst', T2}} ->
+          case is_type_equivalent( T1, T2 ) of
+            false -> {error, {append_element_type_mismatch, Info, {T1, T2}}};
+            true  -> {ok, {'Lst', T1}}
+          end;
         {ok, T2}          -> {error, {append_rhs_no_list, Info, {E2, T2}}};
         {error, Reason2}  -> {error, Reason2}
       end;
@@ -366,17 +371,17 @@ type( Gamma, {for, Info, TRet, XteLst, EBody} ) ->                              
 
     [] ->
       case check_for_binding( Gamma, Info, XteLst ) of
-
-        {error, Reason1} ->
-          {error, Reason1};
-
-        ok ->
+        {error, Reason1} -> {error, Reason1};
+        ok               ->
           Gamma1 = maps:from_list( [{X, T} || {X, T, _E} <- XteLst] ),
           Gamma2 = maps:merge( Gamma, Gamma1 ),
           case type( Gamma2, EBody ) of
-            {ok, TRet}       -> {ok, t_lst( TRet )};
-            {ok, T1}         -> {error, {for_body_type_mismatch, Info, {TRet, EBody, T1}}};
-            {error, Reason2} -> {error, Reason2}
+            {error, Reason2} -> {error, Reason2};
+            {ok, TBody}      ->
+              case is_type_equivalent( TRet, TBody ) of
+                false -> {error, {for_body_type_mismatch, Info, {TRet, EBody, TBody}}};
+                true  -> {ok, {'Lst', TRet}}
+              end
           end
       end;
 
@@ -391,39 +396,40 @@ type( _Gamma, {fold, Info, {X, _T, _EAcc}, {X, _T, _ELst}, _EBody} ) ->         
 type( Gamma, {fold, Info, {X1, T1, E1}, {X2, T2, E2}, EBody} ) ->
 
   case type( Gamma, E1 ) of
+    {error, Reason1} -> {error, Reason1};
+    {ok, T3}         ->
+      case is_type_equivalent( T1, T3 ) of
+        false -> {error, {fold_acc_bind_type_mismatch, Info, {X1, T1, E1, T3}}};
+        true  ->
+          case type( Gamma, E2 ) of
 
-    {ok, T1} ->
-      case type( Gamma, E2 ) of
+            {ok, {'Lst', T4}} ->
+              case is_type_equivalent( T2, T4 ) of
+                false -> {error, {fold_list_bind_type_mismatch, Info, {X2, T2, E2, T4}}};
+                true  ->
+                  case type( Gamma#{ X1 => T1, X2 => T2 }, EBody ) of
+                    {error, ReasonBody} -> {error, ReasonBody};
+                    {ok, TBody}         ->
+                      case is_type_equivalent( T1, TBody ) of
+                        false -> {error, {fold_body_type_mismatch, Info, {T1, EBody, TBody}}};
+                        true  -> {ok, T1}
+                      end
+                  end
+              end;
 
-        {ok, {'Lst', T2}} ->
-          case type( Gamma#{ X1 => T1, X2 => T2 }, EBody ) of
-            {ok, T1}            -> {ok, T1};
-            {ok, TBody}         -> {error, {fold_body_type_mismatch, Info, {T1, EBody, TBody}}};
-            {error, ReasonBody} -> {error, ReasonBody}
-          end;
-
-        {ok, {'Lst', T4}} ->
-          {error, {fold_list_bind_type_mismatch, Info, {X2, T2, E2, T4}}};
-
-        {ok, T5} ->
-          {error, {fold_no_list_type, Info, {X2, T2, E2, T5}}};
+            {ok, T5} ->
+              {error, {fold_list_bind_no_list, Info, {t_lst( T2 ), E2, T5}}};
         
-        {error, Reason2} ->
-          {error, Reason2}
+            {error, Reason2} ->
+              {error, Reason2}
 
-      end;
-
-    {ok, T3} ->
-      {error, {fold_acc_bind_type_mismatch, Info, {X1, T1, E1, T3}}};
-
-    {error, Reason1} ->
-      {error, Reason1}
-
+          end
+      end
   end;
 
 type( Gamma, {rcd, Info, BindLst} ) ->                                          % T-rcd
   case ambiguous_names( xe_names( BindLst ) ) of
-    []  -> check_rcd_binding( Gamma, BindLst );
+    []  -> type_unambiguous_rcd_binding( Gamma, BindLst );
     Lst -> {error, {rcd_ambiguous_field_name, Info, Lst}}
   end;
 
@@ -440,29 +446,27 @@ type( Gamma, {proj, Info, X, E} ) ->                                            
       end;
 
     {ok, T} ->
-      {error, {proj_no_record, Info, {X, T, E}}};
+      {error, {proj_no_record, Info, {E, T}}};
 
     {error, Reason} ->
       {error, Reason}
 
-  end;
-
-type( _Gamma, E ) -> error( {bad_expr, E} ).                                    % T-error
+  end.
 
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 
--spec check_rcd_binding( Gamma, XeLst ) -> {ok, t()} | {error, type_error()}
+-spec type_unambiguous_rcd_binding( Gamma, XeLst ) -> {ok, t()} | {error, type_error()}
 when Gamma :: #{ x() => t() },
      XeLst :: [{x(), e()}].
 
-check_rcd_binding( _Gamma, [] ) ->
+type_unambiguous_rcd_binding( _Gamma, [] ) ->
   {ok, t_rcd( [] )};
 
-check_rcd_binding( Gamma, [{X, E}|Tl] ) ->
-  case check_rcd_binding( Gamma, Tl ) of
+type_unambiguous_rcd_binding( Gamma, [{X, E}|Tl] ) ->
+  case type_unambiguous_rcd_binding( Gamma, Tl ) of
     {ok, {'Rcd', XtLst}} ->
       case type( Gamma, E ) of
         {ok, T}          -> {ok, t_rcd( [{X, T}|XtLst] )};
@@ -483,14 +487,14 @@ check_for_binding( Gamma, Info, [{X, T, E}|Tl] ) ->
 
   case type( Gamma, E ) of
 
-    {ok, {'Lst', T}} ->
-      check_for_binding( Gamma, Info, Tl );
-
     {ok, {'Lst', T1}} ->
-      {error, {for_bind_type_mismatch, Info, {X, T, E, T1}}};
+      case is_type_equivalent( T, T1 ) of
+        false -> {error, {for_bind_type_mismatch, Info, {X, T, E, T1}}};
+        true  -> check_for_binding( Gamma, Info, Tl )
+      end;
 
     {ok, T2} ->
-      {error, {for_bind_no_list, Info, {X, T, E, T2}}};
+      {error, {for_bind_no_list, Info, {t_lst( T ), E, T2}}};
 
     {error, Reason} ->
       {error, Reason}
@@ -514,15 +518,15 @@ check_argument_binding( _Gamma, Info, [{X, T}|_], [] ) ->
 check_argument_binding( _Gamma, Info, [], [{X, E}] ) ->
   {error, {app_dangling_bind, Info, {X, E}}};
 
-check_argument_binding( Gamma, Info, [{X, TArg}|T1], [{X, EArg}|T2] ) ->
+check_argument_binding( Gamma, Info, [{X1, T1}|Tl1], [{X1, E1}|Tl2] ) ->
 
-  case type( Gamma, EArg ) of
+  case type( Gamma, E1 ) of
 
-    {ok, TArg} ->
-      check_argument_binding( Gamma, Info, T1, T2 );
-
-    {ok, T} ->
-      {error, {app_bind_type_mismatch, Info, {X, TArg, EArg, T}}};
+    {ok, T2} ->
+      case is_type_equivalent( T1, T2 ) of
+        true  -> check_argument_binding( Gamma, Info, Tl1, Tl2 );
+        false -> {error, {app_bind_type_mismatch, Info, {X1, T1, E1, T2}}}
+      end;
 
     {error, Reason} ->
       {error, Reason}
@@ -534,20 +538,58 @@ check_argument_binding( _Gamma, Info, [{X, _}|_], [{Y, _}|_] ) ->
   % TODO: Cut some slack for renamed arguments. E.g., x$123 = x.
 
 
--spec is_comparable( T1 :: t(), T2 :: t() ) -> boolean().
+-spec is_type_comparable( T :: t() ) -> boolean().
 
-is_comparable( 'Bool', 'Bool' )           -> true;                    % C-bool
-is_comparable( 'Str', 'Str' )             -> true;                    % C-str
-is_comparable( {'Lst', T1}, {'Lst', T2} ) -> is_comparable( T1, T2 ); % C-lst
-is_comparable( {'Rcd', []}, {'Rcd', []} ) -> true;                    % C-rcd-base
-is_comparable( {'Rcd', XtLst1}, {'Rcd', XtLst2} ) ->                  % C-rcd-ind
-  [{X1, T1}|Tl1] = lists:keysort( 1, XtLst1 ),
-  [{X2, T2}|Tl2] = lists:keysort( 1, XtLst2 ),
-  case X1 of
-    X2 ->
-              is_comparable( T1, T2 )
-      andalso is_comparable( t_rcd( Tl1 ), t_rcd( Tl2 ) );
-    _  ->
-      false
+is_type_comparable( 'Str' )          -> true;
+is_type_comparable( 'Bool' )         -> true;
+is_type_comparable( {'Lst', T} )     -> is_type_comparable( T );
+is_type_comparable( {'Rcd', XtLst} ) -> lists:all( fun( {_, T} ) -> is_type_comparable( T ) end, XtLst );
+is_type_comparable( _ )              -> false.
+
+
+-spec is_type_equivalent( T1 :: t(), T2 :: t() ) -> boolean().
+
+is_type_equivalent( 'Str', 'Str' )   -> true;
+is_type_equivalent( 'File', 'File' ) -> true;
+is_type_equivalent( 'Bool', 'Bool' ) -> true;
+
+is_type_equivalent( {'Fn', XtLst1, TRet1}, {'Fn', XtLst2, TRet2} ) ->
+
+  F =
+    fun
+      ( {X1, T1}, {X1, T2} ) -> is_type_equivalent( T1, T2 );
+      ( _, _ )               -> false
+    end,
+
+  case length( XtLst1 ) =:= length( XtLst2 ) of
+    false -> false;
+    true  ->
+
+      L = lists:zipwith( F, XtLst1, XtLst2 ),
+
+              lists:foldl( fun( Acc, E ) -> Acc and E end, true, L )
+      andalso is_type_equivalent( TRet1, TRet2 )
+      
   end;
-is_comparable( _, _ )                     -> false.
+
+is_type_equivalent( {'Lst', T1}, {'Lst', T2} ) ->
+  is_type_equivalent( T1, T2 );
+
+is_type_equivalent( {'Rcd', []}, {'Rcd', []} ) ->
+  true;
+
+is_type_equivalent( {'Rcd', [{X1, T1}|XtLst1]}, {'Rcd', XtLst2} ) ->
+  case lists:keyfind( X1, 1, XtLst2 ) of
+    Xt = {_, T2} ->
+      case is_type_equivalent( T1, T2 ) of
+        true  ->
+          is_type_equivalent( {'Rcd', XtLst1},
+                              {'Rcd', lists:delete( Xt, XtLst2 )} );
+        false -> false
+      end;
+    false        -> false
+  end;
+
+is_type_equivalent( _, _ ) ->
+  false.
+

@@ -256,18 +256,20 @@ prop_var_is_neutral_element_of_subst() ->
 
 %% Alpha Equivalence
 
+prop_is_alpha_equivalent_reflexive() ->
+  ?FORALL( E, e(),
+    begin
+      is_alpha_equivalent( E, E )
+    end ).
+
 prop_is_alpha_equivalent_symmetric() ->
   ?FORALL( E1, e(),
     ?FORALL( E2, oneof( [e(),
                          ?LET( {E, X1, X2}, {E1, x(), x()},
                            rename( E, X1, X2 ) )
                         ] ),
-      case is_alpha_equivalent( E1, E2 ) of
-        true ->
-          collect( if E1 =:= E2 -> equal; true -> alpha_eq end,
-                   is_alpha_equivalent( E2, E1 ) );
-        false ->
-          collect( neq, true )
+      begin
+        is_alpha_equivalent( E1, E2 ) =:= is_alpha_equivalent( E2, E1 )
       end ) ).
 
 %% Variable Names
@@ -319,13 +321,13 @@ prop_expr_size_never_negative() ->
 
 %% Values
 
-prop_is_value_total_for_expr() ->
-  ?FORALL( E, e(),
+prop_is_value_total() ->
+  ?FORALL( Z, oneof( [e(), term()] ),
   begin
-    I = is_value( E ),
-    collect( case I of true -> value; false -> nonvalue end,
-             is_boolean( I ) )
+    is_boolean( is_value( Z ) )
   end ).
+
+
 
 %%==========================================================
 %% Helpers

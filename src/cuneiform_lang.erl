@@ -116,9 +116,7 @@
           expr_free_vars/1,
           expr_size/1,
           is_alpha_equivalent/2,
-          is_value/1,
-          is_type_comparable/1,
-          is_type_equivalent/2] ).
+          is_value/1] ).
 
 
 
@@ -1681,45 +1679,3 @@ is_value( {rcd, _, XeLst} )   -> lists:all( fun( {_, E} ) -> is_value( E ) end, 
 is_value( _ )                 -> false.
 
 
--spec is_type_comparable( T :: type() ) -> boolean().
-
-is_type_comparable( 'Str' )          -> true;
-is_type_comparable( 'Bool' )         -> true;
-is_type_comparable( {'Lst', T} )     -> is_type_comparable( T );
-is_type_comparable( {'Rcd', XtLst} ) -> lists:all( fun( {_, T} ) -> is_type_comparable( T ) end, XtLst );
-is_type_comparable( _ )              -> false.
-
-
--spec is_type_equivalent( T1 :: type(), T2 :: type() ) -> boolean().
-
-is_type_equivalent( 'Str', 'Str' )   -> true;
-is_type_equivalent( 'File', 'File' ) -> true;
-is_type_equivalent( 'Bool', 'Bool' ) -> true;
-
-is_type_equivalent( {'Fn', XtLst1, TRet1}, {'Fn', XtLst2, TRet2} ) ->
-
-  F =
-    fun
-      ( {X1, T1}, {X1, T2} ) -> is_type_equivalent( T1, T2 );
-      ( _, _ )               -> false
-    end,
-
-  L = lists:zipwith( F, XtLst1, XtLst2 ),
-
-          lists:fold( fun( Acc, E ) -> Acc and E end, true, L )
-  andalso is_type_equivalent( TRet1, TRet2 ).
-
-is_type_equivalent( {'Lst', T1}, {'Lst', T2} ) ->
-  is_type_equivalent( T1, T2 );
-
-is_type_equivalent( {'Rcd', []}, {'Rcd', []} ) ->
-  true;
-
-is_type_equivalent( {'Rcd', [{X, T1}|R1]}, {'Rcd', [{X, T2}|R2]} ) ->
-          is_type_equivalent( T1, T2 )
-  andalso is_type_equivalent( {'Rcd', R1}, {'Rcd', R2} );
-
-is_type_equivalent( _, _ ) ->
-  false.
-
-  
