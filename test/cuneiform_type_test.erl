@@ -155,8 +155,12 @@ type_test_() ->
      fun foreign_lambda_with_ambiguous_return_field_name_untypable/0},
     {"foreign lambda with ambiguous argument and return field untypable",
      fun foreign_lambda_with_ambiguous_argument_and_return_field_untypable/0},
+    {"foreign lambda with nonrecord return type untypable",
+     fun foreign_lambda_with_nonrecord_return_type_untypable/0},
     {"application typable",
      fun application_typable/0},
+    {"app no fn untypable",
+     fun app_no_fn_untypable/0},
     {"application with invalid function expression untypable",
      fun application_with_invalid_function_expression_untypable/0},
     {"application with variable function expression typable",
@@ -173,6 +177,10 @@ type_test_() ->
      fun application_with_argument_type_mismatch_untypable/0},
     {"application with variable argument typable",
      fun application_with_variable_argument_typable/0},
+    {"app with multiple dangling arg binds untypable",
+     fun app_with_multiple_dangling_arg_binds_untypable/0},
+    {"app with multiple missing arg binds untypable",
+     fun app_with_multiple_missing_arg_binds_untypable/0},
     {"record field access typable",
      fun record_field_access_typable/0},
     {"record field access with invalid record expression untypable",
@@ -593,14 +601,14 @@ application_with_variable_function_expression_typable() ->
 application_with_too_few_arguments_untypable() ->
   ELam = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
   EA = app( ELam, [] ),
-  ?assertEqual( {error, {app_missing_bind, na, {<<"x">>, t_str()}}},
+  ?assertEqual( {error, {app_missing_bind, na, [{<<"x">>, t_str()}]}},
                 type( EA ) ).
 
 application_with_too_many_arguments_untypable() ->
   ELam = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
   EA = app( ELam, [{<<"x">>, str( <<"bla">> )},
                    {<<"y">>, str( <<"blub">> )}] ),
-  ?assertEqual( {error, {app_dangling_bind, na, {<<"y">>, str( <<"blub">> )}}},
+  ?assertEqual( {error, {app_dangling_bind, na, [{<<"y">>, str( <<"blub">> )}]}},
                 type( EA ) ).
 
 application_with_argument_name_mismatch_untypable() ->
@@ -1069,6 +1077,33 @@ fold_body_rcd_field_order_no_effect() ->
                    {<<"a">>, conj( proj( <<"a">>, var( <<"acc">> ) ), var( <<"x">> ) )}] ) ),
   ?assertEqual( {ok, TAcc}, type( E ) ).
 
+app_no_fn_untypable() ->
+  E = {app,na,{str,na,<<>>},[]},
+  ?assertEqual( {error, {app_lhs_no_function, na, {{str,na,<<>>}, t_str()}}},
+                type( E ) ).
+
+foreign_lambda_with_nonrecord_return_type_untypable() ->
+  E = lam( [], {frn, <<"f">>, t_str(), l_bash(), <<"blub">>} ),
+  ?assertEqual( {error, {frn_fn_returns_no_rcd, na, t_str()}}, type( E ) ).
+
+app_with_multiple_dangling_arg_binds_untypable() ->
+  E = {app,na,{lam,na, [],
+                       {ntv,{str,na,<<5,0>>}}},
+              [{<<>>,{var,na,<<>>}},{<<>>,{var,na,<<>>}}]},
+  ?assertEqual( {error, {app_dangling_bind, na, [{<<>>,{var,na,<<>>}},{<<>>,{var,na,<<>>}}]}},
+                type( E ) ).
+
+app_with_multiple_missing_arg_binds_untypable() ->
+  E = {app,na,{lam,na, [{<<"a">>,{var,na,<<>>}},{<<"b">>,{var,na,<<>>}}],
+                       {ntv,{str,na,<<5,0>>}}},
+              []},
+  ?assertEqual( {error, {app_missing_bind, na, [{<<"a">>,{var,na,<<>>}},{<<"b">>,{var,na,<<>>}}]}},
+                type( E ) ).
+
+
+
+
+
 
 is_type_equivalent_test_() ->
   {foreach,
@@ -1085,4 +1120,5 @@ rcd_type_with_changed_field_order_is_equivalent() ->
   T1 = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
   T2 = t_rcd( [{<<"b">>, t_str()}, {<<"a">>, t_bool()}] ),
   ?assert( is_type_equivalent( T1, T2 ) ).
+
 

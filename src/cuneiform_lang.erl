@@ -1541,8 +1541,8 @@ is_alpha_equivalent_protected( {lam, I1, [{X1, _}|XtLst1], {ntv, EBody1}},
                                  lam( I2, XtLst2, {ntv, rename( EBody2, X2, X1 )} ),
                                  [X1|BoundLst] );
 
-is_alpha_equivalent_protected( {lam, _, XtLst1, {frn, _, _, L, S}},
-                               {lam, _, XtLst2, {frn, _, _, L, S}},
+is_alpha_equivalent_protected( {lam, _, XtLst1, {frn, Name, _, L, S}},
+                               {lam, _, XtLst2, {frn, Name, _, L, S}},
                                _BoundLst ) ->
   xt_names( XtLst1 ) =:= xt_names( XtLst2 );
 
@@ -1659,7 +1659,7 @@ is_alpha_equivalent_protected( {rcd, I1, [{X, E1}|Tl1]},
 is_alpha_equivalent_protected( {proj, _, X, E1}, {proj, _, X, E2}, BoundLst ) ->
   is_alpha_equivalent_protected( E1, E2, BoundLst );
 
-is_alpha_equivalent_protected( {err, _, _, _}, {err, _, _, _}, _BoundLst ) ->
+is_alpha_equivalent_protected( {err, _, _, R}, {err, _, _, R}, _BoundLst ) ->
   true;
 
 is_alpha_equivalent_protected( _, _, _ ) ->

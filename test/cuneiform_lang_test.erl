@@ -2263,7 +2263,13 @@ is_alpha_equivalent_test_() ->
     {"is_alpha_equivalent for free var not bound var",
      fun is_alpha_equivalent_for_free_var_not_bound_var/0},
     {"is_alpha_equivalent null",
-     fun is_alpha_equivalent_null/0}
+     fun is_alpha_equivalent_null/0},
+    {"is_alpha_equivalent free var",
+     fun is_alpha_equivalent_free_var/0},
+    {"is_alpha_equivalent frn fn arg count",
+     fun is_alpha_equivalent_frn_fn_arg_count/0},
+    {"is_alpha_equivalent traverses application arg",
+     fun is_alpha_equivalent_traverses_application_arg/0}
    ]
   }.
 
@@ -2291,6 +2297,19 @@ is_alpha_equivalent_null() ->
   E0 = null( t_str() ),
   ?assert( is_alpha_equivalent( E0, E0 ) ).
 
+is_alpha_equivalent_free_var() ->
+  ?assert( is_alpha_equivalent( var( <<"x">> ), var( <<"y">> ) ) ).
+
+is_alpha_equivalent_frn_fn_arg_count() ->
+  Body = {frn, <<"f">>, t_rcd( [{<<"a">>, t_str()}] ), l_bash(), <<"blub">>},
+  E1 = lam( [{<<"x">>, t_str()}], Body ),
+  E2 = lam( [{<<"y">>, t_str()}], Body ),
+  ?assertNot( is_alpha_equivalent( E1, E2 ) ).
+
+is_alpha_equivalent_traverses_application_arg() ->
+  E1 = app( var( <<"f">> ), [{<<"x">>, true()}] ),
+  E2 = app( var( <<"f">> ), [{<<"x">>, false()}] ),
+  ?assertNot( is_alpha_equivalent( E1, E2 ) ).
 
 
 

@@ -111,12 +111,14 @@
 -type type_error()  :: {unbound_var,                               info(), x()}
                      | {ambiguous_name,                            info(), [x()]}
                      | {frn_fn_ambiguous_arg_or_return_field_name, info(), [x()]}
+                     | {frn_fn_returns_no_rcd,                     info(), t()}
                      | {awk_frn_fn_first_arg_no_file,              info(), {x(), t()}}
                      | {awk_frn_fn_no_arg,                         info()}
                      | {awk_frn_fn_result_field_no_file,           info(), t()}
                      | {awk_frn_fn_no_result_field,                info()}
-                     | {app_missing_bind,                          info(), {x(), t()}}
-                     | {app_dangling_bind,                         info(), {x(), e()}}
+                     | {app_lhs_no_function,                       info(), {e(), t()}}
+                     | {app_missing_bind,                          info(), [{x(), t()}]}
+                     | {app_dangling_bind,                         info(), [{x(), e()}]}
                      | {app_bind_type_mismatch,                    info(), {x(), t(), e(), t()}}
                      | {app_arg_name_mismatch,                     info(), {x(), x()}}
                      | {fix_fn_no_arg,                             info(), {e(), t()}}
