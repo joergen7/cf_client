@@ -125,7 +125,7 @@ notion( {for, I, TBody, XteLst, EBody} ) ->
     lists:any( [case E of {null, _, _} -> true; {cons, _, _, _} -> false end || {_, _, E} <- XteLst] ),
 
   case AnyNil of
-    true  -> {null, I, TBody}
+    true  -> {null, I, TBody};
     false ->
       XteLst1 = [{X, T, E1} || {X, T, {cons, _, E1, E2}} <- XteLst],
       XteLst2 = [{X, T, E2} || {X, T, {cons, _, E1, E2}} <- XteLst],
