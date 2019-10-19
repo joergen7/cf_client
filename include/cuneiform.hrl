@@ -156,3 +156,13 @@
                      | {proj_field_missing,                        info(), x()}
                      | {proj_no_record,                            info(), {e(), t()}}.
 
+-type v() :: {lam, info(), [{x(), t()}], {ntv, e()}}
+           | {lam, info(), [{x(), t()}], {frn, x(), t(), l(), s()}}
+           | {str, info(), s()}
+           | {file, info(), s()}
+           | {true, info()}
+           | {false, info()}
+           | {null, info(), t()}
+           | {cons, info(), v(), v()}
+           | {rcd, info(), [{x(), v()}]}.
+
