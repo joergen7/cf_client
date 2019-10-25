@@ -34,8 +34,8 @@
 
 -include( "cuneiform.hrl" ).
 
--type k() :: {app_arg, info(), e(), [{x(), e()}], x(), [{x(), e()}]}
-           | {app_fn, info(), [x(), e()]}
+-type k() :: {app_arg, info(), e(), [{x(), e()}], x(), [{x(), e()}], env()}
+           | {app_fn, info(), [x(), e()], env()}
            | {fix_op, info()}
            | {cmp_lhs, info(), e(), env()}
            | {cmp_rhs, info(), e()}
@@ -52,6 +52,7 @@
            | {tl_op, info(), e()}
            | {append_lhs, info(), e(), env()}
            | {append_rhs, info(), e()}
+           | {for_arg, info(), t(), [{x(), t(), e()}], x(), t(), [x(), t(), e()], e(), env()}
 
 -type env() :: #{ x() => {e(), env()} }.
 
@@ -65,96 +66,117 @@
 
 %% Notion of Reduction
 
-step( {OutBox, InBox, down, {app, _, {lam, _, XtLst, {ntv, EBody}}, XeLst}, Env, K} ) ->
-  F =
+%% TODO: resolve variables
+%% TODO: down-lam is a special occasion that turns into up-lam but also the closure gets packed into the lam
+
+step( {OutBox,
+       InBox,
+       up,
+       {lam, _, XtLst, {ntv, EBody}},
+       _,
+       [{app_fn, I, XeLst, _}|K]} ) ->
+  
+  FZip =
     fun( {X, _}, {_, E} ) ->
       {X, {E, Env}}
     end,
-  Env1 = maps:merge( Env, maps:from_list( maps:zipwith( F, XtLst, XeLst ) ) ),
-  {OutBox, InBox, down, EBody, Env1, K};
 
-step( {OutBox, InBox, down, E = {fix, IFix, {lam, ILam, [{X, T}|XtLst], {ntv, EBody}}}, Env, K} ) ->
-  EBody1 = {app, IFix, {lam, IFix, [{X, T}], {ntv, EBody}}, [{X, E}]}, %%%% TODO: substitute environment in EBody %%%%%%%
-  E1 = {lam, ILam, XtLst, {ntv, EBody1}},
-  {OutBox, InBox, up, E1, #{}, K}; %% because here we drop the environment but the body expression might take from the closure
+  Env = maps:from_list( maps:zipwith( FZip, XtLst, XeLst ) ),
 
-step( {OutBox, InBox, down, {cmp, I, {str, _, S1}, {str, _, S2}}, Env, K} ) ->
+  {OutBox, InBox, down, EBody, Env, K};
+
+step( {OutBox,
+       InBox,
+       up,
+       ELam = {lam, _, _, {frn, _, _, _, _}},
+       _,
+       [{lam_fn, I, [{X1, E1}|XeLst], Env}|K]} ) ->
+  {OutBox, InBox, down, E1, Env, [{app_arg, I, ELam, [], X1, XeLst, Env}|K]};
+
+step( {OutBox, InBox, up, E1 = {lam, ILam, [{X1, T1}|XtLst], {ntv, EBody}}, _, [{fix_op, I}|K]} ) ->
+  EBody1 = {app, I, {lam, I, [{X1, T1}], {ntv, EBody}}, [{X1, E1}]},
+  E2 = {lam, ILam, XtLst, {ntv, EBody1}},
+  {OutBox, InBox, up, E1, #{}, K};
+
+step( {OutBox, InBox, up, {str, _, S2}, _, [{cmp_rhs, I, {str, _, S1}}|K]} ) ->
   E1 = {S1 =:= S2, I},
   {OutBox, InBox, up, E1, #{}, K};
 
-step( {OutBox, InBox, down, {cmp, I, {A1, _}, {A2, _}}, Env, K} ) ->
+step( {OutBox, InBox, up, {A2, _}, _, [{cmp_rhs, I, {A1, _}}|K]} ) ->
   E1 = {A1 =:= A2, I},
   {OutBox, InBox, up, E1, #{}, K};
 
-step( {OutBox, InBox, down, {cmp, I, {null, _, _}, {null, _, _}}, Env, K} ) ->
+step( {OutBox, InBox, up, {null, _, _}, _, [{cmp_rhs, I, {null, _, _}}|K]} ) ->
   E1 = {true, I},
   {OutBox, InBox, up, E1, #{}, K};
 
-step( {OutBox, InBox, down, {cmp, I, {null, _, _}, {cons, _, _, _}}, Env, K} ) ->
+step( {OutBox, InBox, up, {cons, _, _, _}, _, [{cmp_rhs, I, {null, _, _}}|K]} ) ->
   E1 = {false, I},
   {OutBox, InBox, up, E1, #{}, K};
 
-step( {OutBox, InBox, down, {cmp, I, {cons, _, _, _}, {null, _, _}}, Env, K} ) ->
+step( {OutBox, InBox, up, {null, _, _}, _, [{cmp_rhs, I, {cons, _, _, _}}|K]} ) ->
   E1 = {false, I},
   {OutBox, InBox, up, E1, #{}, K};
 
-step( {OutBox, InBox, down, {cmp, I, {cons, _, E11, E12}, {cons, _, E21, E22}}, Env, K} ) ->
+step( {OutBox, InBox, up, {cons, _, E21, E22}, _, [{cmp_rhs, I, {cons, _, E11, E12}}|K]} ) ->
   E1 = {conj, I, {cmp, I, E11, E21}, {cmp, I, E12, E22}},
-  {OutBox, InBox, down, E1, Env, K};
+  {OutBox, InBox, down, E1, #{}, K};
 
-step( {OutBox, InBox, down, {cmp, I, {rcd, _, []}, {rcd, _, []}}, Env, K} ) ->
+step( {OutBox, InBox, up, {rcd, _, []}, _, [{cmp_rhs, I, {rcd, _, []}}|K]} ) ->
   E1 = {true, I},
   {OutBox, InBox, up, E1, #{}, K};
 
-step( {OutBox, InBox, down, {cmp, I, {rcd, I1, [{X, E1}|XeLst1]}, {rcd, I2, XeLst2}}, Env, K} ) ->
+step( {OutBox, InBox, up, {rcd, I2, XeLst2}, _, [{cmp_rhs, I, {rcd, I1, [{X, E1}|XeLst1]}}|K]} ) ->
   {_, E2} = lists:keyfind( X, 1, XeLst2 ),
   E3 = {conj, I, {cmp, I, E1, E2},
                  {cmp, I, {rcd, I1, XeLst1},
                           {rcd, I2, lists:remove( {X, E2}, XeLst2 )}}},
-  {OutBox, InBox, down, E3, Env, K};
+  {OutBox, InBox, down, E3, #{}, K};
 
-step( {OutBox, InBox, down, {conj, I, {A1, _}, {A2, _}}, Env, K} ) ->
+%%% TODO: below: we're on the way up so draw info from the continuation and not the control string!!!
+
+step( {OutBox, InBox, up, {conj, I, {A1, _}, {A2, _}}, Env, K} ) ->
   E1 = {A1 and A2, I},
   {OutBox, InBox, up, E1, #{}, K};
 
-step( {OutBox, InBox, down, {disj, I, {A1, _}, {A2, _}}, Env, K} ) ->
+step( {OutBox, InBox, up, {disj, I, {A1, _}, {A2, _}}, Env, K} ) ->
   E1 = {A1 or A2, I},
   {OutBox, InBox, up, E1, #{}, K};
 
-step( {OutBox, InBox, down, {neg, I, {A1, _}}, Env, K} ) ->
+step( {OutBox, InBox, up, {neg, I, {A1, _}}, Env, K} ) ->
   E1 = {not A1, I},
   {OutBox, InBox, up, E1, #{}, K};
 
-step( {OutBox, InBox, down, {isnil, I, {null, _, _}}, Env, K} ) ->
+step( {OutBox, InBox, up, {isnil, I, {null, _, _}}, Env, K} ) ->
   E1 = {true, I},
   {OutBox, InBox, up, E1, #{}, K};
 
-step( {OutBox, InBox, down, {cnd, _, {true, _}, E2, E3}, Env, K} ) ->
+step( {OutBox, InBox, up, {cnd, _, {true, _}, E2, E3}, Env, K} ) ->
   {OutBox, InBox, down, E2, Env, K};
 
-step( {OutBox, InBox, down, {cnd, _, {false, _}, E2, E3}, Env, K} ) ->
+step( {OutBox, InBox, up, {cnd, _, {false, _}, E2, E3}, Env, K} ) ->
   {OutBox, InBox, down, E3, Env, K};
 
-step( {OutBox, InBox, down, {hd, I, {null, _, _}, E2}, Env, K} ) ->
+step( {OutBox, InBox, up, {hd, I, {null, _, _}, E2}, Env, K} ) ->
   {OutBox, InBox, down, E2, Env, K};
 
-step( {OutBox, InBox, down, {hd, I, {cons, _, E11, _}, _}, Env, K} ) ->
+step( {OutBox, InBox, up, {hd, I, {cons, _, E11, _}, _}, Env, K} ) ->
   {OutBox, InBox, down, E11, Env, K};
 
-step( {OutBox, InBox, down, {tl, I, {null, _, _}, E2}, Env, K} ) ->
+step( {OutBox, InBox, up, {tl, I, {null, _, _}, E2}, Env, K} ) ->
   {OutBox, InBox, down, E2, Env, K};
 
-step( {OutBox, InBox, down, {tl, I, {cons, _, _, E12}, _}, Env, K} ) ->
+step( {OutBox, InBox, up, {tl, I, {cons, _, _, E12}, _}, Env, K} ) ->
   {OutBox, InBox, down, E12, Env, K};
 
-step( {OutBox, InBox, down, {append, I, {null, _, _}, E2}, Env, K} ) ->
+step( {OutBox, InBox, up, {append, I, {null, _, _}, E2}, Env, K} ) ->
   {OutBox, InBox, down, E2, Env, K};
 
-step( {OutBox, InBox, down, {append, I, {cons, E11, E12}, E2}, Env, K} ) ->
+step( {OutBox, InBox, up, {append, I, {cons, E11, E12}, E2}, Env, K} ) ->
   E1 = {cons, I, E11, {append, I, E12, E2}},
   {OutBox, InBox, down, E1, Env, K};
 
-step( {OutBox, InBox, down, {for, I, TBody, XteLst, EBody}, Env, K} ) ->
+step( {OutBox, InBox, up, E1, _, [{for_arg, I, TBody, XteLst0, X1, T1, [], EBody, Env}|K]} ) ->
 
   IsNil =
     fun
@@ -167,6 +189,8 @@ step( {OutBox, InBox, down, {for, I, TBody, XteLst, EBody}, Env, K} ) ->
       ( {cons, _, _, _} ) -> true;
       ( _ )               -> false
     end,
+
+  XteLst = [{X1, T1, E1}|XteLst0],
 
   AnyNil =
     lists:any( [IsNil( E ) || {_, _, E} <- XteLst] ),
@@ -184,7 +208,7 @@ step( {OutBox, InBox, down, {for, I, TBody, XteLst, EBody}, Env, K} ) ->
       case AllCons of
 
         false ->
-          {OutBox, InBox, down, } %% TODO
+          {OutBox, InBox, up, {for, I, TBody, XteLst, EBody}, #{}, K};
 
         true ->
           XteLst1 = [{X, T, E1} || {X, T, {cons, _, E1, E2}} <- XteLst],
@@ -212,36 +236,48 @@ step( {OutBox, InBox, down, {proj, _, X, {rcd, _, XeLst}}, Env, K} ) ->
   {OutBox, InBox, down, E1, Env, K};
 
 
-%% Send and Receive
+%% Send
 
 step( {OutBox,
        InBox,
-       down,
-       E = {app, I, Lam = {lam, _, _, {frn, _, _, _, _}}, XeLst},
-       Env,
-       K} ) ->
+       up,
+       ELam = {lam, _, _, {frn, _, _, _, _}},
+       _,
+       [{app_fn, I, [], _}|K]} ) ->
+  EApp = {app, I, ELam, []},
+  {[EApp|OutBox], InBox, up, {fut, I, EApp}, #{}, K};
+
+step( {OutBox,
+       InBox,
+       up,
+       E1,
+       _,
+       [{app_arg, I, ELam = {lam, _, _, {frn, _, _, _, _}}, XeLst0, X1, [], _}|K]} ) ->
+
+  XeLst = [{X1, E1}|XeLst0],
 
   AllValue =
     lists:all( [is_value( E ) || {_, E} <- XeLst] ),
 
+  EApp = {app, I, ELam, XeLst},
+
   case AllValue of
-    true  ->
-      {[E|OutBox], InBox, up, {fut, I, E}, #{}, K};
-    false ->
-      [{X1, E1}|R] = XeLst,
-      {OutBox, InBox, down, E1, Env, [{app_arg, I, Lam, [], X1, R}|K]}
+    true  -> {[EApp|OutBox], InBox, up, {fut, I, EApp}, #{}, K};
+    false -> {OutBox, InBox, up, EApp, #{}, K}
   end;
+
+%% Receive
 
 step( {OutBox, InBox, down, {fut, I, E}, Env, K} ) ->
   case maps:get( E, InBox, no_entry ) of
     no_entry -> {OutBox, InBox, up, {fut, I, E}, #{}, K};
-    E1       -> {OutBox, InBox, down, E1, #{}, K}
+    E1       -> {OutBox, InBox, down, E1, Env, K}
   end;
 
 
 %% Errors
 
-step( {OutBox, InBox, down, E = {err, _, _, _}, Env, [_|_]} ) ->
+step( {OutBox, InBox, down, E = {err, _, _, _}, _, [_|_]} ) ->
   {OutBox, InBox, up, E, #{}, []};
 
 
