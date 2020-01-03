@@ -81,13 +81,13 @@ l               -> l_elixir                   : l_elixir().
 l               -> l_erlang                   : l_erlang().
 l               -> l_gnuplot                  : l_gnuplot().
 l               -> l_java                     : l_java().
+l               -> l_javascript               : l_javascript().
 l               -> l_matlab                   : l_matlab().
 l               -> l_octave                   : l_octave().
 l               -> l_perl                     : l_perl().
 l               -> l_python                   : l_python().
 l               -> l_r                        : l_r().
 l               -> l_racket                   : l_racket().
-l               -> l_javascript               : l_javascript().
 
 t               -> t_str                                     : t_str().
 t               -> t_file                                    : t_file().

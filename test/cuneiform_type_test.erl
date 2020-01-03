@@ -398,7 +398,7 @@ comparison_with_file_operands_untypable() ->
 
 comparison_with_nonmatching_operands_untypable() ->
   E = cmp( true(), str( <<"blub">> ) ),
-  ?assertEqual( {error, {cmp_lhs_and_rhs_incomparable, na, {true(), t_bool(), str( <<"blub">> ), t_str()}}},
+  ?assertEqual( {error, {cmp_incomparable, na, {true(), t_bool(), str( <<"blub">> ), t_str()}}},
                         type( E ) ).
 
 comparison_with_lhs_variable_typable() ->

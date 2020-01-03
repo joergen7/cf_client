@@ -125,7 +125,7 @@
                      | {fix_fn_arg_type_mismatch,                  info(), {x(), t(), t()}}
                      | {fix_no_fn,                                 info(), {e(), t()}}
                      | {cmp_no_comparable_type,                    info(), {e(), t()}}
-                     | {cmp_lhs_and_rhs_incomparable,              info(), {e(), t(), e(), t()}}
+                     | {cmp_incomparable,                          info(), {e(), t(), e(), t()}}
                      | {conj_lhs_no_bool,                          info(), {e(), t()}}
                      | {conj_rhs_no_bool,                          info(), {e(), t()}}
                      | {disj_lhs_no_bool,                          info(), {e(), t()}}

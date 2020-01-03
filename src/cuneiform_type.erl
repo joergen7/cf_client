@@ -195,7 +195,7 @@ type( Gamma, {cmp, Info, E1, E2} ) ->                                           
             {ok, T2}         ->
               case is_type_equivalent( T1, T2 ) of
                 true  -> {ok, 'Bool'};
-                false -> {error, {cmp_lhs_and_rhs_incomparable, Info, {E1, T1, E2, T2}}}
+                false -> {error, {cmp_incomparable, Info, {E1, T1, E2, T2}}}
               end
           end
       end
