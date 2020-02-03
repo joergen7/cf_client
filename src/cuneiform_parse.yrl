@@ -40,11 +40,10 @@ Terminals
   l_awk l_bash l_elixir l_erlang l_gnuplot l_java l_javascript l_matlab
   l_octave l_perl l_python l_r l_racket
   t_str t_file t_bool t_fn_frn t_fn_ntv
-  assign bar wedge cmp cnd colon
-  comma def do doublertag else eq err false fold for halt import in
-  isnil larrow lbrace lparen lsquarebr ltag neg vee plus
-  rarrow rbrace rparen rsquarebr rtag semicolon then true id
-  intlit strlit filelit body.
+  assign bar cmp cnd colon comma def default do doublertag else eq err false
+  fold for halt hd import in isnil larrow lbrace lparen lsquarebr ltag neg plus
+  rarrow rbrace rparen rsquarebr rtag semicolon then tl true vee wedge
+  id intlit strlit filelit body.
 
 %%====================================================================
 %% Syntax Definition
@@ -73,7 +72,7 @@ define_lst      -> define                     : ['$1'].
 define_lst      -> define define_lst          : ['$1'|'$2'].
 
 r               -> id colon t                 : visit_r_var( '$1', '$3' ).
-r               -> ltag r_bind_lst rtag       : visit_r_rcd( '$1', '$2' ).
+r               -> ltag r_bind_lst rtag       : r_rcd( '$2' ).
 
 l               -> l_awk                      : l_awk().
 l               -> l_bash                     : l_bash().
@@ -92,10 +91,10 @@ l               -> l_racket                   : l_racket().
 t               -> t_str                                     : t_str().
 t               -> t_file                                    : t_file().
 t               -> t_bool                                    : t_bool().
-t               -> t_fn_ntv lparen rparen rarrow t           : t_fn( ntv, [], '$5' ).
-t               -> t_fn_ntv lparen t_arg_lst rparen rarrow t : t_fn( ntv, '$3', '$6' ).
-t               -> t_fn_frn lparen rparen rarrow t           : t_fn( frn, [], '$5' ).
-t               -> t_fn_frn lparen t_arg_lst rparen rarrow t : t_fn( frn, '$3', '$6' ).
+t               -> t_fn_ntv lparen rparen rarrow t           : t_fn( [], '$5' ).
+t               -> t_fn_ntv lparen t_arg_lst rparen rarrow t : t_fn( '$3', '$6' ).
+t               -> t_fn_frn lparen rparen rarrow t           : t_fn( [], '$5' ).
+t               -> t_fn_frn lparen t_arg_lst rparen rarrow t : t_fn( '$3', '$6' ).
 t               -> lsquarebr t rsquarebr                     : t_lst( '$2' ).
 t               -> ltag t_arg_lst rtag                       : t_rcd( '$2' ).
 
@@ -106,28 +105,32 @@ t_arg_lst       -> t_arg comma t_arg_lst      : ['$1'|'$3'].
 
 
 e               -> id                                                   : visit_var( '$1' ).
+e               -> id lparen rparen                                     : visit_app( '$1', [] ).
+e               -> id lparen e_bind_lst rparen                          : visit_app( '$1', '$3' ).
 e               -> strlit                                               : visit_str( '$1' ).
 e               -> intlit                                               : visit_str( '$1' ).
 e               -> filelit                                              : visit_file( '$1' ).
 e               -> true                                                 : visit_true( '$1' ).
 e               -> false                                                : visit_false( '$1' ).
 e               -> lparen e cmp e rparen                                : visit_cmp( '$2', '$3', '$4' ).
+e               -> lparen e vee e rparen                                : visit_disj( '$2', '$3', '$4' ).
+e               -> lparen e wedge e rparen                              : visit_conj( '$2', '$3', '$4' ).
+e               -> neg e                                                : visit_neg( '$1', '$2' ).
+e               -> isnil e                                              : visit_isnil( '$1', '$2' ).
 e               -> cnd e then e else e halt                             : visit_cnd( '$1', '$2', [], '$4', [], '$6' ).
 e               -> cnd e then define_lst e else e halt                  : visit_cnd( '$1', '$2', '$4', '$5', [], '$7' ).
 e               -> cnd e then e else define_lst e halt                  : visit_cnd( '$1', '$2', [], '$4', '$6', '$7' ).
 e               -> cnd e then define_lst e else define_lst e halt       : visit_cnd( '$1', '$2', '$4', '$5', '$7', '$8' ).
-e               -> neg e                                                : visit_neg( '$1', '$2' ).
-e               -> lparen e wedge e rparen                              : visit_conj( '$2', '$3', '$4' ).
-e               -> lparen e vee e rparen                                : visit_disj( '$2', '$3', '$4' ).
-e               -> id lparen rparen                                     : visit_app( '$1', [] ).
-e               -> id lparen e_bind_lst rparen                          : visit_app( '$1', '$3' ).
+e               -> lparen e doublertag e rparen                         : visit_cons( '$3', '$2', '$4' ).
+e               -> lsquarebr colon t rsquarebr                          : visit_lst( [], '$2', '$3' ).
+e               -> lsquarebr e_lst colon t rsquarebr                    : visit_lst( '$2', '$3', '$4' ).
+
+e               -> hd e default e halt                                  : visit_hd( '$1', '$2', '$4' ).
+e               -> tl e default e halt                                  : visit_tl( '$1', '$2', '$4' ).
+
 e               -> ltag e_bind_lst rtag                                 : visit_rcd( '$1', '$2' ).
 e               -> lparen e bar id rparen                               : visit_proj( '$2', '$4' ).
 e               -> lparen e plus e rparen                               : visit_append( '$2', '$3', '$4' ).
-e               -> lsquarebr colon t rsquarebr                          : visit_lst( [], '$2', '$3' ).
-e               -> lparen e doublertag e rparen                         : visit_cons( '$3', '$2', '$4' ).
-e               -> lsquarebr e_lst colon t rsquarebr                    : visit_lst( '$2', '$3', '$4' ).
-e               -> isnil e                                              : visit_isnil( '$1', '$2' ).
 e               -> for from_lst do e colon t halt                       : visit_for( '$1', '$2', [], '$4', '$6' ).
 e               -> for from_lst do define_lst e colon t halt            : visit_for( '$1', '$2', '$4', '$5', '$7' ).
 e               -> fold id colon t eq e comma from do e halt            : visit_fold( '$1', '$2', '$4', '$6', '$8', [], '$10' ).
@@ -167,22 +170,24 @@ Erlang code.
                          ] ).
 
 -import( cuneiform_lang, [
-                          t_str/0, t_file/0, t_bool/0, t_fn/3, t_lst/1,
+                          t_str/0, t_file/0, t_bool/0, t_fn/2, t_lst/1,
                           t_rcd/1
                          ] ).
+
+-import( cuneiform_lang, [r_rcd/1] ).
 
 -import( cuneiform_preproc, [join_stat/2, visit_from/3, visit_fold/7,
                              visit_cnd/6, visit_for/5, visit_import/1,
                              visit_r_var/2, visit_var/1, visit_file/1,
                              visit_str/1, visit_assign/3, visit_def_frn/6,
-                             visit_def_ntv/6, visit_r_rcd/2, visit_t_arg/2,
+                             visit_def_ntv/6, visit_t_arg/2,
                              visit_true/1, visit_false/1, visit_cmp/3,
                              visit_conj/3, visit_disj/3, visit_neg/2,
                              visit_app/2, visit_rcd/2, visit_proj/2,
                              visit_append/3, visit_lst/3, visit_cons/3,
                              visit_isnil/2, visit_err/3, visit_e_bind/2,
-                             visit_r_bind/2
-                             ] ).
+                             visit_r_bind/2, visit_hd/3, visit_tl/3
+                            ] ).
 
 
 

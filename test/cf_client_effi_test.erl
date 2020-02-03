@@ -33,7 +33,7 @@
 -include_lib( "eunit/include/eunit.hrl" ).
 
 -import( cf_client_effi, [effi_reply_to_expr/2, reconstruct_type/1] ).
--import( cuneiform_lang, [rcd/1, e_bind/2, str/1, t_bool/0, t_arg/2, t_rcd/1] ).
+-import( cuneiform_lang, [rcd/1, str/1, t_bool/0, t_rcd/1] ).
 
 result_decode_test() ->
 
@@ -59,7 +59,7 @@ result_decode_test() ->
                     stat         => #{ duration => <<"9103976">>,
                                        t_start  => <<"1515225807640943499">> } },
 
-  E = rcd( [e_bind( out, str( <<"Hello Jorgen">> ) )] ),
+  E = rcd( [{out, str( <<"Hello Jorgen">> )}] ),
 
   ?assertEqual( E, effi_reply_to_expr( EffiRequest, EffiResult ) ).
 
@@ -80,6 +80,6 @@ reconstruct_singleton_boolean() ->
                    arg_type => <<"Bool">>,
                    is_list  => false }],
 
-  T = t_rcd( [t_arg( a, t_bool() )] ),
+  T = t_rcd( [{a, t_bool()}] ),
 
   ?assertEqual( T, reconstruct_type( RetTypeLst ) ).

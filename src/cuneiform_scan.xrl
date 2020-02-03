@@ -62,6 +62,7 @@ CND         = if
 COLON       = :
 COMMA       = ,
 DEF         = def
+DEFAULT     = default
 DO          = do
 DOUBLERTAG  = >>
 ELSE        = else
@@ -71,6 +72,7 @@ FALSE       = false
 FOLD        = fold
 FOR         = for
 HALT        = end
+HD          = hd
 IMPORT      = import
 IN          = in
 ISNIL       = isnil
@@ -88,6 +90,7 @@ RSQUAREBR   = \]
 RTAG        = >
 SEMICOLON   = ;
 THEN        = then
+TL          = tl
 TRUE        = true
 VEE         = or
 WEDGE       = and
@@ -135,15 +138,17 @@ Rules.
 {COLON}       : {token, {colon, TokenLine, TokenChars}}.
 {COMMA}       : {token, {comma, TokenLine, TokenChars}}.
 {DEF}         : {token, {def, TokenLine, TokenChars}}.
+{DEFAULT}     : {token, {default, TokenLine, TokenChars}}.
 {DO}          : {token, {do, TokenLine, TokenChars}}.
 {DOUBLERTAG}  : {token, {doublertag, TokenLine, TokenChars}}.
 {ELSE}        : {token, {else, TokenLine, TokenChars}}.
 {ERR}         : {token, {err, TokenLine, TokenChars}}.
-{HALT}        : {token, {halt, TokenLine, TokenChars}}.
 {EQ}          : {token, {eq, TokenLine, TokenChars}}.
 {FALSE}       : {token, {false, TokenLine, TokenChars}}.
 {FOLD}        : {token, {fold, TokenLine, TokenChars}}.
 {FOR}         : {token, {for, TokenLine, TokenChars}}.
+{HALT}        : {token, {halt, TokenLine, TokenChars}}.
+{HD}          : {token, {hd, TokenLine, TokenChars}}.
 {IMPORT}      : {token, {import, TokenLine, TokenChars}}.
 {IN}          : {token, {in, TokenLine, TokenChars}}.
 {ISNIL}       : {token, {isnil, TokenLine, TokenChars}}.
@@ -161,6 +166,7 @@ Rules.
 {RTAG}        : {token, {rtag, TokenLine, TokenChars}}.
 {SEMICOLON}   : {token, {semicolon, TokenLine, TokenChars}}.
 {THEN}        : {token, {then, TokenLine, TokenChars}}.
+{TL}          : {token, {tl, TokenLine, TokenChars}}.
 {TRUE}        : {token, {true, TokenLine, TokenChars}}.
 {VEE}         : {token, {vee, TokenLine, TokenChars}}.
 {WEDGE}       : {token, {wedge, TokenLine, TokenChars}}.

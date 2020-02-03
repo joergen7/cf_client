@@ -29,7 +29,6 @@
 %% -------------------------------------------------------------------
 
 -module( cuneiform_lang ).
--include( "cuneiform.hrl" ).
 
 %%====================================================================
 %% Exports
@@ -49,7 +48,7 @@
           lam/2,    lam/3,
           app/2,    app/3,
           fix/1,    fix/2,
-          fut/1,    fut/2,
+          fut/2,    fut/3,
           str/1,    str/2,
           file/1,   file/2,
           true/0,   true/1,
@@ -73,8 +72,7 @@
 
 %% Syntactic Sugar
 -export( [lst/2, lst/3,
-          alet/2, alet/3,
-          asc/2, asc/3] ).
+          alet/2, alet/3] ).
 
 %% Patterns, Assignments, and Expansion
 -export( [r_var/2, r_rcd/1, assign/2, assign/3,
@@ -96,46 +94,57 @@
           validate_reason/1,
           validate_assign/1] ).
 
-%% Contract Predicates
--export( [is_pattern/1,
-          is_info/1,
-          is_type/1,
-          is_lang/1,
-          is_expr/1,
-          is_reason/1,
-          is_assign/1] ).
-
-%% Renaming and Substitution
--export( [rename/3,
-          protect_name/1,
-          protect_expr/1,
-          subst/3] ).
-
-%% Properties
--export( [expr_vars/1,
-          expr_free_vars/1,
-          expr_size/1,
-          is_alpha_equivalent/2,
-          is_value/1] ).
+-export( [drop_info/1, impose_info/2] ).
 
 
+%%====================================================================
+%% Includes
+%%====================================================================
+
+-include( "cuneiform_lang.hrl" ).
 
 %%====================================================================
 %% Language constructors
 %%====================================================================
 
+% @doc Generates Awk language designation.
+% @return Awk language designation
 -spec l_awk()        -> l(). l_awk()        -> 'Awk'.
+% @doc Generates Bash language designation.
+% @return Bash language designation
 -spec l_bash()       -> l(). l_bash()       -> 'Bash'.
+% @doc Generates Elixir language designation.
+% @return Elixir language designation
 -spec l_elixir()     -> l(). l_elixir()     -> 'Elixir'.
+% @doc Generates Erlang language designation.
+% @return Erlang language designation
 -spec l_erlang()     -> l(). l_erlang()     -> 'Erlang'.
+% @doc Generates Gnuplot language designation.
+% @return Gnuplot language designation
 -spec l_gnuplot()    -> l(). l_gnuplot()    -> 'Gnuplot'.
+% @doc Generates Java language designation.
+% @return Java language designation
 -spec l_java()       -> l(). l_java()       -> 'Java'.
+% @doc Generates Javascript language designation.
+% @return Javascript language designation
 -spec l_javascript() -> l(). l_javascript() -> 'Javascript'.
+% @doc Generates Matlab language designation.
+% @return Matlab language designation
 -spec l_matlab()     -> l(). l_matlab()     -> 'Matlab'.
+% @doc Generates Octave language designation.
+% @return Octave language designation
 -spec l_octave()     -> l(). l_octave()     -> 'Octave'.
+% @doc Generates Perl language designation.
+% @return Perl language designation
 -spec l_perl()       -> l(). l_perl()       -> 'Perl'.
+% @doc Generates Python language designation.
+% @return Python language designation
 -spec l_python()     -> l(). l_python()     -> 'Python'.
+% @doc Generates R language designation.
+% @return R language designation
 -spec l_r()          -> l(). l_r()          -> 'R'.
+% @doc Generates Racket language designation.
+% @return Racket language designation
 -spec l_racket()     -> l(). l_racket()     -> 'Racket'.
 
 
@@ -143,58 +152,100 @@
 %% Type constructors
 %%====================================================================
 
+% @doc Generates string type.
+% @return string type
 -spec t_str() -> t().
       t_str() -> 'Str'.
 
+% @doc Generates file type.
+% @return file type
 -spec t_file() -> t().
       t_file() -> 'File'.
 
+% @doc Generates Boolean type.
+% @return Boolean type
 -spec t_bool() -> t().
       t_bool() -> 'Bool'.
 
--spec t_rcd( ArgLst :: [{x(), t()}] ) -> t().
-      t_rcd( XtLst )                  -> validate_type( {'Rcd', XtLst} ).
-
--spec t_lst( T :: t() ) -> t().
-      t_lst( T )        -> validate_type( {'Lst', T} ).
-
--spec t_fn( ArgLst :: [{x(), t()}], TRet :: t() ) -> t().
+% @doc Generates function type.
+% @param XtLst list of pairs holding a function argument's name and type
+% @param TRet  function's return type
+% @return function type
+-spec t_fn( XtLst :: [{x(), t()}], TRet :: t() ) -> t().
 
 t_fn( XtLst, TRet ) ->
   validate_type( {'Fn', XtLst, TRet} ).
+
+% @doc Generates list type.
+% @param T list element's type
+% @return list type
+-spec t_lst( T :: t() ) -> t().
+      t_lst( T )        -> validate_type( {'Lst', T} ).
+
+% @doc Generates record type.
+% @param XtLst list of pairs holding a record field's name and type
+% @return record type
+-spec t_rcd( XtLst :: [{x(), t()}] ) -> t().
+      t_rcd( XtLst )                 -> validate_type( {'Rcd', XtLst} ).
 
 
 %%====================================================================
 %% Expression constructors
 %%====================================================================
 
+% @doc Generates anonymous variable expression.
+% @param X variable name
+% @return variable expression
 -spec var( X :: x() ) -> e().
       var( X )        -> var( na, X ).
 
+% @doc Generates variable expression.
+% @param Info source location
+% @param X variable name
+% @return variable expression
 -spec var( Info :: info(), X :: x() ) -> e().
       var( Info, X )                  -> validate_expr( {var, Info, X} ).
 
-
+% @doc Generates anonymous lambda expression.
+% @param XtLst list of pairs holding a function argument's name and type
+% @param Body function body, either native or foreign body.
+% @return lambda expression
 -spec lam( XtLst, Body ) -> e()
 when XtLst :: [{x(), t()}],
      Body  :: {ntv, e()}
-            | {frn, s(), t(), l(), s()}.
+            | {frn, x(), t(), l(), s()}.
 
 lam( XtLst, Body ) ->
   lam( na, XtLst, Body ).
 
+% @doc Generates lambda expression.
+% @param Info source location
+% @param XtLst list of pairs holding a function argument's name and type
+% @param Body function body, either native or foreign body.
+% @return lambda expression
 -spec lam( Info, XtLst, Body ) -> e()
 when Info  :: info(),
      XtLst :: [{x(), t()}],
      Body  :: {ntv, e()}
-            | {frn, s(), t(), l(), s()}.
+            | {frn, x(), t(), l(), s()}.
 
 lam( Info, XtLst, Body ) ->
   validate_expr( {lam, Info, XtLst, Body} ).
 
--spec app( F :: e(), ArgLst :: [{x(), e()}] ) -> e().
-      app( F, ArgLst )                        -> app( na, F, ArgLst ).
+% @doc Generates anonymous application expression.
+% @param EFn   application's function expression
+% @param XeLst list of pairs holding a function argument's name and expression
+%              to bind
+% @return application expression
+-spec app( EFn :: e(), XeLst :: [{x(), e()}] ) -> e().
+      app( EFn, XeLst )                        -> app( na, EFn, XeLst ).
 
+% @doc Generates application expression.
+% @param Info source location
+% @param EFn   application's function expression
+% @param XeLst list of pairs holding a function argument's name and expression
+%              to bind
+% @return application expression
 -spec app( Info :: info(), EFn :: e(), XeLst :: [{x(), e()}] ) -> e().
 
 app( Info, EFn, XeLst ) ->
@@ -208,13 +259,13 @@ app( Info, EFn, XeLst ) ->
 fix( Info, EOp ) ->
   validate_expr( {fix, Info, EOp} ).
 
--spec fut( EOp :: e() ) -> e().
-      fut( EOp )        -> fut( na, EOp ).
+-spec fut( T :: t(), Hash :: binary() ) -> e().
+      fut( T, Hash )                    -> fut( na, T, Hash ).
 
--spec fut( Info :: info(), EOp :: e() ) -> e().
+-spec fut( Info :: info(), T :: t(), Hash :: binary() ) -> e().
 
-fut( Info, EOp ) ->
-  validate_expr( {fut, Info, EOp} ).
+fut( Info, T, Hash ) ->
+  validate_expr( {fut, Info, T, Hash} ).
 
 -spec str( S :: s() ) -> e().
       str( S )        -> str( na, S ).
@@ -426,18 +477,6 @@ alet( Info, XteLst, EBody ) ->
        [{X, E} || {X, _, E} <- XteLst] ).
 
 
--spec asc( E :: e(), T :: t() ) -> e().
-
-asc( E, T ) ->
-  asc( na, E, T ).
-
--spec asc( Info :: info(), E :: e(), T :: t() ) -> e().
-
-asc( Info, E, T ) ->
-  X = <<"#asc">>,
-  alet( Info, [{X, T, E}], {var, Info, X} ).
-
-
 %%====================================================================
 %% Pattern Constructors, Assignments, and Expansion
 %%====================================================================
@@ -466,9 +505,9 @@ when AssignLst :: [assign()],
 expand_closure( [], EBody ) ->
   EBody;
 
-expand_closure( [Hd|Tl], EBody ) ->
+expand_closure( [Hd = {assign, Info, _, _}|Tl], EBody ) ->
   XteLst = expand_assign( Hd ),
-  alet( XteLst, expand_closure( Tl, EBody ) ).
+  alet( Info, XteLst, expand_closure( Tl, EBody ) ).
 
 
 -spec expand_assign( assign() ) -> [{x(), t(), e()}].
@@ -496,7 +535,7 @@ ambiguous_names( NameLst ) when is_list( NameLst ) ->
 
 -spec pattern_names( Pattern :: r() ) -> [x()].
 
-pattern_names( {r_var, X, _T} ) when is_binary( X ) ->
+pattern_names( {r_var, X, _T} ) when is_atom( X ) ->
   [X];
 
 pattern_names( {r_rcd, BindLst} ) when is_list( BindLst ) ->
@@ -526,6 +565,16 @@ xte_names( BindLst ) when is_list( BindLst ) ->
 %% Validators
 %%====================================================================
 
+-spec validate_x( Z :: _ ) -> x().
+
+validate_x( Z ) when is_atom( Z ) -> Z;
+validate_x( Z )                   -> error( {bad_x, Z} ).
+
+-spec validate_s( Z :: _ ) -> s().
+
+validate_s( Z ) when is_binary( Z ) -> Z;
+validate_s( Z )                     -> error( {bad_s, Z} ).
+
 -spec validate_assign( Z :: _ ) -> assign().
 
 validate_assign( A = {assign, Info, R, E} ) ->
@@ -539,9 +588,9 @@ validate_assign( A = {assign, Info, R, E} ) ->
 validate_reason( R = {run, Node, AppId, LamName, ExtendedScript, Output} )
 when is_binary( Node ),
      is_binary( AppId ),
-     is_binary( LamName ),
      is_binary( ExtendedScript ),
      is_binary( Output ) ->
+  validate_x( LamName ),
   R;
 
 validate_reason( {run, Z, _, _, _, _} )
@@ -549,10 +598,6 @@ when not is_binary( Z ) ->
   error( {bad_binary, Z} );
 
 validate_reason( {run, _, Z, _, _, _} )
-when not is_binary( Z ) ->
-  error( {bad_binary, Z} );
-
-validate_reason( {run, _, _, Z, _, _} )
 when not is_binary( Z ) ->
   error( {bad_binary, Z} );
 
@@ -567,22 +612,16 @@ when not is_binary( Z ) ->
 validate_reason( R = {stagein, Node, AppId, LamName, FileLst} )
 when is_binary( Node ),
      is_binary( AppId ),
-     is_binary( LamName ),
      is_list( FileLst ) ->
-  case lists:all( fun is_binary/1, FileLst ) of
-    true -> R;
-    false -> error( {bad_file_lst, FileLst} )
-  end;
+  validate_x( LamName ),
+  lists:foreach( fun validate_s/1, FileLst ),
+  R;
 
 validate_reason( {stagein, Z, _, _, _} )
 when not is_binary( Z ) ->
   error( {bad_binary, Z} );
 
 validate_reason( {stagein, _, Z, _, _} )
-when not is_binary( Z ) ->
-  error( {bad_binary, Z} );
-
-validate_reason( {stagein, _, _, Z, _} )
 when not is_binary( Z ) ->
   error( {bad_binary, Z} );
 
@@ -593,12 +632,10 @@ when not is_list( Z ) ->
 validate_reason( R = {stageout, Node, AppId, LamName, FileLst} )
 when is_binary( Node ),
      is_binary( AppId ),
-     is_binary( LamName ),
      is_list( FileLst ) ->
-  case lists:all( fun is_binary/1, FileLst ) of
-    true -> R;
-    false -> error( {bad_file_lst, FileLst} )
-  end;
+  validate_x( LamName ),
+  lists:foreach( fun validate_s/1, FileLst ),
+  R;
 
 validate_reason( {stageout, Z, _, _, _} )
 when not is_binary( Z ) ->
@@ -608,19 +645,13 @@ validate_reason( {stageout, _, Z, _, _} )
 when not is_binary( Z ) ->
   error( {bad_binary, Z} );
 
-validate_reason( {stageout, _, _, Z, _} )
-when not is_binary( Z ) ->
-  error( {bad_binary, Z} );
-
 validate_reason( {stageout, _, _, _, Z} )
 when not is_list( Z ) ->
   error( {bad_file_lst, Z} );
 
-validate_reason( R = {user, Msg} ) when is_binary( Msg ) ->
+validate_reason( R = {user, Msg} ) ->
+  validate_s( Msg ),
   R;
-
-validate_reason( {user, Z} ) ->
-  error( {bad_binary, Z} );
 
 validate_reason( Z ) ->
   error( {bad_reason, Z} ).
@@ -646,12 +677,10 @@ validate_lang( Z )                -> error( {bad_lang, Z} ).
 
 -spec validate_pattern( Z :: _ ) -> r().
 
-validate_pattern( Z = {r_var, X, T} ) when is_binary( X ) ->
+validate_pattern( Z = {r_var, X, T} ) ->
+  validate_x( X ),
   validate_type( T ),
   Z;
-
-validate_pattern( {r_var, Z, _} ) ->
-  error( {bad_binary, Z} );
 
 validate_pattern( Z = {r_rcd, RLst} ) ->
   validate_xr_lst( RLst ),
@@ -663,12 +692,10 @@ validate_pattern( Z ) ->
 
 -spec validate_xr( Z :: _ ) -> {x(), r()}.
 
-validate_xr( Z = {X, R} ) when is_binary( X ) ->
+validate_xr( Z = {X, R} ) ->
+  validate_x( X ),
   validate_pattern( R ),
   Z;
-
-validate_xr( {Z, _} ) ->
-  error( {bad_binary, Z} );
 
 validate_xr( Z ) ->
   error( {bad_xr, Z} ).
@@ -696,19 +723,17 @@ validate_info( Z ) ->
   error( {bad_info, Z} ).
 
 
--spec validate_xt( X :: _ ) -> {x(), t()}.
+-spec validate_xt( Z :: _ ) -> {x(), t()}.
 
-validate_xt( Xt = {X, T} ) when is_binary( X ) ->
+validate_xt( Xt = {X, T} ) ->
+  validate_x( X ),
   validate_type( T ),
   Xt;
-
-validate_xt( {Z, _} ) ->
-  error( {bad_binary, Z} );
 
 validate_xt( Z ) ->
   error( {bad_xt, Z} ).
 
--spec validate_xt_lst( X :: _ ) -> [{x(), t()}].
+-spec validate_xt_lst( Z :: _ ) -> [{x(), t()}].
 
 validate_xt_lst( [] )    -> [];
 validate_xt_lst( [H|T] ) -> [validate_xt( H )|validate_xt_lst( T )];
@@ -717,13 +742,10 @@ validate_xt_lst( Z )     -> error( {bad_xt_lst, Z} ).
 
 -spec validate_xe( X :: _ ) -> {x(), e()}.
 
-validate_xe( Z = {X, E} )
-when is_binary( X ) ->
+validate_xe( Z = {X, E} ) ->
+  validate_x( X ),
   validate_expr( E ),
   Z;
-
-validate_xe( {Z, _} ) ->
-  error( {bad_binary, Z} );
 
 validate_xe( Z ) ->
   error( {bad_xe, Z} ).
@@ -737,14 +759,11 @@ validate_xe_lst( Z )     -> error( {bad_xe_lst, Z} ).
 
 -spec validate_xte( X :: _ ) -> {x(), t(), e()}.
 
-validate_xte( Z = {X, T, E} )
-when is_binary( X ) ->
+validate_xte( Z = {X, T, E} ) ->
+  validate_x( X ),
   validate_type( T ),
   validate_expr( E ),
   Z;
-
-validate_xte( {Z, _, _} ) ->
-  error( {bad_binary, Z} );
 
 validate_xte( Z ) ->
   error( {bad_xte, Z} ).
@@ -758,12 +777,10 @@ validate_xte_lst( Z )     -> error( {bad_xte_lst, Z} ).
 
 -spec validate_expr( Z :: _ ) -> e().
 
-validate_expr( E = {var, Info, X} ) when is_binary( X ) ->
+validate_expr( E = {var, Info, X} ) ->
   validate_info( Info ),
+  validate_x( X ),
   E;
-
-validate_expr( {var, _, Z} ) ->
-  error( {bad_binary, Z} );
 
 validate_expr( E = {lam, Info, XtLst, {ntv, EBody}} ) ->
   validate_info( Info ),
@@ -771,20 +788,14 @@ validate_expr( E = {lam, Info, XtLst, {ntv, EBody}} ) ->
   validate_expr( EBody ),
   E;
 
-validate_expr( E = {lam, Info, XtLst, {frn, X, T, L, S}} )
-when is_binary( X ),
-     is_binary( S ) ->
+validate_expr( E = {lam, Info, XtLst, {frn, X, T, L, S}} ) ->
   validate_info( Info ),
   validate_xt_lst( XtLst ),
+  validate_x( X ),
   validate_type( T ),
   validate_lang( L ),
+  validate_s( S ),
   E;
-
-validate_expr( {lam, _, _, {frn, Z, _, _, _}} ) when not is_binary( Z ) ->
-  error( {bad_binary, Z} );
-
-validate_expr( {lam, _, _, {frn, _, _, _, Z}} ) when not is_binary( Z ) ->
-  error( {bad_binary, Z} );
 
 validate_expr( {lam, _, _, Z} ) ->
   error( {bad_body, Z} );
@@ -800,24 +811,23 @@ validate_expr( E = {fix, Info, EOp} ) ->
   validate_expr( EOp ),
   E;
 
-validate_expr( E = {fut, Info, EOp} ) ->
+validate_expr( E = {fut, Info, T, Hash} ) when is_binary( Hash ) ->
   validate_info( Info ),
-  validate_expr( EOp ),
+  validate_type( T ),
   E;
 
-validate_expr( E = {str, Info, S} ) when is_binary( S ) ->
+validate_expr( {fut, _, _, Hash} ) ->
+  error( {bad_binary, Hash} );
+
+validate_expr( E = {str, Info, S} ) ->
   validate_info( Info ),
+  validate_s( S ),
   E;
 
-validate_expr( {str, _, Z} ) ->
-  error( {bad_binary, Z} );
-
-validate_expr( E = {file, Info, S} ) when is_binary( S ) ->
+validate_expr( E = {file, Info, S} ) ->
   validate_info( Info ),
+  validate_s( S ),
   E;
-
-validate_expr( {file, _, Z} ) ->
-  error( {bad_binary, Z} );
 
 validate_expr( E = {true, Info} ) ->
   validate_info( Info ),
@@ -910,13 +920,11 @@ validate_expr( E = {rcd, Info, XeLst} ) ->
   validate_xe_lst( XeLst ),
   E;
 
-validate_expr( E = {proj, Info, X, EOp} ) when is_binary( X ) ->
+validate_expr( E = {proj, Info, X, EOp} ) ->
   validate_info( Info ),
+  validate_x( X ),
   validate_expr( EOp ),
   E;
-
-validate_expr( {proj, _, Z, _} ) ->
-  error( {bad_binary, Z} );
 
 validate_expr( E = {err, Info, T, R} ) ->
   validate_info( Info ),
@@ -957,725 +965,37 @@ validate_type( Z ) ->
 
 
 %%====================================================================
-%% Contract Predicates
+%% Info Binding and Unbinding
 %%====================================================================
 
--spec is_assign( Z :: _ ) -> boolean().
-
-is_assign( Z ) ->
-  try validate_assign( Z ) of
-    Z -> true
-  catch
-    error:_ -> false
-  end.
-
-
--spec is_pattern( Z :: _ ) -> boolean().
-
-is_pattern( Z ) ->
-  try validate_pattern( Z ) of
-    Z -> true
-  catch
-    error:_ -> false
-  end.
-
-
--spec is_info( Z :: _ ) -> boolean().
-
-is_info( Z ) ->
-  try validate_info( Z ) of
-    Z -> true
-  catch
-    error:_ -> false
-  end.
-
--spec is_type( Z :: _ ) -> boolean().
-
-is_type( Z ) ->
-  try validate_type( Z ) of
-    Z -> true
-  catch
-    error:_ -> false
-  end.
-
-
--spec is_lang( Z :: _ ) -> boolean().
-
-is_lang( Z ) ->
-  try validate_lang( Z ) of
-    Z -> true
-  catch
-    error:_ -> false
-  end.
-
--spec is_expr( Z :: _ ) -> boolean().
-
-is_expr( Z ) ->
-  try validate_expr( Z ) of
-    Z -> true
-  catch
-    error:_ -> false
-  end.
-
--spec is_reason( Z :: _ ) -> boolean().
-
-is_reason( Z ) ->
-  try validate_reason( Z ) of
-    Z -> true
-  catch
-    error:_ -> false
-  end.
-
-
-%%====================================================================
-%% Renaming and Substitution
-%%====================================================================
-
-
--spec rename_xt( {x(), t()}, x(), x() ) -> {x(), t()}.
-
-rename_xt( {X1, T}, X1, X2 ) -> {X2, T};
-rename_xt( Xt, _, _ )        -> Xt.
-
--spec rename_xt_lst( [{x(), t()}], x(), x() ) -> [{x(), t()}].
-
-rename_xt_lst( [], _, _ ) ->
-  [];
-
-rename_xt_lst( [H|T], X1, X2 ) ->
-  [rename_xt( H, X1, X2 )|rename_xt_lst( T, X1, X2 )].
-
--spec rename_xte( {x(), t(), e()}, x(), x() ) -> {x(), t(), e()}.
-
-rename_xte( {X1, T, E}, X1, X2 ) -> {X2, T, rename( E, X1, X2 )};
-rename_xte( {X, T, E}, X1, X2 )  -> {X, T, rename( E, X1, X2 )}.
-
--spec rename_xte_lst( [{x(), t(), e()}], x(), x() ) -> [{x(), t(), e()}].
-
-rename_xte_lst( [], _, _ )      ->
-  [];
-
-rename_xte_lst( [H|T], X1, X2 ) ->
-  [rename_xte( H, X1, X2 )|rename_xte_lst( T, X1, X2 )].
-
--spec rename( E :: e(), X1 :: x(), X2 :: x() ) -> e().
-
-rename( {var, Info, X1}, X1, X2 ) -> {var, Info, X2};
-rename( E = {var, _, _}, _, _ )   -> E;
-
-rename( {lam, Info, XtLst, {ntv, E}}, X1, X2 ) ->
-  {lam, Info, rename_xt_lst( XtLst, X1, X2 ), {ntv, rename( E, X1, X2 )}};
-
-rename( E = {lam, _, _, {frn, _, _, _, _}}, _, _ ) -> E;
-
-rename( {app, Info, F, XeLst}, X1, X2 ) ->
-  {app, Info, rename( F, X1, X2 ),
-               [{X, rename( E, X1, X2 )} || {X, E} <- XeLst]};
-
-rename( {fix, Info, E}, X1, X2 ) ->
-  {fix, Info, rename( E, X1, X2 )};
-
-rename( E = {fut, _, _}, _, _ )  -> E;
-rename( E = {str, _, _}, _, _ )  -> E;
-rename( E = {file, _, _}, _, _ ) -> E;
-rename( E = {true, _}, _, _ )    -> E;
-rename( E = {false, _}, _, _ )   -> E;
-
-rename( {cmp, Info, E1, E2}, X1, X2 ) ->
-  {cmp, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
-
-rename( {conj, Info, E1, E2}, X1, X2 ) ->
-  {conj, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
-
-rename( {disj, Info, E1, E2}, X1, X2 ) ->
-  {disj, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
-
-rename( {neg, Info, E}, X1, X2 ) ->
-  {neg, Info, rename( E, X1, X2 )};
-
-rename( {isnil, Info, E}, X1, X2 ) ->
-  {isnil, Info, rename( E, X1, X2 )};
-
-rename( {cnd, Info, E1, E2, E3}, X1, X2 ) ->
-  {cnd, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 ), rename( E3, X1, X2 )};
-
-rename( E = {null, _, _}, _, _ ) -> E;
-
-rename( {cons, Info, E1, E2}, X1, X2 ) ->
-  {cons, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
-
-rename( {hd, Info, E1, E2}, X1, X2 ) ->
-  {hd, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
-
-rename( {tl, Info, E1, E2}, X1, X2 ) ->
-  {tl, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
-
-rename( {append, Info, E1, E2}, X1, X2 ) ->
-  {append, Info, rename( E1, X1, X2 ), rename( E2, X1, X2 )};
-
-rename( {for, Info, TRet, XteLst, EBody}, X1, X2 ) ->
-  {for, Info, TRet, rename_xte_lst( XteLst, X1, X2 ), rename( EBody, X1, X2 )};
-
-rename( {fold, Info, Xte1, Xte2, EBody}, X1, X2 ) ->
-  {fold, Info, rename_xte( Xte1, X1, X2 ),
-               rename_xte( Xte2, X1, X2 ),
-               rename( EBody, X1, X2 )};
-
-rename( {rcd, Info, XeLst}, X1, X2 ) ->
-  {rcd, Info, [{X, rename( E, X1, X2 )} || {X, E} <- XeLst]};
-
-rename( {proj, Info, X, E}, X1, X2 ) ->
-  {proj, Info, X, rename( E, X1, X2 )};
-
-rename( E={err, _, _, _}, _, _ ) -> E.
-
-
--spec protect_name( x() ) -> x().
-
-protect_name( Y ) ->
-  [Z|_] = string:split( Y, "$" ),
-  N = integer_to_binary( erlang:unique_integer( [positive] ) ),
-  <<Z/binary, $$, N/binary>>.
-
-
--spec protect_expr( E :: e() ) -> e().
-
-protect_expr( E = {var, _, _} )                    -> E;
-
-protect_expr( {lam, Info, [], {ntv, EBody}} ) ->
-  {lam, Info, [], {ntv, protect_expr( EBody )}};
-
-protect_expr( {lam, Info, [{X1, T}|XtLst], {ntv, EBody}} ) ->
-  {lam, _, XtLst1, {ntv, EBody1}} = protect_expr( {lam, Info, XtLst, {ntv, EBody}} ),
-  X2 = protect_name( X1 ),
-  EBody2 = rename( EBody1, X1, X2 ),
-  {lam, Info, [{X2, T}|XtLst1], {ntv, EBody2}};
-
-protect_expr( E = {lam, _, _, {frn, _, _, _, _}} ) -> E;
-
-protect_expr( {app, Info, EFn, XeLst} ) ->
-  {app, Info, protect_expr( EFn ),
-              [{X, protect_expr( E )} || {X, E} <- XeLst]};
-
-protect_expr( {fix, Info, E} ) ->
-  {fix, Info, protect_expr( E )};
-
-protect_expr( E = {fut, _, _} )                    -> E;
-protect_expr( E = {str, _, _} )                    -> E;
-protect_expr( E = {file, _, _} )                   -> E;
-protect_expr( E = {true, _} )                      -> E;
-protect_expr( E = {false, _} )                     -> E;
-
-protect_expr( {cmp, Info, E1, E2} ) ->
-  {cmp, Info, protect_expr( E1 ), protect_expr( E2 )};
-
-protect_expr( {conj, Info, E1, E2} ) ->
-  {conj, Info, protect_expr( E1 ), protect_expr( E2 )};
-
-protect_expr( {disj, Info, E1, E2} ) ->
-  {disj, Info, protect_expr( E1 ), protect_expr( E2 )};
-
-protect_expr( {neg, Info, E} ) ->
-  {neg, Info, protect_expr( E )};
-
-protect_expr( {isnil, Info, E} ) ->
-  {isnil, Info, protect_expr( E )};
-
-protect_expr( {cnd, Info, E1, E2, E3} ) ->
-  {cnd, Info, protect_expr( E1 ), protect_expr( E2 ), protect_expr( E3 )};
-
-protect_expr( E = {null, _, _} )                   -> E;
-
-protect_expr( {cons, Info, E1, E2} ) ->
-  {cons, Info, protect_expr( E1 ), protect_expr( E2 )};
-
-protect_expr( {hd, Info, E1, E2} ) ->
-  {hd, Info, protect_expr( E1 ), protect_expr( E2 )};
-
-protect_expr( {tl, Info, E1, E2} ) ->
-  {tl, Info, protect_expr( E1 ), protect_expr( E2 )};
-
-protect_expr( {append, Info, E1, E2} ) ->
-  {append, Info, protect_expr( E1 ), protect_expr( E2 )};
-
-protect_expr( {for, Info, TRet, [], EBody} ) ->
-  {for, Info, TRet, [], protect_expr( EBody )};
-
-protect_expr( {for, Info, TRet, [{X1, T, E1}|XteLst], EBody} ) ->
-  {for, _, _, XteLst1, EBody1} = protect_expr( {for, Info, TRet, XteLst, EBody} ),
-  X2 = protect_name( X1 ),
-  E2 = protect_expr( E1 ),
-  EBody2 = rename( EBody1, X1, X2 ),
-  {for, Info, TRet, [{X2, T, E2}|XteLst1], EBody2};
-
-protect_expr( {fold, Info, {X1, T1, E1}, {X2, T2, E2}, EBody} ) ->
-  X3 = protect_name( X1 ),
-  X4 = protect_name( X2 ),
-  {fold, Info, {X3, T1, protect_expr( E1 )},
-                {X4, T2, protect_expr( E2 )},
-                rename( rename( protect_expr( EBody ), X1, X3 ), X2, X4 )};
-
-protect_expr( {rcd, Info, XeLst} ) ->
-  {rcd, Info, [{X, protect_expr( E )} || {X, E} <- XeLst]};
-
-protect_expr( {proj, Info, X, E} ) ->
-  {proj, Info, X, protect_expr( E )};
-
-protect_expr( E = {err, _, _, _} )                 -> E.
-
-
--spec subst_protected( e(), x(), e() ) -> e().
-
-subst_protected( {var, _, X1}, X1, E1 ) ->
-  E1;
-
-subst_protected( E = {var, _, _}, _, _ )    -> E;
-
-subst_protected( {lam, Info, XtLst, {ntv, EBody}}, X1, E1 ) ->
-  {lam, Info, XtLst, {ntv, subst_protected( EBody, X1, E1)}};
-
-subst_protected( E = {lam, _, _, {frn, _, _, _, _}}, _, _ ) ->
-  E;
-
-subst_protected( {app, Info, EFn, XeLst}, X1, E1 ) ->
-  {app, Info, subst_protected( EFn, X1, E1 ),
-              [{X, subst_protected( E, X1, E1 )} || {X, E} <- XeLst]};
-
-subst_protected( {fix, Info, E}, X1, E1 ) ->
-  {fix, Info, subst_protected( E, X1, E1 )};
-
-subst_protected( E = {fut, _, _}, _, _ )    -> E;
-subst_protected( E = {str, _, _}, _, _ )    -> E;
-subst_protected( E = {file, _, _}, _, _ )   -> E;
-subst_protected( E = {true, _}, _, _ )      -> E;
-subst_protected( E = {false, _}, _, _ )     -> E;
-
-subst_protected( {cmp, Info, ELeft, ERight}, X1, E1 ) ->
-  {cmp, Info, subst_protected( ELeft, X1, E1 ),
-              subst_protected( ERight, X1, E1 )};
-
-subst_protected( {conj, Info, ELeft, ERight}, X1, E1 ) ->
-  {conj, Info, subst_protected( ELeft, X1, E1 ),
-               subst_protected( ERight, X1, E1 )};
-
-subst_protected( {disj, Info, ELeft, ERight}, X1, E1 ) ->
-  {disj, Info, subst_protected( ELeft, X1, E1 ),
-               subst_protected( ERight, X1, E1 )};
-
-subst_protected( {neg, Info, E}, X1, E1 ) ->
-  {neg, Info, subst_protected( E, X1, E1 )};
-
-subst_protected( {isnil, Info, E}, X1, E1 ) ->
-  {isnil, Info, subst_protected( E, X1, E1 )};
-
-subst_protected( {cnd, Info, EA, EB, EC}, X1, E1 ) ->
-  {cnd, Info, subst_protected( EA, X1, E1 ),
-              subst_protected( EB, X1, E1 ),
-              subst_protected( EC, X1, E1 )};
-
-subst_protected( E = {null, _, _}, _, _ )   -> E;
-
-subst_protected( {cons, Info, ELeft, ERight}, X1, E1 ) ->
-  {cons, Info, subst_protected( ELeft, X1, E1 ),
-               subst_protected( ERight, X1, E1 )};
-
-subst_protected( {hd, Info, ELeft, ERight}, X1, E1 ) ->
-  {hd, Info, subst_protected( ELeft, X1, E1 ),
-             subst_protected( ERight, X1, E1 )};
-
-subst_protected( {tl, Info, ELeft, ERight}, X1, E1 ) ->
-  {tl, Info, subst_protected( ELeft, X1, E1 ),
-             subst_protected( ERight, X1, E1 )};
-
-subst_protected( {append, Info, ELeft, ERight}, X1, E1 ) ->
-  {append, Info, subst_protected( ELeft, X1, E1 ),
-                 subst_protected( ERight, X1, E1 )};
-
-subst_protected( {for, Info, TRet, XteLst, EBody}, X1, E1 ) ->
-  {for, Info, TRet,
-              [{X, T, subst_protected( E, X1, E1 )} || {X, T, E} <- XteLst],
-              subst_protected( EBody, X1, E1 )};
-
-subst_protected( {fold, Info, {XA, TA, EA}, {XB, TB, EB}, EBody}, X1, E1 ) ->
-  {fold, Info, {XA, TA, subst_protected( EA, X1, E1 )},
-               {XB, TB, subst_protected( EB, X1, E1 )},
-               subst_protected( EBody, X1, E1 )};
-
-subst_protected( {rcd, Info, XeLst}, X1, E1 ) ->
-  {rcd, Info, [{X, subst_protected( E, X1, E1 )} || {X, E} <- XeLst]};
-
-subst_protected( {proj, Info, X, E}, X1, E1 ) ->
-  {proj, Info, X, subst_protected( E, X1, E1 )};
-
-subst_protected( E = {err, _, _, _}, _, _ ) -> E.
-
-
--spec subst( e(), x(), e() ) -> e().
-
-subst( E, X1, E1 ) when is_binary( X1 ) ->
-  E2 = protect_expr( E ),
-  subst_protected( E2, X1, E1 ).
-
-
-%%====================================================================
-%% Expression Analysis
-%%====================================================================
-
--spec expr_vars( e() ) -> [x()].
-
-expr_vars( {var, _, X} )                    -> [X];
-expr_vars( {lam, _, _, {ntv, E}} )          -> expr_vars( E );
-expr_vars( {lam, _, _, {frn, _, _, _, _}} ) -> [];
-
-expr_vars( {app, _, EFn, XeLst} ) ->
-  lists:usort(   expr_vars( EFn )
-               ++lists:flatmap( fun( {_, E} ) -> expr_vars( E ) end, XeLst ) );
-
-expr_vars( {fix, _, E} )                    -> expr_vars( E );
-expr_vars( {fut, _, _} )                    -> [];
-expr_vars( {str, _, _} )                    -> [];
-expr_vars( {file, _, _} )                   -> [];
-expr_vars( {true, _} )                      -> [];
-expr_vars( {false, _} )                     -> [];
-
-expr_vars( {cmp, _, E1, E2} ) ->
-  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
-
-expr_vars( {conj, _, E1, E2} ) ->
-  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
-
-expr_vars( {disj, _, E1, E2} ) ->
-  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
-
-expr_vars( {neg, _, E} )                    -> expr_vars( E );
-expr_vars( {isnil, _, E} )                  -> expr_vars( E );
-
-expr_vars( {cnd, _, E1, E2, E3} ) ->
-  lists:usort( expr_vars( E1 )++expr_vars( E2 )++expr_vars( E3 ) );
-
-expr_vars( {null, _, _} )                   -> [];
-
-expr_vars( {cons, _, E1, E2} ) ->
-  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
-
-expr_vars( {hd, _, E1, E2} ) ->
-  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
-
-expr_vars( {tl, _, E1, E2} ) ->
-  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
-
-expr_vars( {append, _, E1, E2} ) ->
-  lists:usort( expr_vars( E1 )++expr_vars( E2 ) );
-
-expr_vars( {for, _, _, XteLst, EBody} ) ->
-  lists:usort(   expr_vars( EBody )
-               ++lists:flatmap( fun( {_, _, E} ) -> expr_vars( E ) end,
-                                XteLst ) );
-
-expr_vars( {fold, _, {_, _, EAcc}, {_, _, ELst}, EBody} ) ->
-  lists:usort( expr_vars( EAcc )++expr_vars( ELst)++expr_vars( EBody ) );
-
-expr_vars( {rcd, _, XeLst} ) ->
-  lists:usort( lists:flatmap( fun( {_, E} ) -> expr_vars( E ) end, XeLst ) );
-
-expr_vars( {proj, _, _, E} )                -> expr_vars( E );
-expr_vars( {err, _, _, _} )                 -> [].
-
-
--spec expr_free_vars( e() ) -> [x()].
-
-expr_free_vars( {var, _, X} ) ->
-  [X];
-
-expr_free_vars( {lam, _, XtLst, {ntv, EBody}} ) ->
-  expr_free_vars( EBody )--[X || {X, _} <- XtLst];
-
-expr_free_vars( {lam, _, _, {frn, _, _, _, _}} ) ->
-  [];
-
-expr_free_vars( {app, _, EFn, XeLst} ) ->
-  lists:usort(   expr_free_vars( EFn )
-               ++lists:flatmap( fun( {_, E} ) -> expr_free_vars( E ) end, XeLst ) );
-
-expr_free_vars( {fix, _, E} ) ->
-  expr_free_vars( E );
-
-expr_free_vars( {fut, _, _} )  -> [];
-expr_free_vars( {str, _, _} )  -> [];
-expr_free_vars( {file, _, _} ) -> [];
-expr_free_vars( {true, _} )    -> [];
-expr_free_vars( {false, _} )   -> [];
-
-expr_free_vars( {cmp, _, E1, E2} ) ->
-  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
-
-expr_free_vars( {conj, _, E1, E2} ) ->
-  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
-
-expr_free_vars( {disj, _, E1, E2} ) ->
-  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
-
-expr_free_vars( {neg, _, E} ) ->
-  expr_free_vars( E );
-
-expr_free_vars( {isnil, _, E} ) ->
-  expr_free_vars( E );
-
-expr_free_vars( {cnd, _, E1, E2, E3} ) ->
-  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 )++expr_free_vars( E3 ) );
-
-expr_free_vars( {null, _, _} ) -> [];
-
-expr_free_vars( {cons, _, E1, E2} ) ->
-  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
-
-expr_free_vars( {hd, _, E1, E2} ) ->
-  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
-
-expr_free_vars( {tl, _, E1, E2} ) ->
-  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
-
-expr_free_vars( {append, _, E1, E2} ) ->
-  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 ) );
-
-expr_free_vars( {for, _, _, XteLst, EBody} ) ->
-  lists:usort(   lists:flatmap( fun( {_, _, E} ) -> expr_free_vars( E ) end, XteLst )
-               ++( expr_free_vars( EBody )--[X || {X, _, _} <- XteLst] ) );
-
-expr_free_vars( {fold, _, {X1, _, E1}, {X2, _, E2}, EBody} ) ->
-  lists:usort( expr_free_vars( E1 )++expr_free_vars( E2 )++( expr_free_vars( EBody )--[X1, X2] ) );
-
-expr_free_vars( {rcd, _, XeLst} ) ->
-  lists:usort( lists:flatmap( fun( {_, E} ) -> expr_free_vars( E ) end, XeLst ) );
-
-expr_free_vars( {proj, _, _, E} ) ->
-  expr_free_vars( E );
-
-expr_free_vars( {err, _, _, _} ) -> [].
-
-
--spec expr_size( E :: e() ) -> non_neg_integer().
-
-expr_size( {var, _, _} )                    -> 0;
-expr_size( {lam, _, _, {ntv, EBody}} )      -> 1+expr_size( EBody );
-expr_size( {lam, _, _, {frn, _, _, _, _}} ) -> 1;
-
-expr_size( {app, _, EFn, XeLst} ) ->
-  1+expr_size( EFn )+lists:sum( [expr_size( E ) || {_, E} <- XeLst] );
-
-expr_size( {fix, _, E} )                    -> 1+expr_size( E );
-expr_size( {fut, _, _} )                    -> 1;
-expr_size( {str, _, _} )                    -> 1;
-expr_size( {file, _, _} )                   -> 1;
-expr_size( {true, _} )                      -> 1;
-expr_size( {false, _} )                     -> 1;
-
-expr_size( {cmp, _, E1, E2} ) ->
-  1+expr_size( E1 )+expr_size( E2 );
-
-expr_size( {conj, _, E1, E2} ) ->
-  1+expr_size( E1 )+expr_size( E2 );
-
-expr_size( {disj, _, E1, E2} ) ->
-  1+expr_size( E1 )+expr_size( E2 );
-
-expr_size( {neg, _, E} )                    -> 1+expr_size( E );
-expr_size( {isnil, _, E} )                  -> 1+expr_size( E );
-
-expr_size( {cnd, _, E1, E2, E3} ) ->
-  1+expr_size( E1 )+expr_size( E2 )+expr_size( E3 );
-
-expr_size( {null, _, _} )                   -> 1;
-
-expr_size( {cons, _, E1, E2} ) ->
-  1+expr_size( E1 )+expr_size( E2 );
-
-expr_size( {hd, _, E1, E2} ) ->
-  1+expr_size( E1 )+expr_size( E2 );
-
-expr_size( {tl, _, E1, E2} ) ->
-  1+expr_size( E1 )+expr_size( E2 );
-
-expr_size( {append, _, E1, E2} ) ->
-  1+expr_size( E1 )+expr_size( E2 );
-
-expr_size( {for, _, _, XteLst, EBody} ) ->
-  1+expr_size( EBody )+lists:sum( [expr_size( E ) || {_, _, E} <- XteLst] );
-
-expr_size( {fold, _, {_, _, EAcc}, {_, _, ELst}, EBody} ) ->
-  1+expr_size( EAcc )+expr_size( ELst )+expr_size( EBody );
-
-expr_size( {rcd, _, XeLst} ) ->
-  1+lists:sum( [expr_size( E ) || {_, E} <- XeLst] );
-
-expr_size( {proj, _, _, E} )                -> 1+expr_size( E );
-expr_size( {err, _, _, _} )                 -> 1.
-
-
--spec is_alpha_equivalent( e(), e() ) -> boolean().
-
-is_alpha_equivalent( E1, E2 ) ->
-  is_alpha_equivalent_protected( protect_expr( E1 ), protect_expr( E2 ), [] ).
-
-
--spec is_alpha_equivalent_protected( e(), e(), [x()] ) -> boolean().
-
-is_alpha_equivalent_protected( {var, _, X1}, {var, _, X2}, BoundLst ) ->
-  Bound1 = lists:member( X1, BoundLst ),
-  Bound2 = lists:member( X2, BoundLst ),
-  if
-    Bound1 andalso Bound2      -> X1 =:= X2;
-    not (Bound1 orelse Bound2) -> true;
-    true                       -> false
-  end;
-
-is_alpha_equivalent_protected( {lam, _, [], {ntv, EBody1}},
-                               {lam, _, [], {ntv, EBody2}},
-                               BoundLst ) ->
-  is_alpha_equivalent_protected( EBody1, EBody2, BoundLst );
-
-is_alpha_equivalent_protected( {lam, I1, [{X1, _}|XtLst1], {ntv, EBody1}},
-                               {lam, I2, [{X2, _}|XtLst2], {ntv, EBody2}},
-                               BoundLst ) ->
-  is_alpha_equivalent_protected( lam( I1, XtLst1, {ntv, EBody1} ),
-                                 lam( I2, XtLst2, {ntv, rename( EBody2, X2, X1 )} ),
-                                 [X1|BoundLst] );
-
-is_alpha_equivalent_protected( {lam, _, XtLst1, {frn, Name, _, L, S}},
-                               {lam, _, XtLst2, {frn, Name, _, L, S}},
-                               _BoundLst ) ->
-  xt_names( XtLst1 ) =:= xt_names( XtLst2 );
-
-is_alpha_equivalent_protected( {app, _, EFn1, []},
-                     {app, _, EFn2, []},
-                     BoundLst ) ->
-  is_alpha_equivalent_protected( EFn1, EFn2, BoundLst );
-
-is_alpha_equivalent_protected( {app, Info1, EFn1, [{_, E1}|XeLst1]},
-                     {app, Info2, EFn2, [{_, E2}|XeLst2]},
-                     BoundLst ) ->
-  case is_alpha_equivalent_protected( E1, E2, BoundLst ) of
-    true  -> is_alpha_equivalent_protected( app( Info1, EFn1, XeLst1 ),
-                                  app( Info2, EFn2, XeLst2 ),
-                                  BoundLst );
-    false -> false
-  end;
-
-is_alpha_equivalent_protected( {fix, _, E1}, {fix, _, E2}, BoundLst ) ->
-  is_alpha_equivalent_protected( E1, E2, BoundLst );
-
-is_alpha_equivalent_protected( {fut, _, E1}, {fut, _, E2}, _BoundLst ) ->
-  is_alpha_equivalent_protected( E1, E2, [] );
-
-is_alpha_equivalent_protected( {str, _, S}, {str, _, S}, _ )   -> true;
-is_alpha_equivalent_protected( {file, _, S}, {file, _, S}, _ ) -> true;
-is_alpha_equivalent_protected( {true, _}, {true, _}, _ )       -> true;
-is_alpha_equivalent_protected( {false, _}, {false, _}, _ )     -> true;
-
-is_alpha_equivalent_protected( {cmp, _, E11, E12}, {cmp, _, E21, E22}, BoundLst ) ->
-          is_alpha_equivalent_protected( E11, E21, BoundLst )
-  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
-
-is_alpha_equivalent_protected( {conj, _, E11, E12}, {conj, _, E21, E22}, BoundLst ) ->
-          is_alpha_equivalent_protected( E11, E21, BoundLst )
-  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
-
-is_alpha_equivalent_protected( {disj, _, E11, E12}, {disj, _, E21, E22}, BoundLst ) ->
-          is_alpha_equivalent_protected( E11, E21, BoundLst )
-  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
-
-is_alpha_equivalent_protected( {neg, _, E1}, {neg, _, E2}, BoundLst ) ->
-  is_alpha_equivalent_protected( E1, E2, BoundLst );
-
-is_alpha_equivalent_protected( {isnil, _, E1}, {isnil, _, E2}, BoundLst ) ->
-  is_alpha_equivalent_protected( E1, E2, BoundLst );
-
-is_alpha_equivalent_protected( {cnd, _, E11, E12, E13},
-                     {cnd, _, E21, E22, E23},
-                     BoundLst ) ->
-          is_alpha_equivalent_protected( E11, E21, BoundLst )
-  andalso is_alpha_equivalent_protected( E12, E22, BoundLst )
-  andalso is_alpha_equivalent_protected( E13, E23, BoundLst );
-
-is_alpha_equivalent_protected( {null, _, _}, {null, _, _}, _ ) -> true;
-
-is_alpha_equivalent_protected( {cons, _, E11, E12}, {cons, _, E21, E22}, BoundLst ) ->
-          is_alpha_equivalent_protected( E11, E21, BoundLst )
-  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
-
-is_alpha_equivalent_protected( {hd, _, E11, E12}, {hd, _, E21, E22}, BoundLst ) ->
-          is_alpha_equivalent_protected( E11, E21, BoundLst )
-  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
-
-is_alpha_equivalent_protected( {tl, _, E11, E12}, {tl, _, E21, E22}, BoundLst ) ->
-          is_alpha_equivalent_protected( E11, E21, BoundLst )
-  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
-
-is_alpha_equivalent_protected( {append, _, E11, E12}, {append, _, E21, E22}, BoundLst ) ->
-          is_alpha_equivalent_protected( E11, E21, BoundLst )
-  andalso is_alpha_equivalent_protected( E12, E22, BoundLst );
-
-is_alpha_equivalent_protected( {for, _, _, [], EBody1},
-                               {for, _, _, [], EBody2},
-                               BoundLst ) ->
-  is_alpha_equivalent_protected( EBody1, EBody2, BoundLst );
-
-is_alpha_equivalent_protected( {for, I1, T1, [{X1, _, E1}|XteLst1], EBody1},
-                               {for, I2, T2, [{X2, _, E2}|XteLst2], EBody2},
-                               BoundLst ) ->
-  case is_alpha_equivalent_protected( E1, E2, BoundLst ) of
-    true ->
-      is_alpha_equivalent_protected(
-        for( I1, T1, XteLst1, EBody1 ),
-        for( I2, T2, XteLst2, rename( EBody2, X2, X1 ) ),
-        [X1|BoundLst] );
-    false ->
-      false
-  end;
-
-is_alpha_equivalent_protected( {fold, _, {X11, _, E11}, {X12, _, E12}, EBody1},
-                     {fold, _, {X21, _, E21}, {X22, _, E22}, EBody2},
-                     BoundLst ) ->
-  C1 = is_alpha_equivalent_protected( E11, E21, BoundLst ),
-  C2 = is_alpha_equivalent_protected( E12, E22, BoundLst ),
-  EBody3 = rename( rename( EBody2, X21, X11 ), X22, X12 ),
-  if
-    C1 and C2 -> is_alpha_equivalent_protected( EBody1, EBody3, [X11, X12|BoundLst] );
-    true      -> false
-  end;
-
-is_alpha_equivalent_protected( {rcd, _, []}, {rcd, _, []}, _ ) -> true;
-
-is_alpha_equivalent_protected( {rcd, I1, [{X, E1}|Tl1]},
-                     {rcd, I2, [{X, E2}|Tl2]},
-                     BoundLst ) ->
-  case is_alpha_equivalent_protected( E1, E2, BoundLst ) of
-    true  -> is_alpha_equivalent_protected( rcd( I1, Tl1 ),
-                                  rcd( I2, Tl2 ),
-                                  BoundLst );
-    false -> false
-  end;
-
-is_alpha_equivalent_protected( {proj, _, X, E1}, {proj, _, X, E2}, BoundLst ) ->
-  is_alpha_equivalent_protected( E1, E2, BoundLst );
-
-is_alpha_equivalent_protected( {err, _, _, R}, {err, _, _, R}, _BoundLst ) ->
-  true;
-
-is_alpha_equivalent_protected( _, _, _ ) ->
-  false.
-
-
--spec is_value( E :: e() ) -> boolean().
-
-is_value( {lam, _, _, _} )    -> true;
-is_value( {str, _, _} )       -> true;
-is_value( {file, _, _} )      -> true;
-is_value( {true, _} )         -> true;
-is_value( {false, _} )        -> true;
-is_value( {null, _, _} )      -> true;
-is_value( {cons, _, E1, E2} ) -> is_value( E1 ) andalso is_value( E2 );
-is_value( {rcd, _, XeLst} )   -> lists:all( fun( {_, E} ) -> is_value( E ) end, XeLst );
-is_value( _ )                 -> false.
-
-
+% @doc Drops source location of an expression.
+% @param E expression
+% @return expression with the same meaning but altered source location
+-spec drop_info( E :: e() ) -> e().
+
+drop_info( {lam, _, XtLst, Body = {frn, _, _, _, _}} ) -> {lam, na, XtLst, Body};
+drop_info( {app, _, EFn, XeLst} )                      -> {app, na, EFn, XeLst};
+drop_info( {str, _, S} )                               -> {str, na, S};
+drop_info( {file, _, S} )                              -> {file, na, S};
+drop_info( {true, _} )                                 -> {true, na};
+drop_info( {false, _} )                                -> {false, na};
+drop_info( {null, _, T} )                              -> {null, na, T};
+drop_info( {cons, _, E1, E2} )                         -> {cons, na, drop_info( E1 ), drop_info( E2 )};
+drop_info( Z )                                         -> error( {drop_info_undef, Z} ).
+
+
+% @doc Imposes a source location on an expression.
+% @param Info source location
+% @param E expression
+% @return expression with the same meaning but altered source location
+-spec impose_info( Info :: info(), E :: e() ) -> e().
+
+impose_info( Info, {str, _, S} )       -> {str, Info, S};
+impose_info( Info, {file, _, S} )      -> {file, Info, S};
+impose_info( Info, {true, _} )         -> {true, Info};
+impose_info( Info, {false, _} )        -> {false, Info};
+impose_info( Info, {null, _, T} )      -> {null, Info, T};
+impose_info( Info, {cons, _, E1, E2} ) -> {cons, Info, impose_info( Info, E1 ), impose_info( Info, E2 )};
+impose_info( Info, {rcd, _, XeLst} )   -> {rcd, Info, [{X, impose_info( Info, E )}|| {X, E} <- XeLst]};
+impose_info( Info, {err, _, T, R} )    -> {err, Info, T, R};
+impose_info( _, Z )                    -> error( {impose_info_undef, Z} ).

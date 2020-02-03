@@ -45,13 +45,14 @@
 %% Includes
 %%====================================================================
 
--include_lib( "cf_client/include/cuneiform.hrl" ).
+-include( "cuneiform_lang.hrl" ).
+-include( "cuneiform_shell.hrl" ).
 
 %%====================================================================
 %% Imports
 %%====================================================================
 
--import( cuneiform_lang, [create_closure/2] ).
+-import( cuneiform_lang, [expand_closure/2] ).
 
 %%====================================================================
 %% Constant definitions
@@ -82,13 +83,7 @@
                        reply_lst  = []} ).
 
 
-%%====================================================================
-%% Type definitions
-%%====================================================================
 
--type reply() :: {query, e()}
-               | {error, stage(), _}
-               | {parrot, e(), t()}.
 
 
 
@@ -288,8 +283,7 @@ shell_step( ShellState = #shell_state{ string_buf = "",
                 query_lst = [Q1|QLst],
                 reply_lst = ReplyLst } = ShellState,
 
-  % TODO: catch error
-  {ok, C} = create_closure( DefLst, Q1 ),
+  C = expand_closure( DefLst, Q1 ),
 
   ShellState1 = 
     case cuneiform_type:type( C ) of
@@ -329,8 +323,7 @@ shell_step( ShellState = #shell_state{ string_buf = "",
 
   {assign, _, _, E} = D1,
 
-  % TODO: catch error
-  {ok, C} = create_closure( DefLst++[D1], E ),
+  C = expand_closure( DefLst++[D1], E ),
 
   ShellState1 = 
     case cuneiform_type:type( C ) of

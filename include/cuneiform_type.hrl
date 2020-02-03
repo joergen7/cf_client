@@ -32,87 +32,11 @@
 %% Type definitions
 %%====================================================================
 
--type e()           :: {var, info(), x()}
-                     | {lam, info(), [{x(), t()}], {ntv, e()}}                % binding form
-                     | {lam, info(), [{x(), t()}], {frn, x(), t(), l(), s()}}
-                     | {app, info(), e(), [{x(), e()}]}                       % binding form
-                     | {fix, info(), e()}
-                     | {fut, info(), e()}
-                     | {str, info(), s()}
-                     | {file, info(), s()}
-                     | {true, info()}
-                     | {false, info()}
-                     | {cmp, info(), e(), e()}
-                     | {conj, info(), e(), e()}
-                     | {disj, info(), e(), e()}
-                     | {neg, info(), e()}
-                     | {isnil, info(), e()}
-                     | {cnd, info(), e(), e(), e()}
-                     | {null, info(), t()}
-                     | {cons, info(), e(), e()}
-                     | {hd, info(), e(), e()}
-                     | {tl, info(), e(), e()}
-                     | {append, info(), e(), e()}
-                     | {for, info(), t(), [{x(), t(), e()}], e()}             % binding form
-                     | {fold, info(), {x(), t(), e()}, {x(), t(), e()}, e()}  % binding form
-                     | {rcd, info(), [{x(), e()}]}
-                     | {proj, info(), x(), e()}
-                     | {err, info(), t(), reason()}.
-
--type info()        :: na
-                     | pos_integer()
-                     | {binary(), pos_integer()}.
-
--type reason()      :: {run, Node :: binary(), AppId :: binary(),
-                             LamName :: x(), ExtendedScript :: binary(),
-                             Output :: binary()}
-                     | {stagein, Node :: binary(), AppId :: binary(),
-                                 LamName :: x(), FileLst :: [binary()]}
-                     | {stageout, Node :: binary(), AppId :: binary(),
-                                  LamName :: x(), FileLst :: [binary()]}
-                     | {user, Msg :: binary()}.
-
--type x()           :: binary().
-
--type s()           :: binary().
-
--type t()           :: 'Str'
-                     | 'File'
-                     | 'Bool'
-                     | {'Fn', [{x(), t()}], t()}
-                     | {'Lst', t()}
-                     | {'Rcd', [{x(), t()}]}.
-
--type l()           :: 'Awk'
-                     | 'Bash'
-                     | 'Elixir'
-                     | 'Erlang'
-                     | 'Gnuplot'
-                     | 'Java'
-                     | 'Javascript'
-                     | 'Matlab'
-                     | 'Octave'
-                     | 'Perl'
-                     | 'Python'
-                     | 'R'
-                     | 'Racket'.
-
--type r()           :: {r_var, x(), t()}
-                     | {r_rcd, [{x(), r()}]}.
-
--type assign()      :: {assign, info(), r(), e()}.
-
--type stage() :: load
-               | scan
-               | parse
-               | type
-               | runtime.
-
--type type_error()  :: {unbound_var,                               info(), x()}
+-type type_error()  :: {unbound_var,                               info(),x()}
                      | {ambiguous_name,                            info(), [x()]}
                      | {frn_fn_ambiguous_arg_or_return_field_name, info(), [x()]}
-                     | {frn_fn_returns_no_rcd,                     info(), t()}
-                     | {awk_frn_fn_first_arg_no_file,              info(), {x(), t()}}
+                     | {frn_fn_returns_no_rcd,                     info(),t()}
+                     | {awk_frn_fn_first_arg_no_file,              info(), {x(),t()}}
                      | {awk_frn_fn_no_arg,                         info()}
                      | {awk_frn_fn_result_field_no_file,           info(), t()}
                      | {awk_frn_fn_no_result_field,                info()}
@@ -155,14 +79,3 @@
                      | {rcd_ambiguous_field_name,                  info(), [x()]}
                      | {proj_field_missing,                        info(), x()}
                      | {proj_no_record,                            info(), {e(), t()}}.
-
--type v() :: {lam, info(), [{x(), t()}], {ntv, e()}}
-           | {lam, info(), [{x(), t()}], {frn, x(), t(), l(), s()}}
-           | {str, info(), s()}
-           | {file, info(), s()}
-           | {true, info()}
-           | {false, info()}
-           | {null, info(), t()}
-           | {cons, info(), v(), v()}
-           | {rcd, info(), [{x(), v()}]}.
-

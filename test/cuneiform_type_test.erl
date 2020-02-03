@@ -40,7 +40,7 @@
                           t_fn/2, neg/1, cnd/3, conj/2, disj/2,
                           t_rcd/1, l_bash/0, rcd/1, app/2,
                           proj/2, fix/1, lst/2, t_lst/1, append/2, isnil/1,
-                          for/3, fold/3, err/2, null/1, fut/1] ).
+                          for/3, fold/3, err/2, null/1, fut/2] ).
 
 type_test_() ->
   {foreach,
@@ -360,36 +360,36 @@ native_lambda_typable() ->
   ?assertEqual( {ok, t_fn( [], t_file() )}, type( E2 ) ).
 
 native_lambda_with_invalid_body_expression_untypable() ->
-  E1 = lam( [], {ntv, var( <<"x">> )} ),
-  E2 = lam( [{<<"x">>, t_str()}], {ntv, var( <<"y">> )} ),
-  ?assertEqual( {error, {unbound_var, na, <<"x">>}}, type( E1 ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E2 ) ).
+  E1 = lam( [], {ntv, var( x )} ),
+  E2 = lam( [{x, t_str()}], {ntv, var( y )} ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E1 ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E2 ) ).
 
 native_lambda_with_ambiguous_argument_name_untypable() ->
-  E = lam( [{<<"x">>, t_str()},
-            {<<"x">>, t_file()}],
-           {ntv, var( <<"x">> )} ),
-  ?assertEqual( {error, {ambiguous_name, na, [<<"x">>]}}, type( E ) ).
+  E = lam( [{x, t_str()},
+            {x, t_file()}],
+           {ntv, var( x )} ),
+  ?assertEqual( {error, {ambiguous_name, na, [x]}}, type( E ) ).
 
 native_lambda_body_expression_can_access_closure() ->
-  E = lam( [{<<"x">>, t_str()}], {ntv, lam( [], {ntv, var( <<"x">> )} )} ),
-  T = t_fn( [{<<"x">>, t_str()}], t_fn( [], t_str() ) ),
+  E = lam( [{x, t_str()}], {ntv, lam( [], {ntv, var( x )} )} ),
+  T = t_fn( [{x, t_str()}], t_fn( [], t_str() ) ),
   ?assertEqual( {ok, T}, type( E ) ).
 
 bound_variable_typable() ->
-  E = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
-  ?assertEqual( {ok, t_fn( [{<<"x">>, t_str()}], t_str() )}, type( E ) ).
+  E = lam( [{x, t_str()}], {ntv, var( x )} ),
+  ?assertEqual( {ok, t_fn( [{x, t_str()}], t_str() )}, type( E ) ).
 
 unbound_variable_untypable() ->
-  ?assertEqual( {error, {unbound_var, na, <<"x">>}}, type( var( <<"x">> ) ) ).
+  ?assertEqual( {error, {unbound_var, na, x}}, type( var( x ) ) ).
 
 comparison_with_invalid_lhs_untypable() ->
-  E = cmp( var( <<"x">> ), str( <<"blub">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"x">>}}, type( E ) ).
+  E = cmp( var( x ), str( <<"blub">> ) ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E ) ).
 
 comparison_with_invalid_rhs_untypable() ->
-  E = cmp( str( <<"bla">> ), var( <<"y">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E ) ).
+  E = cmp( str( <<"bla">> ), var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 comparison_with_file_operands_untypable() ->
   E = cmp( file( <<"bla.txt">> ), file( <<"blub">> ) ),
@@ -402,14 +402,14 @@ comparison_with_nonmatching_operands_untypable() ->
                         type( E ) ).
 
 comparison_with_lhs_variable_typable() ->
-  E = lam( [{<<"x">>, t_str()}],
-           {ntv, cmp( var( <<"x">> ), str( <<"blub">> ) )} ),
-  ?assertEqual( {ok, t_fn( [{<<"x">>, t_str()}], t_bool() )}, type( E ) ).
+  E = lam( [{x, t_str()}],
+           {ntv, cmp( var( x ), str( <<"blub">> ) )} ),
+  ?assertEqual( {ok, t_fn( [{x, t_str()}], t_bool() )}, type( E ) ).
 
 comparison_with_rhs_variable_typable() ->
-  E = lam( [{<<"x">>, t_str()}],
-           {ntv, cmp( str( <<"bla">> ), var( <<"x">> ) )} ),
-  ?assertEqual( {ok, t_fn( [{<<"x">>, t_str()}], t_bool() )}, type( E ) ).
+  E = lam( [{x, t_str()}],
+           {ntv, cmp( str( <<"bla">> ), var( x ) )} ),
+  ?assertEqual( {ok, t_fn( [{x, t_str()}], t_bool() )}, type( E ) ).
 
 negation_typable() ->
   ?assertEqual( {ok, t_bool()}, type( neg( true() ) ) ).
@@ -420,12 +420,12 @@ negation_of_nonbool_untypable() ->
                 type( E ) ).
 
 negation_with_invalid_expression_untypable() ->
-  E = neg( var( <<"x">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"x">>}}, type( E ) ).
+  E = neg( var( x ) ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E ) ).
 
 negation_with_variable_typable() ->
-  E = lam( [{<<"x">>, t_bool()}], {ntv, neg( var( <<"x">> ) )} ),
-  T = t_fn( [{<<"x">>, t_bool()}], t_bool() ),
+  E = lam( [{x, t_bool()}], {ntv, neg( var( x ) )} ),
+  T = t_fn( [{x, t_bool()}], t_bool() ),
   ?assertEqual( {ok, T}, type( E ) ).
 
 condition_typable() ->
@@ -435,8 +435,8 @@ condition_typable() ->
   ?assertEqual( {ok, t_file()}, type( E2 ) ).
 
 condition_with_invalid_predicate_untypable() ->
-  E = cnd( var( <<"x">> ), str( <<"bla">> ), str( <<"blub">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"x">>}}, type( E ) ).
+  E = cnd( var( x ), str( <<"bla">> ), str( <<"blub">> ) ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E ) ).
 
 condition_with_nonbool_predicate_untypable() ->
   E = cnd( str( <<"true">> ), str( <<"bla">> ), str( <<"blub">> ) ),
@@ -444,12 +444,12 @@ condition_with_nonbool_predicate_untypable() ->
                 type( E ) ).
 
 condition_with_invalid_then_expression_untypable() ->
-  E = cnd( true(), var( <<"x">> ), str( <<"blub">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"x">>}}, type( E ) ).
+  E = cnd( true(), var( x ), str( <<"blub">> ) ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E ) ).
 
 condition_with_invalid_else_expression_untypable() ->
-  E = cnd( true(), str( <<"bla">> ), var( <<"y">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E ) ).
+  E = cnd( true(), str( <<"bla">> ), var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 condition_with_nonmatching_then_and_else_expression_untypable() ->
   E = cnd( true(), str( <<"bla">> ), file( <<"blub.txt">> ) ),
@@ -457,30 +457,30 @@ condition_with_nonmatching_then_and_else_expression_untypable() ->
                 type( E ) ).
 
 condition_with_variable_predicate_typable() ->
-  E = lam( [{<<"x">>, t_bool()}],
-           {ntv, cnd( var( <<"x">> ), str( <<"bla">> ), str( <<"blub">> ) )} ),
-  ?assertEqual( {ok, t_fn( [{<<"x">>, t_bool()}], t_str() )}, type( E ) ).
+  E = lam( [{x, t_bool()}],
+           {ntv, cnd( var( x ), str( <<"bla">> ), str( <<"blub">> ) )} ),
+  ?assertEqual( {ok, t_fn( [{x, t_bool()}], t_str() )}, type( E ) ).
 
 condition_with_variable_then_expression_typable() ->
-  E = lam( [{<<"y">>, t_str()}],
-           {ntv, cnd( true(),var( <<"y">> ), str( <<"blub">> ) )} ),
-  ?assertEqual( {ok, t_fn( [{<<"y">>, t_str()}], t_str() )}, type( E ) ).
+  E = lam( [{y, t_str()}],
+           {ntv, cnd( true(),var( y ), str( <<"blub">> ) )} ),
+  ?assertEqual( {ok, t_fn( [{y, t_str()}], t_str() )}, type( E ) ).
 
 condition_with_variable_else_expression_typable() ->
-  E = lam( [{<<"z">>, t_str()}],
-           {ntv, cnd( true(), str( <<"bla">> ), var( <<"z">> ) )} ),
-  ?assertEqual( {ok, t_fn( [{<<"z">>, t_str()}], t_str() )}, type( E ) ).
+  E = lam( [{z, t_str()}],
+           {ntv, cnd( true(), str( <<"bla">> ), var( z ) )} ),
+  ?assertEqual( {ok, t_fn( [{z, t_str()}], t_str() )}, type( E ) ).
 
 conjunction_typable() ->
   ?assertEqual( {ok, t_bool()}, type( conj( true(), false() ) ) ).
 
 conjunction_with_invalid_lhs_untypable() ->
-  E = conj( var( <<"x">> ), true() ),
-  ?assertEqual( {error, {unbound_var, na, <<"x">>}}, type( E ) ).
+  E = conj( var( x ), true() ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E ) ).
 
 conjunction_with_invalid_rhs_untypable() ->
-  E = conj( true(), var( <<"y">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E ) ).
+  E = conj( true(), var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 conjunction_with_nonboolean_lhs_untypable() ->
   E = conj( str( <<"bla">> ), true() ),
@@ -493,25 +493,25 @@ conjunction_with_nonboolean_rhs_untypable() ->
                 type( E ) ).
 
 conjunction_with_variable_lhs_typable() ->
-  E = lam( [{<<"x">>, t_bool()}], {ntv, conj( var( <<"x">> ), true() )} ),
-  T = t_fn( [{<<"x">>, t_bool()}], t_bool() ),
+  E = lam( [{x, t_bool()}], {ntv, conj( var( x ), true() )} ),
+  T = t_fn( [{x, t_bool()}], t_bool() ),
   ?assertEqual( {ok, T}, type( E ) ).
 
 conjunction_with_variable_rhs_typable() ->
-  E = lam( [{<<"y">>, t_bool()}], {ntv, conj( true(), var( <<"y">> ) )} ),
-  T = t_fn( [{<<"y">>, t_bool()}], t_bool() ),
+  E = lam( [{y, t_bool()}], {ntv, conj( true(), var( y ) )} ),
+  T = t_fn( [{y, t_bool()}], t_bool() ),
   ?assertEqual( {ok, T}, type( E ) ).
 
 disjunction_typable() ->
   ?assertEqual( {ok, t_bool()}, type( disj( true(), false() ) ) ).
 
 disjunction_with_invalid_lhs_untypable() ->
-  E = disj( var( <<"x">> ), true() ),
-  ?assertEqual( {error, {unbound_var, na, <<"x">>}}, type( E ) ).
+  E = disj( var( x ), true() ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E ) ).
 
 disjunction_with_invalid_rhs_untypable() ->
-  E = disj( true(), var( <<"y">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E ) ).
+  E = disj( true(), var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 disjunction_with_nonboolean_lhs_untypable() ->
   E = disj( str( <<"bla">> ), true() ),
@@ -524,158 +524,158 @@ disjunction_with_nonboolean_rhs_untypable() ->
                 type( E ) ).
 
 disjunction_with_variable_lhs_typable() ->
-  E = lam( [{<<"x">>, t_bool()}], {ntv, disj( var( <<"x">> ), true() )} ),
-  T = t_fn( [{<<"x">>, t_bool()}], t_bool() ),
+  E = lam( [{x, t_bool()}], {ntv, disj( var( x ), true() )} ),
+  T = t_fn( [{x, t_bool()}], t_bool() ),
   ?assertEqual( {ok, T}, type( E ) ).
 
 disjunction_with_variable_rhs_typable() ->
-  E = lam( [{<<"y">>, t_bool()}], {ntv, disj( true(), var( <<"y">> ) )} ),
-  T = t_fn( [{<<"y">>, t_bool()}], t_bool() ),
+  E = lam( [{y, t_bool()}], {ntv, disj( true(), var( y ) )} ),
+  T = t_fn( [{y, t_bool()}], t_bool() ),
   ?assertEqual( {ok, T}, type( E ) ).
 
 record_typable() ->
-  E = rcd( [{<<"x">>, str( <<"blub">> )}] ),
-  ?assertEqual( {ok, t_rcd( [{<<"x">>, t_str()}] )}, type( E ) ).
+  E = rcd( [{x, str( <<"blub">> )}] ),
+  ?assertEqual( {ok, t_rcd( [{x, t_str()}] )}, type( E ) ).
 
 record_with_invalid_field_untypable() ->
-  E1 = rcd( [{<<"x">>, var( <<"y">> )}] ),
-  E2 = rcd( [{<<"x">>, str( <<"blub">> )}, {<<"y">>, var( <<"z">> )}] ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E1 ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"z">>}}, type( E2 ) ).
+  E1 = rcd( [{x, var( y )}] ),
+  E2 = rcd( [{x, str( <<"blub">> )}, {y, var( z )}] ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E1 ) ),
+  ?assertEqual( {error, {unbound_var, na, z}}, type( E2 ) ).
 
 record_with_variable_field_typable() ->
-  E1 = lam( [{<<"x">>, t_str()}], {ntv, rcd( [{<<"y">>, var( <<"x">> )}] )} ),
-  T1 = t_fn( [{<<"x">>, t_str()}], t_rcd( [{<<"y">>, t_str()}] ) ),
-  E2 = lam( [{<<"x">>, t_str()}],
-                {ntv, rcd( [{<<"y">>, file( <<"bla.txt">> )},
-                            {<<"z">>, var( <<"x">> )}] )} ),
-  T2 = t_fn( [{<<"x">>, t_str()}], t_rcd( [{<<"y">>, t_file()}, {<<"z">>, t_str()}] ) ),
+  E1 = lam( [{x, t_str()}], {ntv, rcd( [{y, var( x )}] )} ),
+  T1 = t_fn( [{x, t_str()}], t_rcd( [{y, t_str()}] ) ),
+  E2 = lam( [{x, t_str()}],
+                {ntv, rcd( [{y, file( <<"bla.txt">> )},
+                            {z, var( x )}] )} ),
+  T2 = t_fn( [{x, t_str()}], t_rcd( [{y, t_file()}, {z, t_str()}] ) ),
   ?assertEqual( {ok, T1}, type( E1 ) ),
   ?assertEqual( {ok, T2}, type( E2 ) ).
 
 record_with_ambiguous_field_name_untypable() ->
-  E = rcd( [{<<"x">>, str( <<"bla">> )},
-            {<<"x">>, file( <<"blub.txt">> )}] ),
-  ?assertEqual( {error, {rcd_ambiguous_field_name, na, [<<"x">>]}}, type( E ) ).
+  E = rcd( [{x, str( <<"bla">> )},
+            {x, file( <<"blub.txt">> )}] ),
+  ?assertEqual( {error, {rcd_ambiguous_field_name, na, [x]}}, type( E ) ).
 
 foreign_lambda_typable() ->
-  TRet = t_rcd( [{<<"out">>, t_str()}] ),
-  E = lam( [], {frn, <<"f">>, TRet, l_bash(), <<"blub">>} ),
+  TRet = t_rcd( [{out, t_str()}] ),
+  E = lam( [], {frn, f, TRet, l_bash(), <<"blub">>} ),
   T = t_fn( [], TRet ),
   ?assertEqual( {ok, T}, type( E ) ).
 
 foreign_lambda_with_ambiguous_argument_name_untypable() ->
-  TRet = t_rcd( [{<<"out">>, t_str()}] ),
-  E = lam( [{<<"x">>, t_str()}, {<<"x">>, t_file()}],
-           {frn, <<"f">>, TRet, l_bash(), <<"blub">>} ),
-  ?assertEqual( {error, {frn_fn_ambiguous_arg_or_return_field_name, na, [<<"x">>]}},
+  TRet = t_rcd( [{out, t_str()}] ),
+  E = lam( [{x, t_str()}, {x, t_file()}],
+           {frn, f, TRet, l_bash(), <<"blub">>} ),
+  ?assertEqual( {error, {frn_fn_ambiguous_arg_or_return_field_name, na, [x]}},
                 type( E ) ).
 
 foreign_lambda_with_ambiguous_return_field_name_untypable() ->
-  TRet = t_rcd( [{<<"out">>, t_str()}, {<<"out">>, t_file()}] ),
-  E = lam( [], {frn, <<"f">>, TRet, l_bash(), <<"blub">>} ),
-  ?assertEqual( {error, {frn_fn_ambiguous_arg_or_return_field_name, na, [<<"out">>]}},
+  TRet = t_rcd( [{out, t_str()}, {out, t_file()}] ),
+  E = lam( [], {frn, f, TRet, l_bash(), <<"blub">>} ),
+  ?assertEqual( {error, {frn_fn_ambiguous_arg_or_return_field_name, na, [out]}},
                 type( E ) ).
 
 foreign_lambda_with_ambiguous_argument_and_return_field_untypable() ->
-  TRet = t_rcd( [{<<"x">>, t_str()}] ),
-  E = lam( [{<<"x">>, t_str()}], {frn, <<"f">>, TRet, l_bash(), <<"blub">>} ),
-  ?assertEqual( {error, {frn_fn_ambiguous_arg_or_return_field_name, na, [<<"x">>]}},
+  TRet = t_rcd( [{x, t_str()}] ),
+  E = lam( [{x, t_str()}], {frn, f, TRet, l_bash(), <<"blub">>} ),
+  ?assertEqual( {error, {frn_fn_ambiguous_arg_or_return_field_name, na, [x]}},
                 type( E ) ).
 
 application_typable() ->
-  EF = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
-  EA = app( EF, [{<<"x">>, str( <<"bla">> )}] ),
+  EF = lam( [{x, t_str()}], {ntv, var( x )} ),
+  EA = app( EF, [{x, str( <<"bla">> )}] ),
   ?assertEqual( {ok, t_str()}, type( EA ) ).
 
 application_with_invalid_function_expression_untypable() ->
-  E = app( var( <<"f">> ), [{<<"x">>, str( <<"bla">> )}] ),
-  ?assertEqual( {error, {unbound_var, na, <<"f">>}}, type( E ) ).
+  E = app( var( f ), [{x, str( <<"bla">> )}] ),
+  ?assertEqual( {error, {unbound_var, na, f}}, type( E ) ).
 
 application_with_variable_function_expression_typable() ->
-  EA = app( var( <<"f">> ), [] ),
-  ELam = lam( [{<<"f">>, t_fn( [], t_str() )}], {ntv, EA} ),
-  TLam = t_fn( [{<<"f">>, t_fn( [], t_str() )}], t_str() ),
+  EA = app( var( f ), [] ),
+  ELam = lam( [{f, t_fn( [], t_str() )}], {ntv, EA} ),
+  TLam = t_fn( [{f, t_fn( [], t_str() )}], t_str() ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 application_with_too_few_arguments_untypable() ->
-  ELam = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
+  ELam = lam( [{x, t_str()}], {ntv, var( x )} ),
   EA = app( ELam, [] ),
-  ?assertEqual( {error, {app_missing_bind, na, [{<<"x">>, t_str()}]}},
+  ?assertEqual( {error, {app_missing_bind, na, [{x, t_str()}]}},
                 type( EA ) ).
 
 application_with_too_many_arguments_untypable() ->
-  ELam = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
-  EA = app( ELam, [{<<"x">>, str( <<"bla">> )},
-                   {<<"y">>, str( <<"blub">> )}] ),
-  ?assertEqual( {error, {app_dangling_bind, na, [{<<"y">>, str( <<"blub">> )}]}},
+  ELam = lam( [{x, t_str()}], {ntv, var( x )} ),
+  EA = app( ELam, [{x, str( <<"bla">> )},
+                   {y, str( <<"blub">> )}] ),
+  ?assertEqual( {error, {app_dangling_bind, na, [{y, str( <<"blub">> )}]}},
                 type( EA ) ).
 
 application_with_argument_name_mismatch_untypable() ->
-  EF = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
-  EA = app( EF, [{<<"y">>, str( <<"bla">> )}] ),
-  ?assertEqual( {error, {app_arg_name_mismatch, na, {<<"x">>, <<"y">>}}},
+  EF = lam( [{x, t_str()}], {ntv, var( x )} ),
+  EA = app( EF, [{y, str( <<"bla">> )}] ),
+  ?assertEqual( {error, {app_arg_name_mismatch, na, {x, y}}},
                 type( EA ) ).
 
 application_with_invalid_argument_untypable() ->
-  EF = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
-  EA = app( EF, [{<<"x">>, var( <<"y">> )}] ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( EA ) ).
+  EF = lam( [{x, t_str()}], {ntv, var( x )} ),
+  EA = app( EF, [{x, var( y )}] ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( EA ) ).
 
 application_with_argument_type_mismatch_untypable() ->
-  EF = lam( [{<<"x">>, t_str()}], {ntv, var( <<"x">> )} ),
-  EA = app( EF, [{<<"x">>, file( <<"bla">> )}] ),
-  ?assertEqual( {error, {app_bind_type_mismatch, na, {<<"x">>, t_str(), file( <<"bla">> ), t_file()}}},
+  EF = lam( [{x, t_str()}], {ntv, var( x )} ),
+  EA = app( EF, [{x, file( <<"bla">> )}] ),
+  ?assertEqual( {error, {app_bind_type_mismatch, na, {x, t_str(), file( <<"bla">> ), t_file()}}},
                 type( EA ) ).
 
 application_with_variable_argument_typable() ->
-  EF = lam( [{<<"y">>, t_str()}], {ntv, var( <<"y">> )} ),
-  EA = app( EF, [{<<"y">>, var( <<"x">> )}] ),
-  ELam = lam( [{<<"x">>, t_str()}], {ntv, EA} ),
-  TLam = t_fn( [{<<"x">>, t_str()}], t_str() ),
+  EF = lam( [{y, t_str()}], {ntv, var( y )} ),
+  EA = app( EF, [{y, var( x )}] ),
+  ELam = lam( [{x, t_str()}], {ntv, EA} ),
+  TLam = t_fn( [{x, t_str()}], t_str() ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 record_field_access_typable() ->
-  E1 = proj( <<"x">>, rcd( [{<<"x">>, str( <<"blub">> )}] ) ),
-  E2 = proj( <<"x">>, rcd( [{<<"x">>, file( <<"blub">> )}] ) ),
+  E1 = proj( x, rcd( [{x, str( <<"blub">> )}] ) ),
+  E2 = proj( x, rcd( [{x, file( <<"blub">> )}] ) ),
   ?assertEqual( {ok, t_str()}, type( E1 ) ),
   ?assertEqual( {ok, t_file()}, type( E2 ) ).
 
 record_field_access_with_invalid_record_expression_untypable() ->
-  E = proj( <<"x">>, var( <<"y">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E ) ).
+  E = proj( x, var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 record_field_access_with_nonrecord_record_expression_untypable() ->
-  E = proj( <<"x">>, str( <<"blub">> ) ),
+  E = proj( x, str( <<"blub">> ) ),
   ?assertEqual( {error, {proj_no_record, na, {str( <<"blub">> ), t_str()}}}, type( E ) ).
 
 record_field_access_with_variable_record_expression_typable() ->
-  EProj = proj( <<"x">>, rcd( [{<<"x">>, var( <<"y">> )}] ) ),
-  ELam = lam( [{<<"y">>, t_str()}], {ntv, EProj} ),
-  T = t_fn( [{<<"y">>, t_str()}], t_str() ),
+  EProj = proj( x, rcd( [{x, var( y )}] ) ),
+  ELam = lam( [{y, t_str()}], {ntv, EProj} ),
+  T = t_fn( [{y, t_str()}], t_str() ),
   ?assertEqual( {ok, T}, type( ELam ) ).
 
 record_field_access_with_nonexisting_field_name_untypable() ->
-  E = proj( <<"y">>, rcd( [{<<"x">>, str( <<"blub">> )}] ) ),
-  ?assertEqual( {error, {proj_field_missing, na, <<"y">>}}, type( E ) ).
+  E = proj( y, rcd( [{x, str( <<"blub">> )}] ) ),
+  ?assertEqual( {error, {proj_field_missing, na, y}}, type( E ) ).
 
 fixpoint_typable() ->
-  E1 = fix( lam( [{<<"f">>, t_fn( [], t_str() )}],
+  E1 = fix( lam( [{f, t_fn( [], t_str() )}],
                  {ntv, str( <<"blub">> )} ) ),
-  E2 = fix( lam( [{<<"f">>, t_fn( [], t_file() )}],
+  E2 = fix( lam( [{f, t_fn( [], t_file() )}],
                  {ntv, file( <<"blub">> )} ) ),
   ?assertEqual( {ok, t_fn( [], t_str() )}, type( E1 ) ),
   ?assertEqual( {ok, t_fn( [], t_file() )}, type( E2 ) ).
   
 
 fixpoint_with_argument_typable() ->
-  E = fix( lam( [{<<"f">>, t_fn( [{<<"x">>, t_str()}], t_str() )},
-                 {<<"x">>, t_str()}],
-                {ntv, var( <<"x">> )} ) ),
-  ?assertEqual( {ok, t_fn( [{<<"x">>, t_str()}], t_str() )}, type( E ) ).
+  E = fix( lam( [{f, t_fn( [{x, t_str()}], t_str() )},
+                 {x, t_str()}],
+                {ntv, var( x )} ) ),
+  ?assertEqual( {ok, t_fn( [{x, t_str()}], t_str() )}, type( E ) ).
 
 fixpoint_with_invalid_function_expression_untypable() ->
-  ?assertEqual( {error, {unbound_var, na, <<"f">>}}, type( fix( var( <<"f">> ) ) ) ).
+  ?assertEqual( {error, {unbound_var, na, f}}, type( fix( var( f ) ) ) ).
 
 fixpoint_with_nonfunction_function_expression_untypable() ->
   E = fix( str( <<"blub">> ) ),
@@ -683,17 +683,17 @@ fixpoint_with_nonfunction_function_expression_untypable() ->
                 type( E ) ).
 
 fixpoint_with_foreign_function_expression_untypable() ->
-  TRet = t_rcd( [{<<"out">>, t_str()}] ),
-  ELam = lam( [{<<"f">>, t_str()}], {frn, <<"f">>, TRet, l_bash(), <<"blub">>} ),
+  TRet = t_rcd( [{out, t_str()}] ),
+  ELam = lam( [{f, t_str()}], {frn, f, TRet, l_bash(), <<"blub">>} ),
   E = fix( ELam ),
-  ?assertEqual( {error, {fix_fn_arg_type_mismatch, na, {<<"f">>, t_fn( [], TRet ), t_str()}}},
+  ?assertEqual( {error, {fix_fn_arg_type_mismatch, na, {f, t_fn( [], TRet ), t_str()}}},
                 type( E ) ).
 
 fixpoint_with_variable_function_expression_typable() ->
-  EFix = fix( lam( [{<<"f">>, t_fn( [], t_str() )}],
-                   {ntv, var( <<"x">> )} ) ),
-  ELam = lam( [{<<"x">>, t_str()}], {ntv, EFix} ),
-  TLam = t_fn( [{<<"x">>, t_str()}], t_fn( [], t_str() ) ),
+  EFix = fix( lam( [{f, t_fn( [], t_str() )}],
+                   {ntv, var( x )} ) ),
+  ELam = lam( [{x, t_str()}], {ntv, EFix} ),
+  TLam = t_fn( [{x, t_str()}], t_fn( [], t_str() ) ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 fixpoint_with_constant_function_expression_untypable() ->
@@ -703,8 +703,8 @@ fixpoint_with_constant_function_expression_untypable() ->
   ?assertEqual( {error, {fix_fn_no_arg, na, {ELam, TLam}}}, type( E ) ).
 
 recursive_fixpoint_typable() ->
-  E = fix( lam( [{<<"f">>, t_fn( [], t_str() )}],
-                {ntv, app( var( <<"f">> ), [] )} ) ),
+  E = fix( lam( [{f, t_fn( [], t_str() )}],
+                {ntv, app( var( f ), [] )} ) ),
   ?assertEqual( {ok, t_fn( [], t_str() )}, type( E ) ).
   
 list_typable() ->
@@ -716,10 +716,10 @@ list_typable() ->
   ?assertEqual( {ok, t_lst( t_bool() )}, type( E3 ) ).
 
 list_with_invalid_element_untypable() ->
-  E1 = lst( t_str(), [var( <<"x">> )] ),
-  E2 = lst( t_str(), [str( <<"bla">> ), var( <<"x">> )] ),
-  ?assertEqual( {error, {unbound_var, na, <<"x">>}}, type( E1 ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"x">>}}, type( E2 ) ).
+  E1 = lst( t_str(), [var( x )] ),
+  E2 = lst( t_str(), [str( <<"bla">> ), var( x )] ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E1 ) ),
+  ?assertEqual( {error, {unbound_var, na, x}}, type( E2 ) ).
 
 list_with_nonmatching_element_untypable() ->
   E = lst( t_str(), [file( <<"blub.txt">> )] ),
@@ -727,8 +727,8 @@ list_with_nonmatching_element_untypable() ->
                 type( E ) ).
 
 list_with_variable_element_typable() ->
-  E = lam( [{<<"x">>, t_str()}], {ntv, lst( t_str(), [var( <<"x">> )] )} ),
-  T = t_fn( [{<<"x">>, t_str()}], t_lst( t_str() ) ),
+  E = lam( [{x, t_str()}], {ntv, lst( t_str(), [var( x )] )} ),
+  T = t_fn( [{x, t_str()}], t_lst( t_str() ) ),
   ?assertEqual( {ok, T}, type( E ) ).
 
 list_append_typable() ->
@@ -742,12 +742,12 @@ list_append_typable() ->
   ?assertEqual( {ok, t_lst( t_file() )}, type( E2 ) ).
 
 list_append_with_invalid_lhs_untypable() ->
-  E = append( var( <<"l">> ), lst( t_str(), [] ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"l">>}}, type( E ) ).
+  E = append( var( l ), lst( t_str(), [] ) ),
+  ?assertEqual( {error, {unbound_var, na, l}}, type( E ) ).
 
 list_append_with_invalid_rhs_untypable() ->
-  E = append( lst( t_str(), [] ), var( <<"l">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"l">>}}, type( E ) ).
+  E = append( lst( t_str(), [] ), var( l ) ),
+  ?assertEqual( {error, {unbound_var, na, l}}, type( E ) ).
 
 list_append_with_nonlist_lhs_untypable() ->
   E = append( str( <<"blub">> ), lst( t_str(), [] ) ),
@@ -760,17 +760,17 @@ list_append_with_nonlist_rhs_untypable() ->
                 type( E ) ).
 
 list_append_with_variable_lhs_typable() ->
-  EA = append( var( <<"l">> ),
+  EA = append( var( l ),
                lst( t_str(), [str( <<"blub">> )] ) ),
-  ELam = lam( [{<<"l">>, t_lst( t_str() )}], {ntv, EA} ),
-  TLam = t_fn( [{<<"l">>, t_lst( t_str() )}], t_lst( t_str() ) ),
+  ELam = lam( [{l, t_lst( t_str() )}], {ntv, EA} ),
+  TLam = t_fn( [{l, t_lst( t_str() )}], t_lst( t_str() ) ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 list_append_with_variable_rhs_typable() ->
   EA = append( lst( t_str(), [str( <<"blub">> )] ),
-               var( <<"l">> ) ),
-  ELam = lam( [{<<"l">>, t_lst( t_str() )}], {ntv, EA} ),
-  TLam = t_fn( [{<<"l">>, t_lst( t_str() )}], t_lst( t_str() ) ),
+               var( l ) ),
+  ELam = lam( [{l, t_lst( t_str() )}], {ntv, EA} ),
+  TLam = t_fn( [{l, t_lst( t_str() )}], t_lst( t_str() ) ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 list_append_with_nonmatching_operands_untypable() ->
@@ -787,8 +787,8 @@ isnil_typable() ->
   ?assertEqual( {ok, t_bool()}, type( E ) ).
 
 isnil_with_invalid_list_expression_untypable() ->
-  E = isnil( var( <<"l">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"l">>}}, type( E ) ).
+  E = isnil( var( l ) ),
+  ?assertEqual( {error, {unbound_var, na, l}}, type( E ) ).
 
 isnil_with_nonlist_list_expression_untypable() ->
   E = isnil( str( <<"blub">> ) ),
@@ -796,61 +796,61 @@ isnil_with_nonlist_list_expression_untypable() ->
                 type( E ) ).
 
 isnil_with_variable_list_expression_typable() ->
-  E = lam( [{<<"l">>, t_lst( t_str() )}], {ntv, isnil( var( <<"l">> ) )} ),
-  T = t_fn( [{<<"l">>, t_lst( t_str() )}], t_bool() ),
+  E = lam( [{l, t_lst( t_str() )}], {ntv, isnil( var( l ) )} ),
+  T = t_fn( [{l, t_lst( t_str() )}], t_bool() ),
   ?assertEqual( {ok, T}, type( E ) ).
 
 for_typable() ->
   E1 = for( t_str(),
-            [{<<"x">>, t_str(), lst( t_str(), [str( <<"bla">> ), str( <<"blub">> )] )}],
-            var( <<"x">> ) ),
+            [{x, t_str(), lst( t_str(), [str( <<"bla">> ), str( <<"blub">> )] )}],
+            var( x ) ),
   T1 = t_lst( t_str() ),
-  E2 = for( t_rcd( [{<<"a">>, t_str()}, {<<"b">>, t_file()}]),
-            [{<<"x">>, t_str(), lst( t_str(), [str( <<"bla">> ), str( <<"blub">> )] )},
-             {<<"y">>, t_file(), lst( t_file(), [file( <<"bla.txt">> ),
+  E2 = for( t_rcd( [{a, t_str()}, {b, t_file()}]),
+            [{x, t_str(), lst( t_str(), [str( <<"bla">> ), str( <<"blub">> )] )},
+             {y, t_file(), lst( t_file(), [file( <<"bla.txt">> ),
                                            file( <<"blub.txt">> )] )}],
-           rcd( [{<<"a">>, var( <<"x">> )}, {<<"b">>, var( <<"y">> )}] ) ),
-  T2 = t_lst( t_rcd( [{<<"a">>, t_str()}, {<<"b">>, t_file()}] ) ),
+           rcd( [{a, var( x )}, {b, var( y )}] ) ),
+  T2 = t_lst( t_rcd( [{a, t_str()}, {b, t_file()}] ) ),
   ?assertEqual( {ok, T1}, type( E1 ) ),
   ?assertEqual( {ok, T2}, type( E2 ) ).
 
 for_with_invalid_list_expression_untypable() ->
-  E = for( t_str(), [{<<"x">>, t_str(), var( <<"y">> )}], var( <<"x">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E ) ).
+  E = for( t_str(), [{x, t_str(), var( y )}], var( x ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 for_with_nonlist_list_expression_untypable() ->
-  E = for( t_str(), [{<<"x">>, t_str(), str( <<"blub">> )}], var( <<"x">> ) ),
+  E = for( t_str(), [{x, t_str(), str( <<"blub">> )}], var( x ) ),
   ?assertEqual( {error, {for_bind_no_list, na, {t_lst( t_str() ), str( <<"blub">> ), t_str()}}},
                 type( E ) ).
 
 for_with_variable_list_expression_typable() ->
-  EFor = for( t_str(), [{<<"x">>, t_str(), var( <<"l">> )}], var( <<"x">> ) ),
-  ELam = lam( [{<<"l">>, t_lst( t_str() )}], {ntv, EFor} ),
-  TLam = t_fn( [{<<"l">>, t_lst( t_str() )}], t_lst( t_str() ) ),
+  EFor = for( t_str(), [{x, t_str(), var( l )}], var( x ) ),
+  ELam = lam( [{l, t_lst( t_str() )}], {ntv, EFor} ),
+  TLam = t_fn( [{l, t_lst( t_str() )}], t_lst( t_str() ) ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 for_with_invalid_body_expression_untypable() ->
-  E = for( t_str(), [{<<"x">>, t_str(), lst( t_str(), [str( <<"bla">> )] )}], var( <<"y">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E ) ).
+  E = for( t_str(), [{x, t_str(), lst( t_str(), [str( <<"bla">> )] )}], var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 for_with_nonmatching_body_expression_untypable() ->
-  E = for( t_str(), [{<<"x">>, t_str(), lst( t_str(), [str( <<"bla">> )] )}], file( <<"blub">> ) ),
+  E = for( t_str(), [{x, t_str(), lst( t_str(), [str( <<"bla">> )] )}], file( <<"blub">> ) ),
   ?assertEqual( {error, {for_body_type_mismatch, na, {t_str(), file( <<"blub">> ), t_file()}}},
                 type( E ) ).
 
 for_variable_body_expression_typable() ->
-  EFor = for( t_rcd( [{<<"a">>, t_str()}, {<<"b">>, t_file()}] ),
-              [{<<"x">>, t_str(), lst( t_str(), [str( <<"bla">> )] )}],
-              rcd( [{<<"a">>, var( <<"x">> )}, {<<"b">>, var( <<"y">> )}] ) ),
-  ELam = lam( [{<<"y">>, t_file()}], {ntv, EFor} ),
-  TLam = t_fn( [{<<"y">>, t_file()}],
-               t_lst( t_rcd( [{<<"a">>, t_str()}, {<<"b">>, t_file()}] ) ) ),
+  EFor = for( t_rcd( [{a, t_str()}, {b, t_file()}] ),
+              [{x, t_str(), lst( t_str(), [str( <<"bla">> )] )}],
+              rcd( [{a, var( x )}, {b, var( y )}] ) ),
+  ELam = lam( [{y, t_file()}], {ntv, EFor} ),
+  TLam = t_fn( [{y, t_file()}],
+               t_lst( t_rcd( [{a, t_str()}, {b, t_file()}] ) ) ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 for_argument_mismatch_untypable() ->
-  X = <<"x">>,
+  X = x,
   T = t_str(),
-  E = lst( t_file(), [file( <<"f">> )] ),
+  E = lst( t_file(), [file( <<"bla">> )] ),
   EFor = for( t_str(),
               [{X, T, E}],
               str( <<"bla">> ) ),
@@ -858,223 +858,223 @@ for_argument_mismatch_untypable() ->
                         type( EFor ) ).
 
 fold_typable() ->
-  E1 = fold( {<<"x_acc">>, t_str(), str( <<"0">> )},
-             {<<"x">>, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
-             var( <<"x">> ) ),
-  E2 = fold( {<<"x_acc">>, t_str(), str( <<"0">> )},
-             {<<"x">>, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
-             var( <<"x_acc">> ) ),
+  E1 = fold( {x_acc, t_str(), str( <<"0">> )},
+             {x, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
+             var( x ) ),
+  E2 = fold( {x_acc, t_str(), str( <<"0">> )},
+             {x, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
+             var( x_acc ) ),
   ?assertEqual( {ok, t_str()}, type( E1 ) ),
   ?assertEqual( {ok, t_str()}, type( E2 ) ).
 
 fold_with_invalid_accumulator_expression_untypable() ->
-  E = fold( {<<"x_acc">>, t_str(), var( <<"y">> )},
-            {<<"x">>, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
-            var( <<"x">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E ) ).
+  E = fold( {x_acc, t_str(), var( y )},
+            {x, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
+            var( x ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 fold_with_variable_accumulator_expression_typable() ->
-  EFold = fold( {<<"x_acc">>, t_str(), var( <<"y">> )},
-                {<<"x">>, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
-                var( <<"x">> ) ),
-  ELam = lam( [{<<"y">>, t_str()}], {ntv, EFold} ),
-  TLam = t_fn( [{<<"y">>, t_str()}], t_str() ),
+  EFold = fold( {x_acc, t_str(), var( y )},
+                {x, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
+                var( x ) ),
+  ELam = lam( [{y, t_str()}], {ntv, EFold} ),
+  TLam = t_fn( [{y, t_str()}], t_str() ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 fold_with_invalid_list_expression_untypable() ->
-  E = fold( {<<"x_acc">>, t_str(), str( <<"bla">> )},
-            {<<"x">>, t_str(), var( <<"y">> )},
-            var( <<"x">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E ) ).
+  E = fold( {x_acc, t_str(), str( <<"bla">> )},
+            {x, t_str(), var( y )},
+            var( x ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 fold_with_nonlist_list_expression_untypable() ->
-  X = <<"x">>,
+  X = x,
   T = t_str(),
   E = str( <<"blub">> ),
-  E1 = fold( {<<"x_acc">>, t_str(), str( <<"bla">> )},
+  E1 = fold( {x_acc, t_str(), str( <<"bla">> )},
              {X, T, E},
-             var( <<"x">> ) ),
+             var( x ) ),
   ?assertEqual( {error, {fold_list_bind_no_list, na, {t_lst( t_str() ), E, t_str()}}},
                 type( E1 ) ).
 
 fold_with_variable_list_expression_typable() ->
-  EFold = fold( {<<"x_acc">>, t_str(), str( <<"bla">> )},
-                {<<"x">>, t_str(), var( <<"l">> )},
-                var( <<"x">> ) ),
-  ELam = lam( [{<<"l">>, t_lst( t_str() )}], {ntv, EFold} ),
-  TLam = t_fn( [{<<"l">>, t_lst( t_str() )}], t_str() ),
+  EFold = fold( {x_acc, t_str(), str( <<"bla">> )},
+                {x, t_str(), var( l )},
+                var( x ) ),
+  ELam = lam( [{l, t_lst( t_str() )}], {ntv, EFold} ),
+  TLam = t_fn( [{l, t_lst( t_str() )}], t_str() ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 fold_with_invalid_body_expression_untypable() ->
-  E = fold( {<<"x_acc">>, t_str(), str( <<"0">> )},
-            {<<"x">>, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
-            var( <<"y">> ) ),
-  ?assertEqual( {error, {unbound_var, na, <<"y">>}}, type( E ) ).
+  E = fold( {x_acc, t_str(), str( <<"0">> )},
+            {x, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
+            var( y ) ),
+  ?assertEqual( {error, {unbound_var, na, y}}, type( E ) ).
 
 fold_with_variable_body_expression_typable() ->
-  EFold = fold( {<<"x_acc">>, t_str(), str( <<"bla">> )},
-                {<<"x">>, t_str(), lst( t_str(), [str( <<"blub">> )] )},
-                var( <<"y">> ) ),
-  ELam = lam( [{<<"y">>, t_str()}], {ntv, EFold} ),
-  TLam = t_fn( [{<<"y">>, t_str()}], t_str() ),
+  EFold = fold( {x_acc, t_str(), str( <<"bla">> )},
+                {x, t_str(), lst( t_str(), [str( <<"blub">> )] )},
+                var( y ) ),
+  ELam = lam( [{y, t_str()}], {ntv, EFold} ),
+  TLam = t_fn( [{y, t_str()}], t_str() ),
   ?assertEqual( {ok, TLam}, type( ELam ) ).
 
 fold_with_nonmatching_accumulator_and_body_expression_untypable() ->
-  E = fold( {<<"x_acc">>, t_file(), file( <<"0">> )},
-            {<<"x">>, t_file(), lst( t_file(), [file( <<"1">> ), file( <<"2">> )] )},
+  E = fold( {x_acc, t_file(), file( <<"0">> )},
+            {x, t_file(), lst( t_file(), [file( <<"1">> ), file( <<"2">> )] )},
             str( <<"blub">> ) ),
   ?assertEqual( {error, {fold_body_type_mismatch, na, {t_file(), str( <<"blub">> ), t_str()}}},
                 type( E ) ).
 
 fold_with_nonmatching_accumulator_and_list_expression_untypable() ->
-  EBody = var( <<"x">> ),
+  EBody = var( x ),
   TAcc = t_file(),
-  E = fold( {<<"x_acc">>, TAcc, file( <<"0">> )},
-            {<<"x">>, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
+  E = fold( {x_acc, TAcc, file( <<"0">> )},
+            {x, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
             EBody ),
   ?assertEqual( {error, {fold_body_type_mismatch, na, {TAcc, EBody, t_str()}}},
                 type( E ) ).
 
 fold_with_ambiguous_accumulator_and_list_expression_name_untypable() ->
-  E = fold( {<<"x">>, t_str(), str( <<"0">> )},
-            {<<"x">>, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
-            var( <<"x">> ) ),
-  ?assertEqual( {error, {fold_ambiguous_bind_name, na, <<"x">>}}, type( E ) ).
+  E = fold( {x, t_str(), str( <<"0">> )},
+            {x, t_str(), lst( t_str(), [str( <<"1">> ), str( <<"2">> )] )},
+            var( x ) ),
+  ?assertEqual( {error, {fold_ambiguous_bind_name, na, x}}, type( E ) ).
 
 fold_with_independent_accumulator_and_list_types_typable() ->
-  E = fold( {<<"acc">>, t_str(), str( <<"bla">> )},
-            {<<"x">>, t_bool(), null( t_bool() )},
-            var( <<"acc">> ) ),
+  E = fold( {acc, t_str(), str( <<"bla">> )},
+            {x, t_bool(), null( t_bool() )},
+            var( acc ) ),
   ?assertEqual( {ok, t_str()}, type( E ) ).
 
 fold_with_nonmatching_accumulator_type_untypable() ->
-  X = <<"acc">>,
+  X = acc,
   T = t_str(),
-  E = file( <<"x">> ),
+  E = file( <<"bla">> ),
   E1 = fold( {X, T, E},
-             {<<"x">>, t_str(), null( t_str() )},
+             {x, t_str(), null( t_str() )},
              str( <<"bla">> ) ),
   ?assertEqual( {error, {fold_acc_bind_type_mismatch, na, {X, T, E, t_file()}}},
                 type( E1 ) ).
 
 fold_with_nonmatching_list_argument_type_untypable() ->
-  X = <<"x">>,
+  X = x,
   T = t_str(),
   E = lst( t_bool(), [true(), false()] ),
-  E1 = fold( {<<"acc">>, t_str(), str( <<"blub">> )},
+  E1 = fold( {acc, t_str(), str( <<"blub">> )},
              {X, T, E},
              str( <<"bla">> ) ),
   ?assertEqual( {error, {fold_list_bind_type_mismatch, na, {X, T, E, t_bool()}}},
                 type( E1 ) ).
 
 future_is_typable() ->
-  E = fut( str( <<"bla">> ) ),
+  E = fut( t_str(), <<"1234">> ),
   ?assertEqual( {ok, t_str()}, type( E ) ).
 
 error_is_typable() ->
   ?assertEqual( {ok, t_str()}, type( err( t_str(), {user, <<"blub">>} ) ) ).
 
 for_with_ambiguous_name_untypable() ->
-  E = for( t_str(), [{<<"x">>, t_str(), null( t_str() )},
-                     {<<"x">>, t_str(), null( t_str() )}],
-           var( <<"x">> ) ),
-  ?assertEqual( {error, {for_ambiguous_bind_name, na, [<<"x">>]}}, type( E ) ).
+  E = for( t_str(), [{x, t_str(), null( t_str() )},
+                     {x, t_str(), null( t_str() )}],
+           var( x ) ),
+  ?assertEqual( {error, {for_ambiguous_bind_name, na, [x]}}, type( E ) ).
 
 fixpoint_with_wrong_first_argument_type_untypable() ->
-  E = fix( lam( [{<<"f">>, t_str()}], {ntv, str( <<"5">> )} ) ),
-  ?assertEqual( {error, {fix_fn_arg_type_mismatch, na, {<<"f">>, t_fn( [], t_str() ), t_str()}}},
+  E = fix( lam( [{f, t_str()}], {ntv, str( <<"5">> )} ) ),
+  ?assertEqual( {error, {fix_fn_arg_type_mismatch, na, {f, t_fn( [], t_str() ), t_str()}}},
                 type( E ) ).
 
 app_rcd_field_order_no_effect() ->
-  T = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
-  E = app( lam( [{<<"x">>, T}],
-                {ntv, var( <<"x">> )} ),
-           [{<<"x">>, rcd( [{<<"b">>, str( <<"bla">> )},
-                            {<<"a">>, true()}] )}] ),
+  T = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
+  E = app( lam( [{x, T}],
+                {ntv, var( x )} ),
+           [{x, rcd( [{b, str( <<"bla">> )},
+                            {a, true()}] )}] ),
   ?assertEqual( {ok, T}, type( E ) ).
 
 cmp_rcd_field_order_no_effect() ->
-  E1 = rcd( [{<<"a">>, true()}, {<<"b">>, str( <<"bla">> )}] ),
-  E2 = rcd( [{<<"b">>, str( <<"bla">> )}, {<<"a">>, true()}] ),
+  E1 = rcd( [{a, true()}, {b, str( <<"bla">> )}] ),
+  E2 = rcd( [{b, str( <<"bla">> )}, {a, true()}] ),
   E3 = cmp( E1, E2 ),
   ?assertEqual( {ok, t_bool()}, type( E3 ) ).
 
 cnd_rcd_field_order_no_effect() ->
-  E1 = rcd( [{<<"a">>, true()}, {<<"b">>, str( <<"bla">> )}] ),
-  T1 = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
-  E2 = rcd( [{<<"b">>, str( <<"bla">> )}, {<<"a">>, true()}] ),
+  E1 = rcd( [{a, true()}, {b, str( <<"bla">> )}] ),
+  T1 = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
+  E2 = rcd( [{b, str( <<"bla">> )}, {a, true()}] ),
   E3 = cnd( false(), E1, E2 ),
   ?assertEqual( {ok, T1}, type( E3 ) ).
 
 cons_rcd_field_order_no_effect() ->
-  E1 = rcd( [{<<"b">>, str( <<"bla">> )}, {<<"a">>, true()}] ),
-  T = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
+  E1 = rcd( [{b, str( <<"bla">> )}, {a, true()}] ),
+  T = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
   E2 = cons( E1, null( T ) ),
   ?assertEqual( {ok, t_lst( T )}, type( E2 ) ).
 
 hd_rcd_field_order_no_effect() ->
-  T = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
+  T = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
   E1 = null( T ),
-  E2 = rcd( [{<<"b">>, str( <<"bla">> )}, {<<"a">>, true()}] ),
+  E2 = rcd( [{b, str( <<"bla">> )}, {a, true()}] ),
   ?assertEqual( {ok, T}, type( hd( E1, E2 ) ) ).
 
 tl_rcd_field_order_no_effect() ->
-  T = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
+  T = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
   E1 = null( T ),
-  E2 = rcd( [{<<"b">>, str( <<"bla">> )}, {<<"a">>, true()}] ),
+  E2 = rcd( [{b, str( <<"bla">> )}, {a, true()}] ),
   ?assertEqual( {ok, T}, type( tl( E1, E2 ) ) ).
 
 append_rcd_field_order_no_effect() ->
-  T1 = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
-  T2 = t_rcd( [{<<"b">>, t_str()}, {<<"a">>, t_bool()}] ),
+  T1 = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
+  T2 = t_rcd( [{b, t_str()}, {a, t_bool()}] ),
   E1 = null( T1 ),
   E2 = null( T2 ),
   ?assertEqual( {ok, t_lst( T1 )}, type( append( E1, E2 ) ) ).
 
 for_list_bind_rcd_field_order_no_effect() ->
-  T1 = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
-  T2 = t_rcd( [{<<"b">>, t_str()}, {<<"a">>, t_bool()}] ),
+  T1 = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
+  T2 = t_rcd( [{b, t_str()}, {a, t_bool()}] ),
   E = for( t_bool(),
-           [{<<"x">>, T1, null( T2 )}],
-           proj( <<"a">>, var( <<"x">> ) ) ),
+           [{x, T1, null( T2 )}],
+           proj( a, var( x ) ) ),
   ?assertEqual( {ok, t_lst( t_bool() )}, type( E ) ).
 
 for_body_rcd_field_order_no_effect() ->
-  T = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
-  E = for( T, [{<<"x">>, t_bool(), null( t_bool() )}],
-           rcd( [{<<"b">>, str( <<"blub">> )}, {<<"a">>, var( <<"x">> )}]) ),
+  T = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
+  E = for( T, [{x, t_bool(), null( t_bool() )}],
+           rcd( [{b, str( <<"blub">> )}, {a, var( x )}]) ),
   ?assertEqual( {ok, t_lst( T )}, type( E ) ).
 
 for_invalid_second_list_binding_untypable() ->
-  E = for( t_bool(), [{<<"x">>, t_bool(), null( t_bool() )},
-                      {<<"y">>, t_bool(), null( t_str() )}], true() ),
-  ?assertEqual( {error, {for_bind_type_mismatch, na, {<<"y">>, t_bool(), null( t_str() ), t_str()}}},
+  E = for( t_bool(), [{x, t_bool(), null( t_bool() )},
+                      {y, t_bool(), null( t_str() )}], true() ),
+  ?assertEqual( {error, {for_bind_type_mismatch, na, {y, t_bool(), null( t_str() ), t_str()}}},
                 type( E ) ).
 
 fold_acc_bind_rcd_field_order_no_effect() ->
-  TAcc = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
-  EAcc = rcd( [{<<"b">>, str( <<"blub">> )}, {<<"a">>, true()}] ),
-  E = fold( {<<"acc">>, TAcc, EAcc},
-             {<<"x">>, t_bool(), null( t_bool() )},
-             rcd( [{<<"a">>, conj( proj( <<"a">>, var( <<"acc">> ) ), var( <<"x">> ) )},
-                   {<<"b">>, proj( <<"b">>, var( <<"acc">> ) )}] ) ),
+  TAcc = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
+  EAcc = rcd( [{b, str( <<"blub">> )}, {a, true()}] ),
+  E = fold( {acc, TAcc, EAcc},
+             {x, t_bool(), null( t_bool() )},
+             rcd( [{a, conj( proj( a, var( acc ) ), var( x ) )},
+                   {b, proj( b, var( acc ) )}] ) ),
   ?assertEqual( {ok, TAcc}, type( E ) ).
 
 fold_list_bind_rcd_field_order_no_effect() ->
-  TLst = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
-  ELst = null( t_rcd( [{<<"b">>, t_str()}, {<<"a">>, t_bool()}] ) ),
-  E = fold( {<<"acc">>, t_bool(), false()},
-            {<<"x">>, TLst, ELst},
-            conj( var( <<"acc">> ), proj( <<"a">>, var( <<"x">> ) ) ) ),
+  TLst = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
+  ELst = null( t_rcd( [{b, t_str()}, {a, t_bool()}] ) ),
+  E = fold( {acc, t_bool(), false()},
+            {x, TLst, ELst},
+            conj( var( acc ), proj( a, var( x ) ) ) ),
   ?assertEqual( {ok, t_bool()}, type( E ) ).
 
 fold_body_rcd_field_order_no_effect() ->
-  TAcc = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
-  EAcc = rcd( [{<<"a">>, true()}, {<<"b">>, str( <<"blub">> )}] ),
-  E = fold( {<<"acc">>, TAcc, EAcc},
-             {<<"x">>, t_bool(), null( t_bool() )},
-             rcd( [{<<"b">>, proj( <<"b">>, var( <<"acc">> ) )},
-                   {<<"a">>, conj( proj( <<"a">>, var( <<"acc">> ) ), var( <<"x">> ) )}] ) ),
+  TAcc = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
+  EAcc = rcd( [{a, true()}, {b, str( <<"blub">> )}] ),
+  E = fold( {acc, TAcc, EAcc},
+             {x, t_bool(), null( t_bool() )},
+             rcd( [{b, proj( b, var( acc ) )},
+                   {a, conj( proj( a, var( acc ) ), var( x ) )}] ) ),
   ?assertEqual( {ok, TAcc}, type( E ) ).
 
 app_no_fn_untypable() ->
@@ -1083,7 +1083,7 @@ app_no_fn_untypable() ->
                 type( E ) ).
 
 foreign_lambda_with_nonrecord_return_type_untypable() ->
-  E = lam( [], {frn, <<"f">>, t_str(), l_bash(), <<"blub">>} ),
+  E = lam( [], {frn, f, t_str(), l_bash(), <<"blub">>} ),
   ?assertEqual( {error, {frn_fn_returns_no_rcd, na, t_str()}}, type( E ) ).
 
 app_with_multiple_dangling_arg_binds_untypable() ->
@@ -1094,10 +1094,10 @@ app_with_multiple_dangling_arg_binds_untypable() ->
                 type( E ) ).
 
 app_with_multiple_missing_arg_binds_untypable() ->
-  E = {app,na,{lam,na, [{<<"a">>,{var,na,<<>>}},{<<"b">>,{var,na,<<>>}}],
+  E = {app,na,{lam,na, [{a,{var,na,<<>>}},{b,{var,na,<<>>}}],
                        {ntv,{str,na,<<5,0>>}}},
               []},
-  ?assertEqual( {error, {app_missing_bind, na, [{<<"a">>,{var,na,<<>>}},{<<"b">>,{var,na,<<>>}}]}},
+  ?assertEqual( {error, {app_missing_bind, na, [{a,{var,na,<<>>}},{b,{var,na,<<>>}}]}},
                 type( E ) ).
 
 
@@ -1117,8 +1117,8 @@ is_type_equivalent_test_() ->
   }.
 
 rcd_type_with_changed_field_order_is_equivalent() ->
-  T1 = t_rcd( [{<<"a">>, t_bool()}, {<<"b">>, t_str()}] ),
-  T2 = t_rcd( [{<<"b">>, t_str()}, {<<"a">>, t_bool()}] ),
+  T1 = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
+  T2 = t_rcd( [{b, t_str()}, {a, t_bool()}] ),
   ?assert( is_type_equivalent( T1, T2 ) ).
 
 

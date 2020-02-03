@@ -30,14 +30,17 @@
 
 -module( cuneiform_type ).
 
--include( "cuneiform.hrl" ).
+-include( "cuneiform_lang.hrl" ).
+-include( "cuneiform_type.hrl" ).
 
 -import( cuneiform_lang, [ambiguous_names/1,
                           xt_names/1,
                           xte_names/1,
                           xe_names/1] ).
 
+
 -export( [type/1, type/2, is_type_comparable/1, is_type_equivalent/2] ).
+
 
 
 
@@ -108,7 +111,7 @@ type( _Gamma, {lam, Info, ArgLst, {frn, _FName, TRet, Lang, _SBody}} ) ->       
               []              -> throw( {awk_frn_fn_no_arg, Info} )
             end,
 
-          case lists:keyfind( <<"result">>, 1, FieldLst ) of
+          case lists:keyfind( 'result', 1, FieldLst ) of
             {_, 'File'} -> ok;
             {_, T2}     -> throw( {awk_frn_fn_result_field_no_file, Info, T2} );
             false       -> throw( {awk_frn_fn_no_result_field, Info} )
@@ -165,8 +168,8 @@ type( Gamma, {fix, Info, E} ) ->                                                
 
   end;
 
-type( Gamma, {fut, _Info, E} ) ->
-  type( Gamma, E );
+type( _Gamma, {fut, _Info, T, _H} ) ->
+  {ok, T};
 
 type( _Gamma, {err, _Info, T, _Reason} ) ->
   {ok, T};
@@ -461,8 +464,8 @@ type( Gamma, {proj, Info, X, E} ) ->                                            
 %%====================================================================
 
 -spec type_unambiguous_rcd_binding( Gamma, XeLst ) -> {ok, t()} | {error, type_error()}
-when Gamma :: #{ x() => t() },
-     XeLst :: [{x(), e()}].
+when Gamma :: #{x() =>t() },
+     XeLst :: [{x(),e()}].
 
 type_unambiguous_rcd_binding( _Gamma, [] ) ->
   {ok, {'Rcd', []}};
@@ -478,9 +481,9 @@ type_unambiguous_rcd_binding( Gamma, [{X, E}|Tl] ) ->
   end.
 
 -spec check_for_binding( Gamma, Info, XteLst ) -> ok | {error, type_error()}
-when Gamma  :: #{ x() => t() },
-     Info   :: info(),
-     XteLst :: [{x(), t(), e()}].
+when Gamma  :: #{x() =>t() },
+     Info   ::info(),
+     XteLst :: [{x(),t(),e()}].
 
 check_for_binding( _Gamma, _Info, [] ) ->
   ok;
@@ -505,10 +508,10 @@ check_for_binding( Gamma, Info, [{X, T, E}|Tl] ) ->
 
 
 -spec check_argument_binding( Gamma, Info, TArgLst, EBindLst ) -> Result
-when Gamma    :: #{ x() => t() },
-     Info     :: info(),
-     TArgLst  :: [{x(), t()}],
-     EBindLst :: [{x(), e()}],
+when Gamma    :: #{x() =>t() },
+     Info     ::info(),
+     TArgLst  :: [{x(),t()}],
+     EBindLst :: [{x(),e()}],
      Result   :: ok | {error, type_error()}.
 
 check_argument_binding( _Gamma, _Info, [], [] ) ->

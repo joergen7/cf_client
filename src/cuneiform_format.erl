@@ -33,7 +33,8 @@
 -export( [format_expr/1, format_type/1, format_pattern/1, format_info/1,
           format_extended_script/1, format_error/1] ).
 
--include( "cuneiform.hrl" ).
+-include( "cuneiform_lang.hrl" ).
+-include( "cuneiform_shell.hrl" ).
 
 -define( CLOSURE, "**closure**" ).
 

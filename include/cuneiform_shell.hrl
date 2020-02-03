@@ -28,59 +28,16 @@
 %% @end
 %% -------------------------------------------------------------------
 
--module( prop_cuneiform_notion ).
-
--include_lib( "proper/include/proper.hrl" ).
-
--include( "cuneiform.hrl" ).
-
--import( cuneiform_lang, [is_expr/1] ).
--import( cuneiform_notion, [notion/1] ).
-
-
 %%====================================================================
-%% Properties
+%% Type definitions
 %%====================================================================
 
-prop_notion_returns_expr_or_fails_norule() ->
-  ?FORALL( E, e(),
-    begin
-      try
-        is_expr( notion( E ) )
-      catch
-        error:{norule, E} -> true;
-        error:_           -> false
-      end
-    end ).
+-type stage() :: load
+               | scan
+               | parse
+               | type
+               | runtime.
 
-prop_notion_alters_redex() ->
-  ?FORALL( E, e(),
-    begin
-      try
-        notion( E ) =/= E
-      catch
-        error:{norule, E} -> true
-      end
-    end ).
-
-prop_notion_value_fails() ->
-  ?FORALL( V, v(),
-    begin
-      try
-        notion( V ),
-        false
-      catch
-        error:{norule, V} -> true
-      end
-    end ).
-
-prop_notion_nonexpr_fails() ->
-  ?FORALL( Z, ?SUCHTHAT( Z, term(), not is_expr( Z ) ),
-    begin
-      try
-        notion( Z ),
-        false
-      catch
-        error:_ -> true
-      end
-    end ).
+-type reply() :: {query, e()}
+               | {error, stage(), _}
+               | {parrot, e(), t()}.

@@ -37,17 +37,16 @@
 %%====================================================================
 
 %% CRE client callbacks
--export( [init/1, is_value/2, recv/3, step/2] ).
+-export( [init/1, is_value/2, recv/3, step/2, load/2, unload/2] ).
 
 %% API functions
 -export( [start_link/1, start_link/2] ).
 
+-include( "cuneiform_lang.hrl" ).
+-include( "cuneiform_cek.hrl" ).
 
-
--define( CUNEIFORM_SEM, cuneiform_sem_cek ).
-
--include_lib( "cuneiform.hrl" ).
-
+-import( cuneiform_sem, [ev/1, extract_outbox/1, is_finished/1, load/1, recv_result/3, unload/1] ).
+-import( cf_client_effi, [app_to_effi_request/2, effi_reply_to_expr/2] ).
 
 %%====================================================================
 %% API functions
@@ -81,32 +80,50 @@ start_link( Clientname, CreName ) ->
 
 init( _ClientArg ) -> [].
 
--spec is_value( E :: e(), UsrInfo :: _ ) -> boolean().
+-spec is_value( P :: prog(), UsrInfo :: _ ) -> boolean().
 
-is_value( {err, _, _, _}, _ ) -> true;
-
-is_value( E, _ ) ->
-  cuneiform_sem:is_value( E ).
+is_value( P, _ ) ->
+  is_finished( P ).
 
 
--spec recv( E, ReplyLst, UsrInfo ) -> e()
-when E        :: e(),
+-spec recv( P, ReplyLst, UsrInfo ) -> prog()
+when P        :: prog(),
      ReplyLst :: [{#{ atom() => _ }, #{ atom() => _ }}],
      UsrInfo  :: _.
 
-recv( E, ReplyLst, _UsrInfo ) ->
+recv( P, ReplyLst, _UsrInfo ) ->
 
-  ReplyLst1 = [{AppId, cf_client_effi:effi_reply_to_expr( A, R )}
-               || {A = #{ app_id := AppId }, R} <- ReplyLst],
+  F =
+    fun( {A, R}, Prog ) ->
+      #{ app_id := H } = A,
+      E = effi_reply_to_expr( A, R ),
+      recv_result( Prog, H, E )
+    end,
 
-  cuneiform_sem:subst_fut( E, ReplyLst1 ).
+
+  lists:foldl( F, P, ReplyLst ).
 
 
--spec step( E, UsrInfo ) -> Result
-when E       :: e(),
+-spec step( P, UsrInfo ) -> Result
+when P       :: prog(),
      UsrInfo :: _,
-     Result  :: {ok, e(), [e()]}.
+     Result  :: {ok, prog(), [e()]}.
 
-step( E, _UsrInfo ) ->
-  ?CUNEIFORM_SEM:step( E ).
+step( P, _UsrInfo ) ->
+  {Outbox, P1} = extract_outbox( ev( P ) ),
+  Outbox1 = [app_to_effi_request( H, E ) || {H, E} <- Outbox],
+  {ok, P1, Outbox1}.
 
+-spec load( E, UserInfo ) -> prog()
+when E        :: e(),
+     UserInfo :: _.
+
+load( E, _ ) ->
+  load( E ).
+
+-spec unload( P, UserInfo ) -> e()
+when P        :: prog(),
+     UserInfo :: _.
+
+unload( P, _ ) ->
+  unload( P ).

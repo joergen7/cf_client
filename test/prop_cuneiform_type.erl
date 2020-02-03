@@ -32,12 +32,11 @@
 
 -include_lib( "proper/include/proper.hrl" ).
 
--include( "cuneiform.hrl" ).
+-include( "cuneiform_lang.hrl" ).
 
--import( cuneiform_lang, [is_type/1, is_expr/1] ).
+-import( cuneiform_lang, [validate_type/1] ).
 
--import( cuneiform_type, [type/1,
-                          is_type_comparable/1,
+-import( cuneiform_type, [is_type_comparable/1,
                           is_type_equivalent/2] ).
 
 %% Type Comparability
@@ -63,22 +62,3 @@ prop_is_type_equivalent_symmetric() ->
         is_type_equivalent( T1, T2 ) =:= is_type_equivalent( T2, T1 )
       end ) ).
 
-prop_type_returns_type_or_error() ->
-  ?FORALL( E, e(),
-    begin
-      case type( E ) of
-        {ok, T}    -> is_type( T );
-        {error, _} -> true
-      end
-    end ).
-
-prop_type_no_expr_fails() ->
-  ?FORALL( Z, ?SUCHTHAT( Z, term(), not is_expr( Z ) ),
-    begin
-      try
-        type( Z ),
-        false
-      catch
-        error:_ -> true
-      end
-    end ).

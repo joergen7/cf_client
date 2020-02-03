@@ -30,22 +30,20 @@
 
 -module( cf_client_effi ).
 
--export( [app_to_effi_request/1, effi_reply_to_expr/2, reconstruct_type/1] ).
+-export( [app_to_effi_request/2, effi_reply_to_expr/2, reconstruct_type/1] ).
 
--include( "cuneiform.hrl" ).
+-include( "cuneiform_lang.hrl" ).
 
--import( cuneiform_lang, [e_bind/2, true/0, false/0, str/1, file/1, lst/2,
-                          t_bool/0, t_str/0, t_file/0, rcd/1, t_lst/1, t_rcd/1,
-                          t_arg/2] ).
-
+-import( cuneiform_lang, [true/0, false/0, str/1, file/1, lst/2, t_bool/0,
+                          t_str/0, t_file/0, rcd/1, t_lst/1, t_rcd/1] ).
 
 
--spec app_to_effi_request( A :: e() ) -> #{ atom() => _ }.
 
-app_to_effi_request(
-  {app, _,
-        {lam_frn, _, FName, ArgLst, {'Rcd', RetLst}, Lang, Body},
-        EBindLst} ) ->
+-spec app_to_effi_request( H :: binary(), A :: e() ) -> #{ atom() => _ }.
+
+app_to_effi_request( H, A ) ->
+
+  {app, _, {lam_frn, _, FName, ArgLst, {'Rcd', RetLst}, Lang, Body}, EBindLst} = A,
 
   ConvertExpr =
     fun
@@ -84,11 +82,6 @@ app_to_effi_request(
                                      is_list  => true }
     end,
 
-  BinaryToHexString =
-    fun( X ) when is_binary( X ) ->
-      lists:flatten( [io_lib:format( "~2.16.0b", [B] ) || <<B>> <= X] )
-    end,
-
   ArgTypeLst = [ConvertTArg( TArg ) || TArg <- ArgLst],
 
   RetTypeLst = [ConvertTArg( TArg ) || TArg <- RetLst],
@@ -103,11 +96,7 @@ app_to_effi_request(
                    value    => ConvertExpr( E ) }
                 || {X, E} <- EBindLst],
 
-  Hash = crypto:hash( sha224, io_lib:format( "~w~w", [Lambda, ArgBindLst] ) ),
-
-  AppId = list_to_binary( BinaryToHexString( Hash ) ),
-
-  #{ app_id       => AppId,
+  #{ app_id       => H,
      lambda       => Lambda,
      arg_bind_lst => ArgBindLst }.
 
@@ -144,26 +133,26 @@ effi_reply_to_expr( Request, Reply ) ->
           case T of
             <<"Bool">> ->
               case V of
-                <<"true">>  -> e_bind( X, true() );
-                <<"false">> -> e_bind( X, false() )
+                <<"true">>  -> {X, true()};
+                <<"false">> -> {X, false()}
               end;
             <<"Str">> ->
-              e_bind( X, str( V ) );
+              {X, str( V )};
             <<"File">> ->
-              e_bind( X, file( V ) )
+              {X, file( V )}
           end;
 
         true ->
           case T of
             <<"Bool">> ->
-              e_bind( X, lst( t_bool(), [case Y of
-                                           <<"true">>  -> true();
-                                           <<"false">> -> false()
-                                         end || Y <- V] ) );
+              {X, lst( t_bool(), [case Y of
+                                    <<"true">>  -> true();
+                                    <<"false">> -> false()
+                                  end || Y <- V] )};
             <<"Str">> ->
-              e_bind( X, lst( t_str(), [str( Y ) || Y <- V] ) );
+              {X, lst( t_str(), [str( Y ) || Y <- V] )};
             <<"File">> ->
-              e_bind( X, lst( t_file(), [file( Y ) || Y <- V] ) )
+              {X, lst( t_file(), [file( Y ) || Y <- V] )}
           end
 
       end
@@ -221,8 +210,8 @@ reconstruct_type( RetTypeLst ) ->
         end,
 
       case IsList of
-        true  -> t_arg( X, t_lst( BaseType ) );
-        false -> t_arg( X, BaseType )
+        true  -> {X, t_lst( BaseType )};
+        false -> {X, BaseType}
       end
 
     end,

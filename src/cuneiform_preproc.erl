@@ -37,42 +37,36 @@
 
 -export( [join_stat/2, visit_from/3, visit_fold/7, visit_cnd/6, visit_for/5,
           visit_import/1, visit_r_var/2, visit_var/1, visit_file/1, visit_str/1,
-          visit_assign/3, visit_def_frn/6, visit_def_ntv/6, visit_r_rcd/2,
+          visit_assign/3, visit_def_frn/6, visit_def_ntv/6,
           visit_t_arg/2, visit_true/1, visit_false/1, visit_cmp/3, visit_conj/3,
           visit_disj/3, visit_neg/2, visit_app/2, visit_rcd/2, visit_proj/2,
           visit_append/3, visit_lst/3, visit_cons/3, visit_isnil/2, visit_err/3,
-          visit_e_bind/2, visit_r_bind/2] ).
+          visit_e_bind/2, visit_r_bind/2, visit_hd/3, visit_tl/3] ).
 
 
 %%====================================================================
 %% Includes
 %%====================================================================
 
--include( "cuneiform.hrl" ).
-
+-include( "cuneiform_lang.hrl" ).
 
 %%====================================================================
 %% Imports
 %%====================================================================
 
--import( cuneiform_lang, [
-                          t_bool/0, t_fn/3, t_rcd/1
-                         ] ).
+-import( cuneiform_lang, [t_bool/0, t_fn/2, t_rcd/1] ).
 
--import( cuneiform_lang, [
-                          r_var/2, t_arg/2, e_bind/2, r_bind/2, r_rcd/1
-                         ] ).
+-import( cuneiform_lang, [r_var/2, r_rcd/1] ).
 
 -import( cuneiform_lang, [
                           var/2, file/2, str/2, assign/3, true/1, false/1,
-                          create_closure/2, cmp/3, conj/3, disj/3, neg/2,
-                          cnd/4, lam_frn/6, fix/2, lam_ntv/3, app/3,
+                          expand_closure/2, cmp/3, conj/3, disj/3, neg/2,
+                          cnd/4, fix/2, lam/3, app/3,
                           rcd/2, proj/3, append/3, lst/3, isnil/2, for/4,
-                          fold/4, cons/3, err/3
+                          fold/4, cons/3, err/3, hd/3, tl/3
                          ] ).
 
--import( cuneiform_lang, [typed_bind/3] ).
--import( cuneiform_lang, [find_ambiguous/1, pattern_names/1] ).
+-import( cuneiform_lang, [ambiguous_names/1, pattern_names/1] ).
 
 
 %%====================================================================
@@ -96,26 +90,24 @@ when Id :: {id, _, S :: string()},
      E  :: e().
 
 visit_from( {id, _, S}, T, E ) ->
-  typed_bind( list_to_atom( S ), T, E ).
+  {list_to_atom( S ), T, E}.
 
 
--spec visit_fold( Fold, Id, T, E, From, DefLst, EBody ) -> e()
-when Fold   :: {fold, L :: pos_integer(), _},
-     Id     :: {id, _, S :: string()},
-     T      :: t(),
-     E      :: e(),
-     From   :: {x(), t(), e()},
-     DefLst :: [assign()],
-     EBody  :: e().
+-spec visit_fold( Fold, Id, T, E, From, AssignLst, EBody ) -> e()
+when Fold      :: {fold, L :: pos_integer(), _},
+     Id        :: {id, _, S :: string()},
+     T         :: t(),
+     E         :: e(),
+     From      :: {x(), t(), e()},
+     AssignLst :: [assign()],
+     EBody     :: e().
 
-visit_fold( {fold, L, _}, {id, _, S}, T, E, From, DefLst, EBody ) ->
+visit_fold( {fold, L, _}, {id, _, S}, T, E, From, AssignLst, EBody ) ->
 
-  AccBind = typed_bind( list_to_atom( S ), T, E ),
+  AccBind = {list_to_atom( S ), T, E},
 
-  case create_closure( DefLst, EBody ) of
-    {ok, C}         -> fold( L, AccBind, From, C );
-    {error, Reason} -> throw( Reason )
-  end.
+  C = expand_closure( AssignLst, EBody ),
+  fold( L, AccBind, From, C ).
 
 
 -spec visit_cnd( Cnd, EIf, DefLstThen, EThen, DefLstElse, EElse ) -> e()
@@ -127,23 +119,9 @@ when Cnd        :: {cnd, L :: pos_integer(), _},
      EElse      :: e().
 
 visit_cnd( {cnd, L, _}, EIf, DefLstThen, EThen, DefLstElse, EElse ) ->
-  case create_closure( DefLstThen, EThen ) of
-
-    {error, R2} ->
-      throw( R2 );
-
-    {ok, E2} ->
-      case create_closure( DefLstElse, EElse ) of
-
-        {error, R3} ->
-          throw( R3 );
-
-        {ok, E3} ->
-          cnd( L, EIf, E2, E3 )
-
-      end
-
-  end.
+  E2 = expand_closure( DefLstThen, EThen ),
+  E3 = expand_closure( DefLstElse, EElse ),
+  cnd( L, EIf, E2, E3 ).
 
 
 -spec visit_for( For, FromLst, DefLst, E, TRet ) -> e()
@@ -154,12 +132,8 @@ when For     :: {for, L :: pos_integer(), _},
      TRet    :: t().
 
 visit_for( {for, L, _}, FromLst, DefLst, E, TRet ) ->
-  case create_closure( DefLst, E ) of
-    {ok, C} ->
-      for( L, TRet, FromLst, C );
-    {error, Reason} ->
-      throw( Reason )
-  end.
+  C = expand_closure( DefLst, E ),
+  for( L, TRet, FromLst, C ).
 
 
 -spec visit_import( {filelit, L :: _, S :: string()} ) -> {import, _, string()}.
@@ -240,55 +214,49 @@ visit_def_frn( {def, L, _}, {id, _, SName}, ArgLst, UArgLst, Lang, {body, _, SBo
   BBody = list_to_binary( SBody ),
   FName = list_to_atom( SName ),
   RetType = t_rcd( UArgLst ),
-  T = t_fn( frn, ArgLst, RetType ), 
+  T = t_fn( ArgLst, RetType ), 
   R = r_var( FName, T ),
-  Lam = lam_frn( L, FName, ArgLst, RetType, Lang, BBody ),
+  Lam = lam( L, ArgLst, {frn, FName, RetType, Lang, BBody} ),
   assign( L, R, Lam ).
 
 
--spec visit_def_ntv( Def, Id, ArgLst, RetType, DefLst, EBody ) -> assign()
-when Def     :: {def, _, _},
-     Id      :: {id, _, string()},
-     ArgLst  :: [{x(), t()}],
-     RetType :: t(),
-     DefLst  :: [assign()],
-     EBody   :: e().
+-spec visit_def_ntv( Def, Id, ArgLst, RetType, AssignLst, EBody ) -> assign()
+when Def       :: {def, _, _},
+     Id        :: {id, _, string()},
+     ArgLst    :: [{x(), t()}],
+     RetType   :: t(),
+     AssignLst :: [assign()],
+     EBody     :: e().
 
 visit_def_ntv( {def, L, _},
                {id, _, SName},
                ArgLst,
                RetType,
-               DefLst,
+               AssignLst,
                EBody )
 when is_integer( L ),
      is_list( SName ),
      is_list( ArgLst ),
-     is_list( DefLst ) ->
+     is_list( AssignLst ) ->
 
-  case create_closure( DefLst, EBody ) of
+  C = expand_closure( AssignLst, EBody ),
+  FName = list_to_atom( SName ),
+  TFn = t_fn( ArgLst, RetType ),
+  Lam = fix(
+          L,
+          lam(
+            L,
+            [{FName, TFn}|ArgLst],
+            {ntv, C} ) ),
+  R = r_var( FName, TFn ),
+  assign( L, R, Lam ).
 
-    {ok, C} ->
-      FName = list_to_atom( SName ),
-      TFn = t_fn( ntv, ArgLst, RetType ),
-      Lam = fix(
-              L,
-              lam_ntv(
-                L,
-                [t_arg( FName, TFn )|ArgLst],
-                C ) ),
-      R = r_var( FName, TFn ),
-      assign( L, R, Lam );
-
-    {error, Reason} ->
-      throw( Reason )
-
-  end.
 
 
 -spec visit_t_arg( {id, _, S :: string()}, T :: t() ) -> {x(), t()}.
 
 visit_t_arg( {id, _, S}, T ) ->
-  t_arg( list_to_atom( S ), T ).
+  {list_to_atom( S ), T}.
 
 
 -spec visit_app( {id, L :: _, S :: string()}, EBindLst :: [{x(), e()}] ) -> e().
@@ -300,34 +268,13 @@ visit_app( {id, L, S}, EBindLst ) ->
 -spec visit_e_bind( {id, _, S :: string()}, E :: e() ) -> {x(), e()}.
 
 visit_e_bind( {id, _, S}, E ) ->
-  e_bind( list_to_atom( S ), E ).
+  {list_to_atom( S ), E}.
 
 
 -spec visit_r_bind( {id, _, S :: string()}, R :: r() ) -> {x(), r()}.
 
 visit_r_bind( {id, _, S}, R ) ->
-  r_bind( list_to_atom( S ), R ).
-
-
--spec visit_r_rcd( {ltag, Info :: _, _}, RBindLst :: [{x(), r()}] ) -> r().
-
-visit_r_rcd( {ltag, Info, _}, RBindLst ) ->
-
-  R = r_rcd( RBindLst ),
-
-  ok = 
-    case find_ambiguous( pattern_names( R ) ) of
-      unambiguous    -> ok;
-      {ambiguous, X} -> throw( {ambiguous_variable, Info, X} )
-    end,
-
-  ok =
-    case find_ambiguous( [X || {X, _R} <- RBindLst] ) of
-      unambiguous    -> ok;
-      {ambiguous, Y} -> throw( {ambiguous_field, Info, Y} )
-    end,
-
-  R.
+  {list_to_atom( S ), R}.
 
 
 -spec visit_rcd( {ltag, L :: _, _}, EBindLst :: [{x(), e()}] ) -> e().
@@ -375,4 +322,15 @@ visit_cons( {doublertag, L, _}, E1, E2 ) ->
 -spec visit_err( {err, L :: _, _}, Msg :: {strlit, _, S :: string()}, T :: t() ) -> e().
 
 visit_err( {err, L, _}, {strlit, _, S}, T ) ->
-  err( L, T, list_to_binary( S ) ).
+  Reason = {user, list_to_binary( S )},
+  err( L, T, Reason ).
+
+-spec visit_hd( {hd, L :: _, _}, E1 :: e(), E2 :: e() ) -> e().
+
+visit_hd( {hd, L, _}, E1, E2 ) ->
+  hd( L, E1, E2 ).
+
+-spec visit_tl( {tl, L :: _, _}, E1 :: e(), E2 :: e() ) -> e().
+
+visit_tl( {tl, L, _}, E1, E2 ) ->
+  tl( L, E1, E2 ).
