@@ -45,7 +45,7 @@
 -include( "cuneiform_lang.hrl" ).
 -include( "cuneiform_cek.hrl" ).
 
--import( cuneiform_sem, [ev/1, extract_outbox/1, is_finished/1, load/1, recv_result/3, unload/1] ).
+-import( cuneiform_cek, [ev/1, extract_outbox/1, is_finished/1, load/1, recv_result/3, unload/1] ).
 -import( cf_client_effi, [app_to_effi_request/2, effi_reply_to_expr/2] ).
 
 %%====================================================================
