@@ -32,6 +32,8 @@
 %% Type definitions
 %%====================================================================
 
+-type gamma()       :: #{ x() => t() }.
+
 -type type_error()  :: {unbound_var,                               info(),x()}
                      | {ambiguous_name,                            info(), [x()]}
                      | {frn_fn_ambiguous_arg_or_return_field_name, info(), [x()]}
@@ -79,3 +81,4 @@
                      | {rcd_ambiguous_field_name,                  info(), [x()]}
                      | {proj_field_missing,                        info(), x()}
                      | {proj_no_record,                            info(), {e(), t()}}.
+

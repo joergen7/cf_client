@@ -55,7 +55,7 @@ type( E ) ->
 
 
 -spec type( Gamma, E ) -> {ok, t()} | {error, type_error()}
-when Gamma :: #{ x() => t() },
+when Gamma :: gamma(),
      E     :: e().
 
 type( Gamma, {var, Info, X} ) ->                                                % T-var
@@ -456,7 +456,11 @@ type( Gamma, {proj, Info, X, E} ) ->                                            
     {error, Reason} ->
       {error, Reason}
 
-  end.
+  end;
+
+type( _Gamma, {close, _, E, Env} ) ->
+  type( env_to_gamma( Env ), E ).
+
 
 
 %%====================================================================
@@ -540,7 +544,6 @@ check_argument_binding( Gamma, Info, [{X1, T1}|Tl1], [{X1, E1}|Tl2] ) ->
 
 check_argument_binding( _Gamma, Info, [{X, _}|_], [{Y, _}|_] ) ->
   {error, {app_arg_name_mismatch, Info, {X, Y}}}.
-  % TODO: Cut some slack for renamed arguments. E.g., x$123 = x.
 
 
 -spec is_type_comparable( T :: t() ) -> boolean().
@@ -598,3 +601,17 @@ is_type_equivalent( {'Rcd', [{X1, T1}|XtLst1]}, {'Rcd', XtLst2} ) ->
 is_type_equivalent( _, _ ) ->
   false.
 
+
+-spec env_to_gamma( Env :: env() ) -> gamma().
+
+env_to_gamma( Env ) ->
+
+  F =
+    fun( _X, {E1, Env1} ) ->
+      case type( env_to_gamma( Env1 ), E1 ) of
+        {ok, T}         -> T;
+        {error, Reason} -> {error, Reason}
+      end
+    end,
+
+  maps:map( F, Env ).

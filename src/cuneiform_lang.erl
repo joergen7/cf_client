@@ -609,6 +609,9 @@ validate_reason( {run, _, _, _, _, Z} )
 when not is_binary( Z ) ->
   error( {bad_binary, Z} );
 
+validate_reason( {stagein, _, _, _, []} ) ->
+  error( {empty_file_list, stagein} );
+
 validate_reason( R = {stagein, Node, AppId, LamName, FileLst} )
 when is_binary( Node ),
      is_binary( AppId ),
@@ -628,6 +631,9 @@ when not is_binary( Z ) ->
 validate_reason( {stagein, _, _, _, Z} )
 when not is_list( Z ) ->
   error( {bad_file_lst, Z} );
+
+validate_reason( {stageout, _, _, _, []} ) ->
+  error( {empty_file_list, stageout} );
 
 validate_reason( R = {stageout, Node, AppId, LamName, FileLst} )
 when is_binary( Node ),

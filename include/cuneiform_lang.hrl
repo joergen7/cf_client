@@ -33,9 +33,9 @@
 %%====================================================================
 
 -type e()           :: {var, info(), x()}
-                     | {lam, info(), [{x(), t()}], {ntv, e()}}                % binding form
+                     | {lam, info(), [{x(), t()}], {ntv, e()}}                   % binding form
                      | {lam, info(), [{x(), t()}], {frn, x(), t(), l(), s()}}
-                     | {app, info(), e(), [{x(), e()}]}                       % binding form
+                     | {app, info(), e(), [{x(), e()}]}                          % binding form
                      | {fix, info(), e()}
                      | {fut, info(), t(), binary()}
                      | {str, info(), s()}
@@ -53,9 +53,9 @@
                      | {hd, info(), e(), e()}
                      | {tl, info(), e(), e()}
                      | {append, info(), e(), e()}
-                     | {for, info(), t(), [{x(), t(), e()}], e()}             % binding form
-                     | {fold, info(), {x(), t(), e()}, {x(), t(), e()}, e()}  % binding form
-                     | {rcd, info(), [{x(), e()}]}
+                     | {for, info(), t(), nonempty_list( {x(), t(), e()} ), e()} % binding form
+                     | {fold, info(), {x(), t(), e()}, {x(), t(), e()}, e()}     % binding form
+                     | {rcd, info(), nonempty_list( {x(), e()} )}
                      | {proj, info(), x(), e()}
                      | {err, info(), t(), reason()}
                      | {close, info(), e(), env()}.
@@ -70,9 +70,9 @@
                              LamName :: x(), ExtendedScript :: binary(),
                              Output :: binary()}
                      | {stagein, Node :: binary(), AppId :: binary(),
-                                 LamName :: x(), FileLst :: [s()]}
+                                 LamName :: x(), FileLst :: nonempty_list( s() )}
                      | {stageout, Node :: binary(), AppId :: binary(),
-                                  LamName :: x(), FileLst :: [s()]}
+                                  LamName :: x(), FileLst :: nonempty_list( s() )}
                      | {user, Msg :: s()}.
 
 -type x()           :: atom().
