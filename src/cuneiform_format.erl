@@ -36,10 +36,35 @@
 -include( "cuneiform_lang.hrl" ).
 -include( "cuneiform_shell.hrl" ).
 
--define( CLOSURE, "**closure**" ).
+-define( LAM, "*lam*" ).
+-define( CLOSE, "*close*" ).
+-define( APP, "*app*" ).
+-define( FIX, "*fix*" ).
+-define( FUT, "*fut*" ).
 
 
 -spec format_expr( E :: e() ) -> string().
+
+format_expr( {var, _, X} ) ->
+  atom_to_list( X );
+
+format_expr( {lam, _, _, _} ) ->
+  ?LAM;
+
+format_expr( {app, _, {var, _, X}, EBindLst} ) ->
+  L = [io_lib:format( "~s = ~s", [X1, format_expr( E1 )] ) ||{X1, E1} <- EBindLst],
+  S = string:join( L, ", " ),
+  io_lib:format( "~s( ~s )", [X, S] );
+
+format_expr( {app, _, {lam, _, [{X, T}], EBody}, [{X, E}]} ) ->
+  io_lib:format( "let ~s : ~s = ~s; ~s",
+                 [X,
+                  format_type( T ),
+                  format_expr( E ),
+                  format_expr( EBody )] );
+
+format_expr( {app, _, _, _} ) ->
+  ?APP;
 
 format_expr( {str, _, B} )     -> io_lib:format( "\"~s\"", [B] );
 format_expr( {file, _, B, _} ) -> io_lib:format( "'~s'", [B] );
@@ -61,32 +86,8 @@ format_expr( {conj, _, A, B} ) ->
 format_expr( {disj, _, A, B} ) ->
   io_lib:format( "(~s or ~s)", [format_expr( A ), format_expr( B )] );
 
-format_expr( {var, _, X} ) ->
-  atom_to_list( X );
-
-format_expr( {lam_ntv, _, _, _} ) ->
-  ?CLOSURE;
-
-format_expr( {lam_frn, _, _, _, _, _, _} ) ->
-  ?CLOSURE;
-
-format_expr( {app, _, {var, _, X}, EBindLst} ) ->
-  L = [io_lib:format( "~s = ~s", [X1, format_expr( E1 )] ) ||{X1, E1} <- EBindLst],
-  S = string:join( L, ", " ),
-  io_lib:format( "~s (~s)", [X, S] );
-
-format_expr( {app, _, {lam_ntv, _, [{X, _, T}], EBody}, [{X, E}]} ) ->
-  io_lib:format( "let ~s : ~s = ~s; ~s",
-                 [X,
-                  format_type( T ),
-                  format_expr( E ),
-                  format_expr( EBody )] );
-
-format_expr( {app, _, _, _} ) ->
-  ?CLOSURE;
-
 format_expr( {fut, _, _, _} ) ->
-  ?CLOSURE;
+  ?FUT;
 
 format_expr( {null, _, T} ) ->
   io_lib:format( "[: ~s]", [format_type( T )] );
@@ -114,7 +115,7 @@ format_expr( {isnil, _, E} ) ->
   io_lib:format( "isnil ~s", [format_expr( E )] );
 
 format_expr( {fix, _, _} ) ->
-  ?CLOSURE;
+  ?FIX;
 
 format_expr( {err, _, T, {user, Msg}} ) ->
   io_lib:format( "error ~s : ~s", [Msg, format_type( T )] );
@@ -150,17 +151,13 @@ format_type( 'Str' )  -> "Str";
 format_type( 'File' ) -> "File";
 format_type( 'Bool' ) -> "Bool";
 
-format_type( {'Fn', Tau, TBindLst, RetType} ) ->
+format_type( {'Fn', [], TRet} ) ->
+  lists:flatten( io_lib:format( "Fn() -> ~s", [format_type( TRet )] ) );
+
+format_type( {'Fn', TBindLst, RetType} ) ->
   L = [io_lib:format( "~s : ~s", [X, format_type( T )] ) || {X, T} <- TBindLst],
-  S = string:join( L, ", " ),
-
-  Z =
-    case Tau of
-      ntv -> "Ntv";
-      frn -> "Frn"
-    end,
-
-  io_lib:format( "~s (~s) -> ~s", [Z, S, format_type( RetType )] );
+  S = lists:join( ", ", L ),
+  lists:flatten( io_lib:format( "Fn( ~s ) -> ~s", [S, format_type( RetType )] ) );
 
 format_type( {'Lst', T} ) ->
   io_lib:format( "[~s]", [format_type( T )] );

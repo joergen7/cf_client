@@ -39,7 +39,7 @@ Nonterminals
 Terminals
   l_awk l_bash l_elixir l_erlang l_gnuplot l_java l_javascript l_matlab
   l_octave l_perl l_python l_r l_racket
-  t_str t_file t_bool t_fn_frn t_fn_ntv
+  t_str t_file t_bool t_fn
   assign bar cmp cnd colon comma def default do doublertag else eq err false
   fold for halt hd import in isnil larrow lbrace lparen lsquarebr ltag neg plus
   rarrow rbrace rparen rsquarebr rtag semicolon then tl true vee wedge
@@ -91,10 +91,8 @@ l               -> l_racket                   : l_racket().
 t               -> t_str                                     : t_str().
 t               -> t_file                                    : t_file().
 t               -> t_bool                                    : t_bool().
-t               -> t_fn_ntv lparen rparen rarrow t           : t_fn( [], '$5' ).
-t               -> t_fn_ntv lparen t_arg_lst rparen rarrow t : t_fn( '$3', '$6' ).
-t               -> t_fn_frn lparen rparen rarrow t           : t_fn( [], '$5' ).
-t               -> t_fn_frn lparen t_arg_lst rparen rarrow t : t_fn( '$3', '$6' ).
+t               -> t_fn lparen rparen rarrow t               : t_fn( [], '$5' ).
+t               -> t_fn lparen t_arg_lst rparen rarrow t     : t_fn( '$3', '$6' ).
 t               -> lsquarebr t rsquarebr                     : t_lst( '$2' ).
 t               -> ltag t_arg_lst rtag                       : t_rcd( '$2' ).
 

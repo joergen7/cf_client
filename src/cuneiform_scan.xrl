@@ -52,8 +52,7 @@ LRACKET     = Racket
 TSTR        = Str
 TFILE       = File
 TBOOL       = Bool
-TFNNTV      = Ntv
-TFNFRN      = Frn
+TFN         = Fn
 
 ASSIGN      = let
 BAR         = \|
@@ -128,8 +127,7 @@ Rules.
 {TSTR}        : {token, {t_str, TokenLine, TokenChars}}.
 {TFILE}       : {token, {t_file, TokenLine, TokenChars}}.
 {TBOOL}       : {token, {t_bool, TokenLine, TokenChars}}.
-{TFNNTV}      : {token, {t_fn_ntv, TokenLine, TokenChars}}.
-{TFNFRN}      : {token, {t_fn_frn, TokenLine, TokenChars}}.
+{TFN}         : {token, {t_fn, TokenLine, TokenChars}}.
 
 {ASSIGN}      : {token, {assign, TokenLine, TokenChars}}.
 {BAR}         : {token, {bar, TokenLine, TokenChars}}.
