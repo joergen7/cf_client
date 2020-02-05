@@ -610,7 +610,7 @@ when not is_binary( Z ) ->
   error( {bad_binary, Z} );
 
 validate_reason( {stagein, _, _, _, []} ) ->
-  error( {empty_file_list, stagein} );
+  error( stagein_empty_file_list );
 
 validate_reason( R = {stagein, Node, AppId, LamName, FileLst} )
 when is_binary( Node ),
@@ -633,7 +633,7 @@ when not is_list( Z ) ->
   error( {bad_file_lst, Z} );
 
 validate_reason( {stageout, _, _, _, []} ) ->
-  error( {empty_file_list, stageout} );
+  error( stageout_empty_file_list );
 
 validate_reason( R = {stageout, Node, AppId, LamName, FileLst} )
 when is_binary( Node ),
@@ -907,6 +907,9 @@ validate_expr( E = {append, Info, E1, E2} ) ->
   validate_expr( E2 ),
   E;
 
+validate_expr( {for, _, _, [], _} ) ->
+  error( for_empty_bind_list );
+
 validate_expr( E = {for, Info, TRet, XteLst, EBody} ) ->
   validate_info( Info ),
   validate_type( TRet ),
@@ -920,6 +923,9 @@ validate_expr( E = {fold, Info, AccBind, LstBind, EBody} ) ->
   validate_xte( LstBind ),
   validate_expr( EBody ),
   E;
+
+validate_expr( {rcd, _, []} ) ->
+  error( rcd_empty_field_list );
 
 validate_expr( E = {rcd, Info, XeLst} ) ->
   validate_info( Info ),

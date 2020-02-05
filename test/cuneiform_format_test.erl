@@ -43,7 +43,7 @@
 
 -import( cuneiform_format, [format_type/1] ).
 
--import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/2] ).
+-import( cuneiform_lang, [t_str/0, t_file/0, t_bool/0, t_fn/2, t_lst/1, t_rcd/1] ).
 
 format_type_test_() ->
   {foreach,
@@ -56,7 +56,10 @@ format_type_test_() ->
     {"format type Bool", fun format_type_bool/0},
     {"format type Fn 0", fun format_type_fn_0/0},
     {"format type Fn 1", fun format_type_fn_1/0},
-    {"format type Fn 2", fun format_type_fn_2/0}
+    {"format type Fn 2", fun format_type_fn_2/0},
+    {"format type Lst", fun format_type_lst/0},
+    {"format type Rcd 1", fun format_type_rcd_1/0},
+    {"format type Rcd 2", fun format_type_rcd_2/0}
    ]
   }.
 
@@ -80,3 +83,15 @@ format_type_fn_1() ->
 format_type_fn_2() ->
   T = t_fn( [{x, t_bool()}, {y, t_file()}], t_str() ),
   ?assertEqual( "Fn( x : Bool, y : File ) -> Str", format_type( T ) ).
+
+format_type_lst() ->
+  T = t_lst( t_bool() ),
+  ?assertEqual( "[Bool]", format_type( T ) ).
+
+format_type_rcd_1() ->
+  T = t_rcd( [{a, t_str()}] ),
+  ?assertEqual( "<a : Str>", format_type( T ) ).
+
+format_type_rcd_2() ->
+  T = t_rcd( [{a, t_str()}, {b, t_bool()}] ),
+  ?assertEqual( "<a : Str, b : Bool>", format_type( T ) ).

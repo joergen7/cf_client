@@ -160,12 +160,12 @@ format_type( {'Fn', TBindLst, RetType} ) ->
   lists:flatten( io_lib:format( "Fn( ~s ) -> ~s", [S, format_type( RetType )] ) );
 
 format_type( {'Lst', T} ) ->
-  io_lib:format( "[~s]", [format_type( T )] );
+  lists:flatten( io_lib:format( "[~s]", [format_type( T )] ) );
 
 format_type( {'Rcd', TBindLst} ) ->
   L = [io_lib:format( "~s : ~s", [X, format_type( T )] ) || {X, T} <- TBindLst],
-  S = string:join( L, ", " ),
-  io_lib:format( "<~s>", [S] ).
+  S = lists:join( ", ", L ),
+  lists:flatten( io_lib:format( "<~s>", [S] ) ).
 
 
 
