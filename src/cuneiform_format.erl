@@ -51,43 +51,64 @@ format_expr( {var, _, X} ) ->
 format_expr( {lam, _, _, _} ) ->
   ?LAM;
 
+format_expr( {app, _, {var, _, X}, []} ) ->
+  lists:flatten( io_lib:format( "~s()", [X] ) );
+
 format_expr( {app, _, {var, _, X}, EBindLst} ) ->
   L = [io_lib:format( "~s = ~s", [X1, format_expr( E1 )] ) ||{X1, E1} <- EBindLst],
   S = string:join( L, ", " ),
-  io_lib:format( "~s( ~s )", [X, S] );
+  lists:flatten( io_lib:format( "~s( ~s )", [X, S] ) );
 
-format_expr( {app, _, {lam, _, [{X, T}], EBody}, [{X, E}]} ) ->
-  io_lib:format( "let ~s : ~s = ~s; ~s",
-                 [X,
-                  format_type( T ),
-                  format_expr( E ),
-                  format_expr( EBody )] );
+%format_expr( {app, _, {lam, _, [{X, T}], EBody}, [{X, E}]} ) ->
+%  io_lib:format( "let ~s : ~s = ~s; ~s",
+%                 [X,
+%                  format_type( T ),
+%                  format_expr( E ),
+%                  format_expr( EBody )] );
 
 format_expr( {app, _, _, _} ) ->
   ?APP;
 
-format_expr( {str, _, B} )     -> io_lib:format( "\"~s\"", [B] );
-format_expr( {file, _, B, _} ) -> io_lib:format( "'~s'", [B] );
-format_expr( {true, _} )       -> "true";
-format_expr( {false, _} )      -> "false";
+format_expr( {fix, _, _} )    -> ?FIX;
+format_expr( {fut, _, _, _} ) -> ?FUT;
 
-format_expr( {cnd, _, A, B, C} ) ->
-  io_lib:format( "if ~s then ~s else ~s end",
-                 [format_expr( A ),
-                  format_expr( B ),
-                  format_expr( C )] );
+format_expr( {str, _, B} ) ->
+  lists:flatten( io_lib:format( "\"~s\"", [B] ) );
 
-format_expr( {neg, _, E} ) ->
-  io_lib:format( "not ~s", [format_expr( E )] );
+format_expr( {file, _, B} ) ->
+  lists:flatten( io_lib:format( "'~s'", [B] ) );
+
+format_expr( {true, _} )      -> "true";
+format_expr( {false, _} )     -> "false";
+
+format_expr( {cmp, _, E1, E2} ) ->
+  S1 = format_expr( E1 ),
+  S2 = format_expr( E2 ),
+  lists:flatten( io_lib:format( "( ~s == ~s )", [S1, S2] ) );
 
 format_expr( {conj, _, A, B} ) ->
-  io_lib:format( "(~s and ~s)", [format_expr( A ), format_expr( B )] );
+  S1 = format_expr( A ),
+  S2 = format_expr( B ),
+  lists:flatten( io_lib:format( "( ~s and ~s )", [S1, S2] ) );
 
 format_expr( {disj, _, A, B} ) ->
-  io_lib:format( "(~s or ~s)", [format_expr( A ), format_expr( B )] );
+  S1 = format_expr( A ),
+  S2 = format_expr( B ),
+  lists:flatten( io_lib:format( "( ~s or ~s )", [S1, S2] ) );
 
-format_expr( {fut, _, _, _} ) ->
-  ?FUT;
+format_expr( {neg, _, E} ) ->
+  lists:flatten( io_lib:format( "not ~s", [format_expr( E )] ) );
+
+format_expr( {isnil, _, E} ) ->
+  lists:flatten( io_lib:format( "isnil ~s", [format_expr( E )] ) );
+
+format_expr( {cnd, _, A, B, C} ) ->
+  S1 = format_expr( A ),
+  S2 = format_expr( B ),
+  S3 = format_expr( C ),
+  lists:flatten( io_lib:format( "if ~s then ~s else ~s end", [S1, S2, S3] ) );
+
+
 
 format_expr( {null, _, T} ) ->
   io_lib:format( "[: ~s]", [format_type( T )] );
@@ -110,12 +131,6 @@ format_expr( Cons = {cons, _, _, _} ) ->
 
 format_expr( {append, _, A, B} ) ->
   io_lib:format( "(~s + ~s)", [format_expr( A ), format_expr( B )] );
-
-format_expr( {isnil, _, E} ) ->
-  io_lib:format( "isnil ~s", [format_expr( E )] );
-
-format_expr( {fix, _, _} ) ->
-  ?FIX;
 
 format_expr( {err, _, T, {user, Msg}} ) ->
   io_lib:format( "error ~s : ~s", [Msg, format_type( T )] );
@@ -182,13 +197,17 @@ format_pattern( {r_rcd, RBindLst} ) ->
   io_lib:format( "<~s>", [S] ).
 
 
+-spec format_info( info() ) -> string().
+
+format_info( na ) ->
+  "[na]";
 
 format_info( N )
 when is_integer( N ), N > 0 ->
-  io_lib:format( "line ~b", [N] );
+  lists:flatten( io_lib:format( "line ~b", [N] ) );
 
-format_info( Info ) ->
-  io_lib:format( "~p", [Info] ).
+format_info( {File, Line} ) ->
+  lists:flatten( io_lib:format( "in ~s line ~b", [File, Line] ) ).
 
 
 -spec format_extended_script( ExtendedScript :: binary() ) -> string().
