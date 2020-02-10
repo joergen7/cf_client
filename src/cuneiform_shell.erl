@@ -480,7 +480,7 @@ shell_step( _ ) -> norule.
 -spec get_banner() -> string().
 
 get_banner() ->
-  string:join(
+  lists:join( "\n",
     ["            ___",
      "           @@WB      Cuneiform",
      "          @@E_____",
@@ -489,17 +489,17 @@ get_banner() ->
      "  @@P    3@B",
      "  @N____ 3@B         "++?BLU( "https://www.cuneiform-lang.org" ),
      "  \"W@@@WF3@B         "++?BLU( "Jorgen Brandt" )
-], "\n" ).
+    ] ).
 
 
 -spec get_help() -> iolist().
 
 get_help() ->
-  string:join(
+  lists:join( "\n",
     [?BYLW( "help" )++?YLW( " show this usage info" ),
      ?BYLW( "hist" )++?YLW( " show definition history" ),
      ?BYLW( "quit" )++?YLW( " quit the shell" )
-], "\n" ).
+    ] ).
 
 
 -spec is_ready( Buf :: string() ) -> boolean().

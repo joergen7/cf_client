@@ -166,7 +166,7 @@ Which will start a shell that should look like the following:
 
 ## System Requirements
 
-- [Erlang](https://www.erlang.org) OTP 18.0 or higher
+- [Erlang](https://www.erlang.org) OTP 19.0 or higher
 - [Rebar3](https://www.rebar3.org) 3.0.0 or higher
 
 ## Resources

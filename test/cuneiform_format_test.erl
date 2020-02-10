@@ -48,7 +48,8 @@
                           t_rcd/1] ).
 -import( cuneiform_lang, [var/1, lam/2, app/2, fix/1, fut/2, str/1, file/1,
                           true/0, false/0, cmp/2, conj/2, disj/2, neg/1,
-                          isnil/1, cnd/3] ).
+                          isnil/1, cnd/3, null/1, cons/2, hd/2, append/2,
+                          for/3, fold/3, rcd/1, proj/2, err/2, close/2] ).
 
 format_type_test_() ->
   {foreach,
@@ -126,6 +127,9 @@ format_info_file_line() ->
   ?assertEqual( "in script.cfl line 20", format_info( I ) ).
 
 
+
+
+
 format_expr_test_() ->
   {foreach,
    fun() -> ok end,
@@ -149,7 +153,22 @@ format_expr_test_() ->
     {"format expr disj", fun format_expr_disj/0},
     {"format expr neg", fun format_expr_neg/0},
     {"format expr isnil", fun format_expr_isnil/0},
-    {"format expr cnd", fun format_expr_cnd/0}
+    {"format expr cnd", fun format_expr_cnd/0},
+    {"format expr null", fun format_expr_null/0},
+    {"format expr cons", fun format_expr_cons/0},
+    {"format expr cons cons", fun format_expr_cons_cons/0},
+    {"format expr hd", fun format_expr_hd/0},
+    {"format expr tl", fun format_expr_tl/0},
+    {"format expr append", fun format_expr_append/0},
+    {"format expr for", fun format_expr_for_1/0},
+    {"format expr for", fun format_expr_for_2/0},
+    {"format expr fold", fun format_expr_fold/0},
+    {"format expr rcd 1", fun format_expr_rcd_1/0},
+    {"format expr rcd 2", fun format_expr_rcd_2/0},
+    {"format expr proj", fun format_expr_proj/0},
+    {"format expr err user", fun format_expr_err_user/0},
+    {"format expr err run", fun format_expr_err_run/0},
+    {"format expr close", fun format_expr_close/0}
    ]
   }.
 
@@ -225,3 +244,63 @@ format_expr_cnd() ->
   E = cnd( var( e1 ), var( e2 ), var( e3 ) ),
   ?assertEqual( "if e1 then e2 else e3 end", format_expr( E ) ).
 
+format_expr_null() ->
+  E = null( t_str() ),
+  ?assertEqual( "[: Str]", format_expr( E ) ).
+
+format_expr_cons() ->
+  E = cons( str( <<"bla">> ), null( t_str() ) ),
+  ?assertEqual( "[\"bla\" : Str]", format_expr( E ) ).
+
+format_expr_cons_cons() ->
+  E = cons( str( <<"bla">> ), cons( str( <<"blub">> ), null( t_str() ) ) ),
+  ?assertEqual( "[\"bla\", \"blub\" : Str]", format_expr( E ) ).
+
+format_expr_hd() ->
+  E = hd( var( l ), str( <<"bla">> ) ),
+  ?assertEqual( "hd l default \"bla\" end", format_expr( E ) ).
+
+format_expr_tl() ->
+  E = hd( var( l ), null( t_str() ) ),
+  ?assertEqual( "hd l default [: Str] end", format_expr( E ) ).
+
+format_expr_append() ->
+  E = append( null( t_str() ), null( t_str() ) ),
+  ?assertEqual( "( [: Str] + [: Str] )", format_expr( E ) ).
+
+format_expr_for_1() ->
+  E = for( t_str(), [{x, t_str(), var( l )}], var( x ) ),
+  ?assertEqual( "for x : Str <- l do x : Str end", format_expr( E ) ).
+
+format_expr_for_2() ->
+  E = for( t_str(), [{x, t_str(), var( l )}, {y, t_bool(), var( m )}], var( x ) ),
+  ?assertEqual( "for x : Str <- l, y : Bool <- m do x : Str end", format_expr( E ) ).
+
+format_expr_fold() ->
+  E = fold( {acc, t_str(), str( <<"blub">> )}, {x, t_str(), var( l )}, var( x ) ),
+  ?assertEqual( "fold acc : Str = \"blub\", x : Str <- l do x end", format_expr( E ) ).
+
+format_expr_rcd_1() ->
+  E = rcd( [{a, str( <<"bla">> )}] ),
+  ?assertEqual( "<a = \"bla\">", format_expr( E ) ).
+
+format_expr_rcd_2() ->
+  E = rcd( [{a, str( <<"bla">> )}, {b, true()}] ),
+  ?assertEqual( "<a = \"bla\", b = true>", format_expr( E ) ).
+
+format_expr_proj() ->
+  E = proj( a, var( r ) ),
+  ?assertEqual( "( r | a )", format_expr( E ) ).
+
+format_expr_err_user() ->
+  E = err( t_str(), {user, <<"kaboom">>} ),
+  ?assertEqual( "error \"kaboom\" : Str", format_expr( E ) ).
+
+format_expr_err_run() ->
+  R = {run, <<"minion">>, <<"1234ef">>, f, <<"blub">>, <<"bla">>},
+  E = err( t_str(), R ),
+  ?assertEqual( "*err*", format_expr( E ) ).
+
+format_expr_close() ->
+  E = close( var( x ), #{} ),
+  ?assertEqual( "*close*", format_expr( E ) ).

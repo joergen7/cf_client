@@ -41,7 +41,7 @@
 -define( APP, "*app*" ).
 -define( FIX, "*fix*" ).
 -define( FUT, "*fut*" ).
-
+-define( ERR, "*err*" ).
 
 -spec format_expr( E :: e() ) -> string().
 
@@ -56,7 +56,7 @@ format_expr( {app, _, {var, _, X}, []} ) ->
 
 format_expr( {app, _, {var, _, X}, EBindLst} ) ->
   L = [io_lib:format( "~s = ~s", [X1, format_expr( E1 )] ) ||{X1, E1} <- EBindLst],
-  S = string:join( L, ", " ),
+  S = lists:join( ", ", L ),
   lists:flatten( io_lib:format( "~s( ~s )", [X, S] ) );
 
 %format_expr( {app, _, {lam, _, [{X, T}], EBody}, [{X, E}]} ) ->
@@ -108,10 +108,8 @@ format_expr( {cnd, _, A, B, C} ) ->
   S3 = format_expr( C ),
   lists:flatten( io_lib:format( "if ~s then ~s else ~s end", [S1, S2, S3] ) );
 
-
-
 format_expr( {null, _, T} ) ->
-  io_lib:format( "[: ~s]", [format_type( T )] );
+  lists:flatten( io_lib:format( "[: ~s]", [format_type( T )] ) );
 
 format_expr( Cons = {cons, _, _, _} ) ->
 
@@ -125,39 +123,57 @@ format_expr( Cons = {cons, _, _, _} ) ->
     end,
 
   {ELst, T} = ToExprLst( Cons ),
-  S = string:join( [format_expr( E ) || E <- ELst], ", " ),
+  S = lists:join( ", ", [format_expr( E ) || E <- ELst] ),
 
-  io_lib:format( "[~s : ~s]", [S, format_type( T )] );
+  lists:flatten( io_lib:format( "[~s : ~s]", [S, format_type( T )] ) );
 
-format_expr( {append, _, A, B} ) ->
-  io_lib:format( "(~s + ~s)", [format_expr( A ), format_expr( B )] );
+format_expr( {hd, _, E1, E2} ) ->
+  S1 = format_expr( E1 ),
+  S2 = format_expr( E2 ),
+  lists:flatten( io_lib:format( "hd ~s default ~s end", [S1, S2] ) );
 
-format_expr( {err, _, T, {user, Msg}} ) ->
-  io_lib:format( "error ~s : ~s", [Msg, format_type( T )] );
+format_expr( {append, _, E1, E2} ) ->
+  S1 = format_expr( E1 ),
+  S2 = format_expr( E2 ),
+  lists:flatten( io_lib:format( "( ~s + ~s )", [S1, S2] ) );
 
-format_expr( {proj, _, X, E} ) ->
-  io_lib:format( "(~s | ~s)", [format_expr( E ), X] );
+format_expr( {for, _, TRet, EBindLst, EBody} ) ->
+  L = [io_lib:format( "~s : ~s <- ~s", [X, format_type( T ), format_expr( E )] ) || {X, T, E} <- EBindLst],
+  S1 = lists:join( ", ", L ),
+  S2 = format_expr( EBody ),
+  S3 = format_type( TRet ),
+  lists:flatten( io_lib:format( "for ~s do ~s : ~s end", [S1, S2, S3] ) );
+
+format_expr( {fold, _, {XAcc, TAcc, EAcc}, {XLst, TLst, ELst}, EBody} ) ->
+  lists:flatten(
+    io_lib:format( "fold ~s : ~s = ~s, ~s : ~s <- ~s do ~s end",
+                   [XAcc,
+                    format_type( TAcc ),
+                    format_expr( EAcc ),
+                    XLst,
+                    format_type( TLst ),
+                    format_expr( ELst ),
+                    format_expr( EBody )] ) );
 
 format_expr( {rcd, _, EBindLst} ) ->
   L = [io_lib:format( "~s = ~s", [X, format_expr( E )] ) || {X, E} <- EBindLst],
-  S = string:join( L, ", " ),
-  io_lib:format( "<~s>", [S] );
+  S = lists:join( ", ", L ),
+  lists:flatten( io_lib:format( "<~s>", [S] ) );
 
-format_expr( {for, _, T, EBindLst, EBody} ) ->
-  L = [io_lib:format( "~s <- ~s", [X, format_expr( E )] ) || {X, E} <- EBindLst],
-  S = string:join( L, ", " ),
-  io_lib:format( "for ~s do ~s : ~s end",
-                 [S,
-                  format_expr( EBody ),
-                  format_type( T )] );
+format_expr( {proj, _, X, E} ) ->
+  lists:flatten( io_lib:format( "( ~s | ~s )", [format_expr( E ), X] ) );
 
-format_expr( {fold, _, {XAcc, EAcc}, {XLst, ELst}, EBody} ) ->
-  io_lib:format( "fold ~s = ~s, ~s <- ~s do ~s end",
-                 [XAcc,
-                  format_expr( EAcc ),
-                  XLst,
-                  format_expr( ELst ),
-                  format_expr( EBody )] ).
+format_expr( {err, _, T, {user, Msg}} ) ->
+  lists:flatten( io_lib:format( "error \"~s\" : ~s", [Msg, format_type( T )] ) );
+
+format_expr( {err, _, _, _} ) ->
+  ?ERR;
+
+format_expr( {close, _, _, _} ) ->
+  ?CLOSE.
+
+
+
 
 
 -spec format_type( T :: t() ) -> string().
@@ -183,20 +199,6 @@ format_type( {'Rcd', TBindLst} ) ->
   lists:flatten( io_lib:format( "<~s>", [S] ) ).
 
 
-
-
--spec format_pattern( R :: r() ) -> string().
-
-format_pattern( {r_var, X, T} ) ->
-  io_lib:format( "~s : ~s", [X, format_type( T )] );
-
-format_pattern( {r_rcd, RBindLst} ) ->
-  SLst = [io_lib:format( "~s = ~s", [X, format_pattern( R )] )
-          || {X, R} <- RBindLst],
-  S = string:join( SLst, ", " ),
-  io_lib:format( "<~s>", [S] ).
-
-
 -spec format_info( info() ) -> string().
 
 format_info( na ) ->
@@ -210,6 +212,9 @@ format_info( {File, Line} ) ->
   lists:flatten( io_lib:format( "in ~s line ~b", [File, Line] ) ).
 
 
+
+
+
 -spec format_extended_script( ExtendedScript :: binary() ) -> string().
 
 format_extended_script( ExtendedScript ) ->
@@ -218,6 +223,22 @@ format_extended_script( ExtendedScript ) ->
                         end,
                         {1, []}, re:split( ExtendedScript, "\n" ) ),
 lists:flatten( S ).
+
+
+
+
+
+-spec format_pattern( R :: r() ) -> string().
+
+format_pattern( {r_var, X, T} ) ->
+  io_lib:format( "~s : ~s", [X, format_type( T )] );
+
+format_pattern( {r_rcd, RBindLst} ) ->
+  SLst = [io_lib:format( "~s = ~s", [X, format_pattern( R )] )
+          || {X, R} <- RBindLst],
+  S = lists:join( ", ", SLst ),
+  io_lib:format( "<~s>", [S] ).
+
 
 
 
@@ -304,8 +325,8 @@ format_error( {error, runtime,
                      format_type( RetType ),
                      Node,
                      AppId,
-                     string:join( lists:map( fun binary_to_list/1, FileLst ),
-                                  ", " )] );
+                     lists:join( ", ",
+                                 lists:map( fun binary_to_list/1, FileLst ) )] );
 
 format_error( {error, runtime,
                       {err, Info,
@@ -323,8 +344,8 @@ format_error( {error, runtime,
                      format_type( RetType ),
                      Node,
                      AppId,
-                     string:join( lists:map( fun binary_to_list/1, FileLst ),
-                                  ", " )] );
+                     lists:join( ", ",
+                                 lists:map( fun binary_to_list/1, FileLst ) )] );
 
 format_error( {error, runtime, {err, Info, RetType, {user, Msg}}} ) ->
 

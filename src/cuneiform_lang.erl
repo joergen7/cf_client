@@ -68,7 +68,8 @@
           fold/3,   fold/4,
           rcd/1,    rcd/2,
           proj/2,   proj/3,
-          err/2,    err/3] ).
+          err/2,    err/3,
+          close/2,  close/3] ).
 
 %% Syntactic Sugar
 -export( [lst/2, lst/3,
@@ -441,6 +442,19 @@ proj( Info, X, E ) ->
 
 err( Info, T, Reason ) ->
   validate_expr( {err, Info, T, Reason} ).
+
+
+-spec close( E :: e(), Env :: env() ) -> e().
+      close( E, Env )                 -> close( na, E, Env ).
+
+
+-spec close( Info :: info(), E :: e(), Env :: env() ) -> e().
+
+close( Info, E, Env ) ->
+  validate_info( Info ),
+  validate_expr( E ),
+  validate_env( Env ),
+  {close, Info, E, Env}.
 
 
 %%====================================================================
@@ -974,6 +988,20 @@ validate_type( T = {'Rcd', XtLst} ) ->
 
 validate_type( Z ) ->
   error( {bad_type, Z} ).
+
+
+-spec validate_env( Env :: env() ) -> env().
+
+validate_env( Env ) ->
+  F =
+    fun( {X1, {E1, Env1}} ) ->
+      validate_x( X1 ),
+      validate_expr( E1 ),
+      validate_env( Env1 )
+    end,
+  L = maps:to_list( Env ),
+  lists:foreach( F, L ),
+  Env.
 
 
 %%====================================================================
