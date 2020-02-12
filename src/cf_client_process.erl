@@ -45,7 +45,8 @@
 -include( "cuneiform_lang.hrl" ).
 -include( "cuneiform_cek.hrl" ).
 
--import( cuneiform_cek, [ev/1, extract_outbox/1, is_finished/1, load/1, recv_result/3, unload/1] ).
+-import( cuneiform_cek,  [ev/1, extract_outbox/1, is_finished/1, load/1,
+                          recv_result/3, unload/1, set_unknown/1] ).
 -import( cf_client_effi, [app_to_effi_request/2, effi_reply_to_expr/2] ).
 
 %%====================================================================
@@ -110,7 +111,7 @@ when P       :: prog(),
      Result  :: {ok, prog(), [e()]}.
 
 step( P, _UsrInfo ) ->
-  {Outbox, P1} = extract_outbox( ev( P ) ),
+  {Outbox, P1} = extract_outbox( ev( set_unknown( P ) ) ),
   Outbox1 = [app_to_effi_request( H, E ) || {H, E} <- Outbox],
   {ok, P1, Outbox1}.
 

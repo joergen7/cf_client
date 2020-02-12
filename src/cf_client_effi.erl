@@ -43,7 +43,7 @@
 
 app_to_effi_request( H, A ) ->
 
-  {app, _, {lam_frn, _, FName, ArgLst, {'Rcd', RetLst}, Lang, Body}, EBindLst} = A,
+  {app, _, {lam, _, ArgLst, {frn, FName, {'Rcd', RetLst}, Lang, Body}}, EBindLst} = A,
 
   ConvertExpr =
     fun

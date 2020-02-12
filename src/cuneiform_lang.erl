@@ -958,6 +958,12 @@ validate_expr( E = {err, Info, T, R} ) ->
   validate_reason( R ),
   E;
 
+validate_expr( E = {close, Info, E1, Env1} ) ->
+  validate_info( Info ),
+  validate_expr( E1 ),
+  validate_env( Env1 ),
+  E;
+
 validate_expr( Z ) ->
   error( {bad_expr, Z} ).
 

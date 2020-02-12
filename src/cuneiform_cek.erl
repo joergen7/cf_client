@@ -31,7 +31,7 @@
 -module( cuneiform_cek ).
 
 -export( [ev/1, extract_outbox/1, is_finished/1, load/1, recv_result/3,
-          unload/1] ).
+          unload/1, step/1, set_unknown/1] ).
 
 -include( "cuneiform_lang.hrl" ).
 -include( "cuneiform_cek.hrl" ).
@@ -127,6 +127,7 @@ step( {Comm, ELam, _, {app_fn, Info, XeLst, _, K}, stalled} ) ->
 step( {Comm, {close, _, E, Env}, _, K, unknown} ) ->
   {Comm, E, Env, K, unknown};
 
+
 % fixpoint
 %---------
 
@@ -135,10 +136,12 @@ step( {Comm, {fix, Info, EFix}, Env, K, unknown} ) ->
   {Comm, EFix, Env, {fix_op, Info, K}, unknown};
 
 % fixpoint operand function: defer
-step( {Comm, C = {lam, InfoLam, [{X, T}|XtLst], {ntv, EBody}}, EnvLam,
-       {fix_op, InfoFix, K}, value} ) ->
-  EBody1 = alet( InfoLam, [{X, T, {fix, InfoFix, C}}], EBody ),
-  {Comm, {lam, InfoLam, XtLst, {ntv, EBody1}}, EnvLam, K, value};
+step( {Comm, E, _, {fix_op, InfoFix, K}, value} ) ->
+  {close, InfoClose, ELam, EnvClose} = E,
+  {lam, InfoLam, [{X, T}|XtLst], {ntv, EBody}} = ELam,
+  EBody1 = alet( InfoLam, [{X, T, {fix, InfoFix, ELam}}], EBody ),
+  E1 = {close, InfoClose, {lam, InfoLam, XtLst, {ntv, EBody1}}, EnvClose},
+  {Comm, E1, #{}, K, value};
 
 % fixpoint operand stalled: stall
 step( {Comm, EFix, _, {fix_op, Info, K}, stalled} ) ->
@@ -581,6 +584,11 @@ recv_result( {{Outbox, Awaybox, Inbox}, E, Env, K, Prop}, H1, E1 ) ->
 extract_outbox( {{Outbox, Awaybox, Inbox}, E, Env, K, Prop} ) ->
   {Outbox, {{[], Awaybox, Inbox}, E, Env, K, Prop}}.
 
+
+-spec set_unknown( P :: prog() ) -> prog().
+
+set_unknown( {Comm, E, Env, K, _} ) ->
+  {Comm, E, Env, K, unknown}.
 
 %%====================================================================
 %% Internal functions
