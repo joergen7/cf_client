@@ -50,6 +50,8 @@
                      | {fix_fn_no_arg,                             info(), {e(), t()}}
                      | {fix_fn_arg_type_mismatch,                  info(), {x(), t(), t()}}
                      | {fix_no_fn,                                 info(), {e(), t()}}
+                     | {fix_return_type_mismatch,                  info(), {t(), t()}}
+                     | {fix_fn_arg_no_fn,                          info(), {x(), t()}}
                      | {cmp_no_comparable_type,                    info(), {e(), t()}}
                      | {cmp_incomparable,                          info(), {e(), t(), e(), t()}}
                      | {conj_lhs_no_bool,                          info(), {e(), t()}}

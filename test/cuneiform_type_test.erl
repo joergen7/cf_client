@@ -212,6 +212,8 @@ type_test_() ->
      fun error_is_typable/0},
     {"fixpoint with wrong first argument type untypable",
      fun fixpoint_with_wrong_first_argument_type_untypable/0},
+    {"native function with return type mismatch reports properly",
+     fun native_function_with_return_type_mismatch_reports_properly/0},
     {"app rcd field order no effect",
      fun app_rcd_field_order_no_effect/0},
     {"cmp rcd field order no effect",
@@ -686,7 +688,7 @@ fixpoint_with_foreign_function_expression_untypable() ->
   TRet = t_rcd( [{out, t_str()}] ),
   ELam = lam( [{f, t_str()}], {frn, f, TRet, l_bash(), <<"blub">>} ),
   E = fix( ELam ),
-  ?assertEqual( {error, {fix_fn_arg_type_mismatch, na, {f, t_fn( [], TRet ), t_str()}}},
+  ?assertEqual( {error, {fix_fn_arg_no_fn, na, {f, t_str()}}},
                 type( E ) ).
 
 fixpoint_with_variable_function_expression_typable() ->
@@ -982,8 +984,12 @@ for_with_ambiguous_name_untypable() ->
 
 fixpoint_with_wrong_first_argument_type_untypable() ->
   E = fix( lam( [{f, t_str()}], {ntv, str( <<"5">> )} ) ),
-  ?assertEqual( {error, {fix_fn_arg_type_mismatch, na, {f, t_fn( [], t_str() ), t_str()}}},
+  ?assertEqual( {error, {fix_fn_arg_no_fn, na, {f, t_str()}}},
                 type( E ) ).
+
+native_function_with_return_type_mismatch_reports_properly() ->
+  E = fix( lam( [{f, t_fn( [], t_bool() )}], {ntv, str( <<"5">> )} ) ),
+  ?assertEqual( {error, {fix_return_type_mismatch, na, {t_bool(), t_str()}}}, type( E ) ).
 
 app_rcd_field_order_no_effect() ->
   T = t_rcd( [{a, t_bool()}, {b, t_str()}] ),
@@ -1099,8 +1105,6 @@ app_with_multiple_missing_arg_binds_untypable() ->
               []},
   ?assertEqual( {error, {app_missing_bind, na, [{a,{var,na,<<>>}},{b,{var,na,<<>>}}]}},
                 type( E ) ).
-
-
 
 
 

@@ -155,12 +155,23 @@ type( Gamma, {fix, Info, E} ) ->                                                
     {ok, T4={'Fn', [], _}} ->
       {error, {fix_fn_no_arg, Info, {E, T4}}};
 
-    {ok, {'Fn', [Xt|XtLst], TRet}} ->
-      TFix = {'Fn', XtLst, TRet},
-      {X, TArg} = Xt,
-      case is_type_equivalent( TFix, TArg ) of
-        true  -> {ok, TFix};
-        false -> {error, {fix_fn_arg_type_mismatch, Info, {X, TFix, TArg}}}
+    {ok, {'Fn', [Xt|XtLst1], TRet1}} ->
+      TFn1 = {'Fn', XtLst1, TRet1},
+      {X, TFn2} = Xt,
+
+      io:format( "~p~n", [TFn2] ),
+      case TFn2 of
+        {'Fn', _, TRet2} ->
+          case is_type_equivalent( TRet1, TRet2 ) of
+            false -> {error, {fix_return_type_mismatch, Info, {TRet2, TRet1}}};
+            true  ->
+              case is_type_equivalent( TFn1, TFn2 ) of
+                true  -> {ok, TFn1};
+                false -> {error, {fix_fn_arg_type_mismatch, Info, {X, TFn1, TFn2}}}
+              end
+          end;
+        _ ->
+          {error, {fix_fn_arg_no_fn, Info, {X, TFn2}}}
       end;
 
     {ok, T5} ->
