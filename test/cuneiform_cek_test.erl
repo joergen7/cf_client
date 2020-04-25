@@ -42,7 +42,8 @@
 
 -import( cuneiform_cek, [load/1, ev/1, unload/1, step/1] ).
 -import( cuneiform_lang, [str/1, true/0, false/0, file/1, lam/2, null/1, app/2,
-                          fut/2, var/1, fix/1, alet/2, close/2] ).
+                          fut/2, var/1, fix/1, alet/2, close/2, rcd/1, proj/2,
+                          err/2, neg/1] ).
 -import( cuneiform_lang, [t_bool/0, t_str/0, t_fn/2] ).
 -import( cuneiform_lang, [l_bash/0] ).
 
@@ -303,3 +304,147 @@ parrot_step_7() ->
   ?assertEqual( EnvZ, Env7 ),
   ?assertEqual( KZ, K7 ),
   ?assertEqual( PropZ, Prop7 ).
+
+% ( <x = "a">|x );
+proj_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"proj step 1", fun proj_step_1/0},
+    {"proj step 2", fun proj_step_2/0},
+    {"proj step 3", fun proj_step_3/0},
+    {"proj step 4", fun proj_step_4/0},
+    {"proj step 5", fun proj_step_5/0}
+   ]
+  }.
+
+
+proj_step_1() ->
+  EStr = str( <<"a">> ),
+  ERcd = rcd( [{x, EStr}] ),
+
+  Comm0 = {[], sets:new(), #{}},
+  E0 = proj( x, ERcd ),
+  P0 = {Comm0, E0, #{}, mt, unknown},
+
+  P1 = step( P0 ),
+  {Comm1, E1, Env1, K1, Prop1} = P1,
+
+  ?assertEqual( Comm0, Comm1 ),
+  ?assertEqual( ERcd, E1 ),
+  ?assertEqual( #{}, Env1 ),
+  ?assertEqual( {proj_op, na, x, mt}, K1 ),
+  ?assertEqual( unknown, Prop1 ).
+
+proj_step_2() ->
+  EStr = str( <<"a">> ),
+
+  Comm1 = {[], sets:new(), #{}},
+  E1 = rcd( [{x, EStr}] ),
+  K1 = {proj_op, na, x, mt},
+  P1 = {Comm1, E1, #{}, K1, unknown},
+
+  P2 = step( P1 ),
+  {Comm2, E2, Env2, K2, Prop2} = P2,
+
+  ?assertEqual( Comm1, Comm2 ),
+  ?assertEqual( EStr, E2 ),
+  ?assertEqual( #{}, Env2 ),
+  ?assertEqual( {rcd_field, na, [], [], x, [], #{}, {proj_op, na, x, mt}}, K2 ),
+  ?assertEqual( unknown, Prop2 ).
+
+proj_step_3() ->
+  Comm2 = {[], sets:new(), #{}},
+  E2 = str( <<"a">> ),
+  K2 = {rcd_field, na, [], [], x, [], #{}, {proj_op, na, x, mt}},
+  P2 = {Comm2, E2, #{}, K2, unknown},
+
+  P3 = step( P2 ),
+  {Comm3, E3, Env3, K3, Prop3} = P3,
+
+  ?assertEqual( Comm2, Comm3 ),
+  ?assertEqual( E2, E3 ),
+  ?assertEqual( #{}, Env3 ),
+  ?assertEqual( K2, K3 ),
+  ?assertEqual( value, Prop3 ).
+
+proj_step_4() ->
+  Comm3 = {[], sets:new(), #{}},
+  E3 = str( <<"a">> ),
+  K3 = {rcd_field, na, [], [], x, [], #{}, {proj_op, na, x, mt}},
+  P3 = {Comm3, E3, #{}, K3, value},
+
+  P4 = step( P3 ),
+  {Comm4, E4, Env4, K4, Prop4} = P4,
+
+  ?assertEqual( Comm3, Comm4 ),
+  ?assertEqual( rcd( [{x, E3}] ), E4 ),
+  ?assertEqual( {proj_op, na, x, mt}, K4 ),
+  ?assertEqual( #{}, Env4 ),
+  ?assertEqual( value, Prop4 ).
+
+proj_step_5() ->
+  EStr = str( <<"a">> ),
+
+  Comm4 = {[], sets:new(), #{}},
+  E4 = rcd( [{x, EStr}] ),
+  K4 = {proj_op, na, x, mt},
+  P4 = {Comm4, E4, #{}, K4, value},
+
+  P5 = step( P4 ),
+  {Comm5, E5, Env5, K5, Prop5} = P5,
+
+  ?assertEqual( Comm4, Comm5 ),
+  ?assertEqual( EStr, E5 ),
+  ?assertEqual( #{}, Env5 ),
+  ?assertEqual( mt, K5 ),
+  ?assertEqual( value, Prop5 ).
+
+
+
+% not error "blub" : Bool;
+error_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"error step 1", fun error_step_1/0},
+    {"error step 2", fun error_step_2/0}
+   ]
+  }.
+
+error_step_1() ->
+  EErr = err( t_bool(), {user, <<"blub">>} ),
+
+  Comm0 = {[], sets:new(), #{}},
+  E0 = neg( EErr ),
+  P0 = {Comm0, E0, #{}, mt, unknown},
+
+  P1 = step( P0 ),
+  {Comm1, E1, Env1, K1, Prop1} = P1,
+
+  ?assertEqual( Comm0, Comm1 ),
+  ?assertEqual( EErr, E1 ),
+  ?assertEqual( #{}, Env1 ),
+  ?assertEqual( {neg_op, na, mt}, K1 ),
+  ?assertEqual( unknown, Prop1 ).
+
+error_step_2() ->
+  Comm1 = {[], sets:new(), #{}},
+  E1 = err( t_bool(), {user, <<"blub">>} ),
+  K1 = {neg_op, na, mt},
+  P1 = {Comm1, E1, #{}, K1, unknown},
+
+  P2 = step( P1 ),
+  {Comm2, E2, Env2, K2, Prop2} = P2,
+
+  ?assertEqual( {[], sets:new(), #{}}, Comm2 ),
+  ?assertEqual( E1, E2 ),
+  ?assertEqual( #{}, Env2 ),
+  ?assertEqual( mt, K2 ),
+  ?assertEqual( unknown, Prop2 ).

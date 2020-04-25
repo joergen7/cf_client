@@ -436,7 +436,7 @@ proj( Info, X, E ) ->
   validate_expr( {proj, Info, X, E} ).
 
 -spec err( T :: t(), Reason :: reason() ) -> e().
-      err( T, Msg )                         -> err( na, T, Msg ).
+      err( T, Reason )                       -> err( na, T, Reason ).
 
 -spec err( Info :: info(), T :: t(), Reason :: reason() ) -> e().
 

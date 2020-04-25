@@ -510,7 +510,7 @@ when Prop1 =/= unknown ->
 %-----
 
 step( {Comm, {proj, Info, X, E1}, Env, K, unknown} ) ->
-  {Comm, E1, Env, {proj_op, Info, X, K}};
+  {Comm, E1, Env, {proj_op, Info, X, K}, unknown};
 
 step( {Comm, {rcd, _, XeLst}, _, {proj_op, _, X, K}, value} ) ->
   {_, E} = lists:keyfind( X, 1, XeLst ),
@@ -528,7 +528,7 @@ step( {Comm, E1, _, {proj_op, Info, X, K}, stalled} ) ->
 
 step( {_, E = {err, _, _, _}, _, K, unknown} )
 when K =/= mt ->
-  {[], #{}, E, #{}, mt, unknown};
+  {{[], sets:new(), #{}}, E, #{}, mt, unknown};
 
 
 step( _ ) ->

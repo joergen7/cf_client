@@ -50,13 +50,9 @@
                           l_javascript/0, l_matlab/0, l_octave/0, l_perl/0,
                           l_python/0, l_r/0, l_racket/0, l_awk/0,
                           l_gnuplot/0] ).
--import( cuneiform_lang, [subst/3, protect_expr/1, rename/3] ).
--import( cuneiform_lang, [is_alpha_equivalent/2, expr_free_vars/1] ).
 -import( cuneiform_lang, [validate_lang/1, validate_info/1] ).
 -import( cuneiform_lang, [ambiguous_names/1, pattern_names/1, xt_names/1,
                           xe_names/1, xte_names/1] ).
--import( cuneiform_lang, [is_expr/1, is_type/1, is_lang/1, is_reason/1,
-                          is_info/1, is_pattern/1, is_assign/1] ).
 
 
 %%====================================================================
