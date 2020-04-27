@@ -613,7 +613,7 @@ send( Comm, ESnd, K ) ->
   ESnd1 = drop_info( ESnd ),
   H = hash( ESnd1 ),
   EFut = {fut, Info, TRet, H},
-  case sets:is_element( H, Awaybox ) of
+  case sets:is_element( H, Awaybox ) orelse maps:is_key( H, Inbox ) of
     true ->
       {Comm, EFut, #{}, K, unknown};
     false ->
