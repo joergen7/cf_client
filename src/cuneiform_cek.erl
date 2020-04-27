@@ -613,7 +613,11 @@ send( Comm, ESnd, K ) ->
   ESnd1 = drop_info( ESnd ),
   H = hash( ESnd1 ),
   EFut = {fut, Info, TRet, H},
-  case keyfind( H, 1, Outbox ) =/= false orelse sets:is_element( H, Awaybox ) orelse maps:is_key( H, Inbox ) of
+  case
+    lists:keyfind( H, 1, Outbox ) =/= false orelse
+    sets:is_element( H, Awaybox ) orelse
+    maps:is_key( H, Inbox )
+  of
     true ->
       {Comm, EFut, #{}, K, unknown};
     false ->
