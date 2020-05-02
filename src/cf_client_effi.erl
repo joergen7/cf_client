@@ -30,7 +30,11 @@
 
 -module( cf_client_effi ).
 
--export( [app_to_effi_request/2, effi_reply_to_expr/2, reconstruct_type/1] ).
+-export( [app_to_effi_request/2,
+          effi_reply_to_expr/2,
+          reconstruct_type/1] ).
+
+-export( [convert_expr/1] ).
 
 -include( "cuneiform_lang.hrl" ).
 
@@ -44,16 +48,6 @@
 app_to_effi_request( H, A ) ->
 
   {app, _, {lam, _, ArgLst, {frn, FName, {'Rcd', RetLst}, Lang, Body}}, EBindLst} = A,
-
-  ConvertExpr =
-    fun
-      ConvertExpr( {true, _} )            -> <<"true">>;
-      ConvertExpr( {false, _} )           -> <<"false">>;
-      ConvertExpr( {str, _, B} )          -> B;
-      ConvertExpr( {file, _, B, _} )      -> B;
-      ConvertExpr( {null, _, _} )         -> [];
-      ConvertExpr( {cons, _, E1, E2} ) -> [ConvertExpr( E1 )|ConvertExpr( E2 )]
-    end,
 
   ConvertTArg =
     fun
@@ -93,7 +87,7 @@ app_to_effi_request( H, A ) ->
               script       => Body },
 
   ArgBindLst = [#{ arg_name => atom_to_binary( X, utf8 ),
-                   value    => ConvertExpr( E ) }
+                   value    => convert_expr( E ) }
                 || {X, E} <- EBindLst],
 
   #{ app_id       => H,
@@ -217,3 +211,24 @@ reconstruct_type( RetTypeLst ) ->
     end,
 
   t_rcd( [F( TypeInfo ) || TypeInfo <- RetTypeLst] ).
+
+
+-spec convert_expr( e() ) -> _.
+
+convert_expr( {true, _} ) ->
+  <<"true">>;
+
+convert_expr( {false, _} ) ->
+  <<"false">>;
+
+convert_expr( {str, _, B} ) ->
+  B;
+
+convert_expr( {file, _, B} ) ->
+  B;
+
+convert_expr( {null, _, _} ) ->
+  [];
+ 
+convert_expr( {cons, _, E1, E2} ) ->
+  [convert_expr( E1 )|convert_expr( E2 )].

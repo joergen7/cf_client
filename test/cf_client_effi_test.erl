@@ -33,7 +33,8 @@
 -include_lib( "eunit/include/eunit.hrl" ).
 
 -import( cf_client_effi, [effi_reply_to_expr/2, reconstruct_type/1] ).
--import( cuneiform_lang, [rcd/1, str/1, t_bool/0, t_rcd/1] ).
+-import( cf_client_effi, [convert_expr/1] ).
+-import( cuneiform_lang, [rcd/1, str/1, t_bool/0, t_rcd/1, file/1] ).
 
 result_decode_test() ->
 
@@ -83,3 +84,21 @@ reconstruct_singleton_boolean() ->
   T = t_rcd( [{a, t_bool()}] ),
 
   ?assertEqual( T, reconstruct_type( RetTypeLst ) ).
+
+
+
+convert_expr_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"convert_expr file works", fun convert_expr_file_works/0}
+   ]
+  }.
+
+convert_expr_file_works() ->
+  B = <<"blub.txt">>,
+  E = file( B ),
+  ?assertEqual( B, convert_expr( E ) ).
