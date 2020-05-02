@@ -188,7 +188,10 @@ shell_eval_oneshot( Input ) ->
       [{error, parse, "premature end of input stream"}];
 
     _ ->
-      ReplyLst
+      case get_error( ReplyLst ) of
+        no_error -> ReplyLst;
+        Error    -> [Error]
+      end
       
   end.
 
@@ -528,3 +531,14 @@ get_prompt( ShellState ) ->
   end.
 
 
+-spec get_error( ReplyLst :: [reply()] ) ->
+  no_error | {error, stage(), _}.
+
+get_error( [] ) ->
+  no_error;
+
+get_error( [Error = {error, _, _}|_] ) ->
+  Error;
+
+get_error( [_|Rst] ) ->
+  get_error( Rst ).
