@@ -564,10 +564,13 @@ load( E ) ->
 unload( {_, E, _, mt, value} ) ->
   E;
 
+unload( {_, E = {err, _, _, _}, _, mt, _} ) ->
+  E;
+
 unload( {_, _, _, K, _} ) when K =/= mt ->
   error( continuation_not_empty );
 
-unload( {_, _, _, _, P} ) when P =/= value ->
+unload( {_, _, _, _, P} ) ->
   error( {bad_control_string_prop, P} ).
 
 

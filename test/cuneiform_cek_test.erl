@@ -459,9 +459,9 @@ is_finished_test_() ->
    fun( _ ) -> ok end,
 
    [
-    {"str is finished", fun str_is_finished/0},
+    {"str is finished",          fun str_is_finished/0},
     {"not true is not finished", fun not_true_is_not_finished/0},
-    {"error is finished", fun error_is_finished/0}
+    {"error is finished",        fun error_is_finished/0}
    ]
   }.
 
@@ -482,3 +482,27 @@ error_is_finished() ->
   E = err( t_str(), {user, <<"blub">>} ),
   P = {Comm, E, #{}, mt, unknown},
   ?assert( is_finished( P ) ).
+
+unload_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"unload value works", fun unload_value_works/0},
+    {"unload error works", fun unload_error_works/0}
+   ]
+  }.
+
+unload_value_works() ->
+  Comm = {[], sets:new(), #{}},
+  E = str( <<"blub">> ),
+  P = {Comm, E, #{}, mt, value},
+  ?assertEqual( E, unload( P ) ).
+
+unload_error_works() ->
+  Comm = {[], sets:new(), #{}},
+  E = err( t_str(), {user, <<"blub">>} ),
+  P = {Comm, E, #{}, mt, unknown},
+  ?assertEqual( E, unload( P ) ).
