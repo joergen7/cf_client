@@ -40,7 +40,7 @@
 %% Imports
 %%====================================================================
 
--import( cuneiform_cek, [load/1, ev/1, unload/1, step/1] ).
+-import( cuneiform_cek, [load/1, ev/1, unload/1, step/1, is_finished/1] ).
 -import( cuneiform_lang, [str/1, true/0, false/0, file/1, lam/2, null/1, app/2,
                           fut/2, var/1, fix/1, alet/2, close/2, rcd/1, proj/2,
                           err/2, neg/1] ).
@@ -448,3 +448,37 @@ error_step_2() ->
   ?assertEqual( #{}, Env2 ),
   ?assertEqual( mt, K2 ),
   ?assertEqual( unknown, Prop2 ).
+
+
+
+
+is_finished_test_() ->
+  {foreach,
+
+   fun() -> ok end,
+   fun( _ ) -> ok end,
+
+   [
+    {"str is finished", fun str_is_finished/0},
+    {"not true is not finished", fun not_true_is_not_finished/0},
+    {"error is finished", fun error_is_finished/0}
+   ]
+  }.
+
+str_is_finished() ->
+  Comm = {[], sets:new(), #{}},
+  E = str( <<"blub">> ),
+  P = {Comm, E, #{}, mt, value},
+  ?assert( is_finished( P ) ).
+
+not_true_is_not_finished() ->
+  Comm = {[], sets:new(), #{}},
+  E = neg( true() ),
+  P = {Comm, E, #{}, mt, unknown},
+  ?assertNot( is_finished( P ) ).
+
+error_is_finished() ->
+  Comm = {[], sets:new(), #{}},
+  E = err( t_str(), {user, <<"blub">>} ),
+  P = {Comm, E, #{}, mt, unknown},
+  ?assert( is_finished( P ) ).

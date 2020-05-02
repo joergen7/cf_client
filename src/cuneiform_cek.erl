@@ -547,8 +547,9 @@ ev( P ) ->
 
 -spec is_finished( P :: prog() ) -> boolean().
 
-is_finished( {_, _, _, mt, value} ) -> true;
-is_finished( _ )                    -> false.
+is_finished( {_, _, _, mt, value} )          -> true;
+is_finished( {_, {err, _, _, _}, _, mt, _} ) -> true;
+is_finished( _ )                             -> false.
 
 
 -spec load( E :: e() ) -> prog().
