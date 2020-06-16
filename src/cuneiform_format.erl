@@ -250,44 +250,6 @@ format_error( {error, scan, {Info, cuneiform_scan, {illegal, S}}} ) ->
 format_error( {error, parse, {Info, cuneiform_parse, Msg}} ) ->
   io_lib:format( "parse error ~s: ~s", [format_info( Info ), Msg] );
 
-format_error( {error, type, {unbound_var, Info, VarName}} ) ->
-  io_lib:format( "type error ~s: unbound variable ~p",
-                 [format_info( Info ), VarName] );
-
-format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
-  io_lib:format( "type error ~s: type mismatch, expected ~s got ~s",
-                 [format_info( Info ),
-                  format_type( T1 ),
-                  format_type( T2 )] );
-
-format_error( {error, type, {ambiguous_name, Info, Name}} ) ->
-  io_lib:format( "type error ~s: ambiguous argument or field name ~p",
-                 [format_info( Info ), Name] );
-
-format_error( {error, type, {key_missing, Info, Name}} ) ->
-  io_lib:format( "type error ~s: application argument missing ~p",
-                 [format_info( Info ), Name] );
-
-format_error( {error, type, {superfluous_key, Info, Name}} ) ->
-  io_lib:format( "type error ~s: application superfluous argument ~p",
-                 [format_info( Info ), Name] );
-
-format_error( {error, type, {no_record_type, Info, T}} ) ->
-  io_lib:format( "type error ~s: record expected, got ~s",
-                 [format_info( Info ), format_type( T )] );
-
-format_error( {error, type, {no_native_function_type, Info, T}} ) ->
-  io_lib:format( "type error ~s: native function expected, got ~s",
-                 [format_info( Info ), format_type( T )] );
-
-format_error( {error, type, {no_list_type, Info, T}} ) ->
-  io_lib:format( "type error ~s: list expected, got ~s",
-                 [format_info( Info ), format_type( T )] );
-
-format_error( {error, type, {no_comparable_type, Info, T}} ) ->
-  io_lib:format( "type error ~s: type not comparable ~s",
-                 [format_info( Info ), format_type( T )] );
-
 format_error( {error,
                runtime,
                {err, Info,
@@ -356,6 +318,57 @@ format_error( {error, runtime, {err, Info, RetType, {user, Msg}}} ) ->
   io_lib:format( S, [format_info( Info ),
                      format_type( RetType ),
                      Msg] );
+
+
+
+format_error( {error, type, {unbound_var, Info, VarName}} ) ->
+  io_lib:format( "type error ~s: unbound variable ~p",
+                 [format_info( Info ), VarName] );
+
+format_error( {error, type, {ntv_fn_ambiguous_arg_name, Info, NameLst}} ) ->
+  io_lib:format( "type error ~s: native function with ambiguous argument name(s) ~p",
+                 [format_info( Info ), NameLst] );
+
+format_error( {error, type, {frn_fn_ambiguous_arg_or_return_field_name, Info, NameLst}} ) ->
+  io_lib:format( "type error ~s: foreign function with ambiguous argument or return field name: ~p",
+                 [format_info( Info ), NameLst] );
+
+format_error( {frn_fn_returns_no_rcd, Info, TRet} ) ->
+  io_lib:format( "type error ~s: foreign function return type is not a record: ~p",
+                 [format_info( Info ), format_type( TRet )] );
+
+% TODO: continue here  
+
+format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
+  io_lib:format( "type error ~s: type mismatch, expected ~s got ~s",
+                 [format_info( Info ),
+                  format_type( T1 ),
+                  format_type( T2 )] );
+
+format_error( {error, type, {key_missing, Info, Name}} ) ->
+  io_lib:format( "type error ~s: application argument missing ~p",
+                 [format_info( Info ), Name] );
+
+format_error( {error, type, {superfluous_key, Info, Name}} ) ->
+  io_lib:format( "type error ~s: application superfluous argument ~p",
+                 [format_info( Info ), Name] );
+
+format_error( {error, type, {no_record_type, Info, T}} ) ->
+  io_lib:format( "type error ~s: record expected, got ~s",
+                 [format_info( Info ), format_type( T )] );
+
+format_error( {error, type, {no_native_function_type, Info, T}} ) ->
+  io_lib:format( "type error ~s: native function expected, got ~s",
+                 [format_info( Info ), format_type( T )] );
+
+format_error( {error, type, {no_list_type, Info, T}} ) ->
+  io_lib:format( "type error ~s: list expected, got ~s",
+                 [format_info( Info ), format_type( T )] );
+
+format_error( {error, type, {no_comparable_type, Info, T}} ) ->
+  io_lib:format( "type error ~s: type not comparable ~s",
+                 [format_info( Info ), format_type( T )] );
+
 
 
 format_error( {error, Stage, Reason} ) ->

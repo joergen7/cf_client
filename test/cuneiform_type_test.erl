@@ -371,7 +371,7 @@ native_lambda_with_ambiguous_argument_name_untypable() ->
   E = lam( [{x, t_str()},
             {x, t_file()}],
            {ntv, var( x )} ),
-  ?assertEqual( {error, {ambiguous_name, na, [x]}}, type( E ) ).
+  ?assertEqual( {error, {ntv_fn_ambiguous_arg_name, na, [x]}}, type( E ) ).
 
 native_lambda_body_expression_can_access_closure() ->
   E = lam( [{x, t_str()}], {ntv, lam( [], {ntv, var( x )} )} ),

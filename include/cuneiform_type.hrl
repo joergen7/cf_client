@@ -35,7 +35,7 @@
 -type gamma()       :: #{ x() => t() }.
 
 -type type_error()  :: {unbound_var,                               info(),x()}
-                     | {ambiguous_name,                            info(), [x()]}
+                     | {ntv_fn_ambiguous_arg_name,                 info(), [x()]}
                      | {frn_fn_ambiguous_arg_or_return_field_name, info(), [x()]}
                      | {frn_fn_returns_no_rcd,                     info(),t()}
                      | {awk_frn_fn_first_arg_no_file,              info(), {x(),t()}}

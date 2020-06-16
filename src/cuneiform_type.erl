@@ -77,7 +77,7 @@ type( Gamma, {lam, Info, ArgLst, {ntv, EBody}} ) ->                             
       end;
 
     Lst ->
-      {error, {ambiguous_name, Info, Lst}}
+      {error, {ntv_fn_ambiguous_arg_name, Info, Lst}}
 
   end;
 
