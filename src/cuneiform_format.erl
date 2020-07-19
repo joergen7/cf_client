@@ -390,8 +390,9 @@ format_error( {error, type, {fix_fn_no_arg, Info, {E, T}}} ) ->
                   format_type( T )] );
 
 format_error( {error, type, {fix_fn_arg_type_mismatch, Info,{X, T1, T2}}} ) ->
-  io_lib:format( "type error ~s: fixpoint operator with function that has bad first argument; ~s expected to be ~s but was ~s",
+  io_lib:format( "type error ~s: fixpoint operator with function that has bad first argument; ~p expected to be ~s but was ~s",
                  [format_info( Info ),
+                  X,
                   format_type( T1 ),
                   format_type( T2 )] );
 
