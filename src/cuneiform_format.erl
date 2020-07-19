@@ -411,6 +411,9 @@ format_error( {error, type, {no_comparable_type, Info, T}} ) ->
 
 
 
+format_error( {error, load, {invalid_option, S}} ) ->
+  io_lib:format( "load error: invalid option ~s", [S] );
+
 format_error( {error, Stage, Reason} ) ->
   io_lib:format( "~p error: ~p", [Stage, Reason] ).
 
