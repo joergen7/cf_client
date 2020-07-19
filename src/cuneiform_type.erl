@@ -159,7 +159,6 @@ type( Gamma, {fix, Info, E} ) ->                                                
       TFn1 = {'Fn', XtLst1, TRet1},
       {X, TFn2} = Xt,
 
-      io:format( "~p~n", [TFn2] ),
       case TFn2 of
         {'Fn', _, TRet2} ->
           case is_type_equivalent( TRet1, TRet2 ) of

@@ -333,49 +333,85 @@ format_error( {error, type, {frn_fn_ambiguous_arg_or_return_field_name, Info, Na
   io_lib:format( "type error ~s: foreign function with ambiguous argument or return field name: ~p",
                  [format_info( Info ), NameLst] );
 
-format_error( {frn_fn_returns_no_rcd, Info, TRet} ) ->
+format_error( {error, type, {frn_fn_returns_no_rcd, Info, TRet}} ) ->
   io_lib:format( "type error ~s: foreign function return type is not a record: ~s",
                  [format_info( Info ), format_type( TRet )] );
 
-format_error( {awk_frn_fn_first_arg_no_file, Info, {X1, T1}} ) ->
+format_error( {error, type, {awk_frn_fn_first_arg_no_file, Info, {X1, T1}}} ) ->
   io_lib:format( "type error ~s: Awk foreign function first argument ~p is not a file: ~s",
                  [format_info( Info ), X1, format_type( T1 )] );
 
-format_error( {awk_frn_fn_no_arg, Info} ) ->
+format_error( {error, type, {awk_frn_fn_no_arg, Info}} ) ->
   io_lib:format( "type error ~s: Awk foreign function needs at least one argument",
                  [format_info( Info )] );
 
-format_error( {awk_frn_fn_result_field_no_file, Info, TRet} ) ->
+format_error( {error, type, {awk_frn_fn_result_field_no_file, Info, TRet}} ) ->
   io_lib:format( "type error ~s: Awk foreign function return record's field result is not a file: ~s",
                  [format_info( Info ), format_type( TRet )] );
 
-format_error( {awk_frn_fn_no_result_field, Info} ) ->
+format_error( {error, type, {awk_frn_fn_no_result_field, Info}} ) ->
   io_lib:format( "type error ~s: Awk foreign function return record has no result field",
                  [format_info( Info )] );
 
-format_error( {app_lhs_no_function, Info, {E, T}} ) ->
+format_error( {error, type, {app_lhs_no_function, Info, {E, T}}} ) ->
   io_lib:format( "type error ~s: function application's left hand side ~s is not a function: ~s",
                  [format_info( Info ), format_expr( E ), format_type( T )] );
 
-format_error( {app_missing_bind, Info, XtLst} ) ->
+format_error( {error, type, {app_missing_bind, Info, XtLst}} ) ->
   SLst = [io_lib:format( "~p : ~s", [X, format_type( T )] ) || {X, T} <- XtLst],
   S = lists:join( ", ", SLst ),
   io_lib:format( "type error ~s: function application misses one or more argument bindings: ~s",
                  [format_info( Info ), S] );
 
-format_error( {app_dangling_bind, Info, XeLst} ) ->
+format_error( {error, type, {app_dangling_bind, Info, XeLst}} ) ->
   SLst = [io_lib:format( "~p = ~s", [X, format_expr( E )] ) || {X, E} <- XeLst],
   S = lists:join( ", ", SLst ),
   io_lib:format( "type error ~s: function application has one or more dangling argument bindings: ~s",
                  [format_info( Info ), S] );
 
-format_error( {app_bind_type_mismatch, Info, {X, TExp, E, TAct}} ) ->
-  io_lib:format( "type error ~s: function application argument ~p = ~s not a ~s: ~s",
+format_error( {error, type, {app_bind_type_mismatch, Info, {X, TExp, E, TAct}}} ) ->
+  io_lib:format( "type error ~s: function application argument ~p = ~s expected to be ~s but was ~s",
                  [format_info( Info ),
                   X,
                   format_expr( E ),
                   format_type( TExp ),
                   format_type( TAct )] );
+
+format_error( {error, type, {app_arg_name_mismatch, Info, {X1, X2}}} ) ->
+  io_lib:format( "type error ~s: application argument mismatch; expected ~p but was ~p",
+                 [format_info( Info ),
+                  X1,
+                  X2] );
+
+format_error( {error, type, {fix_fn_no_arg, Info, {E, T}}} ) ->
+  io_lib:format( "type error ~s: fixpoint operator with function that has no arguments ~s : ~s",
+                 [format_info( Info ),
+                  format_expr( E ),
+                  format_type( T )] );
+
+format_error( {error, type, {fix_fn_arg_type_mismatch, Info,{X, T1, T2}}} ) ->
+  io_lib:format( "type error ~s: fixpoint operator with function that has bad first argument; ~s expected to be ~s but was ~s",
+                 [format_info( Info ),
+                  format_type( T1 ),
+                  format_type( T2 )] );
+
+format_error( {error, type, {fix_no_fn, Info, {E, T}}} ) ->
+  io_lib:format( "type error ~s: fixpoint operator whose operand is no function ~s : ~s",
+                 [format_info( Info ),
+                  format_expr( E ),
+                  format_type( T )] );
+
+format_error( {error, type, {fix_return_type_mismatch, Info, {T1, T2}}} ) ->
+  io_lib:format( "type error ~s: fixpoint operator with return type mismatch; expected ~s but was ~s",
+                 [format_info( Info ),
+                  format_type( T1 ),
+                  format_type( T2 )] );
+
+format_error( {error, type, {fix_fn_arg_no_fn, Info, {X, T}}} ) ->
+  io_lib:format( "type error ~s: fixpoint operator with function whose first operand  ~p is no function: ~s",
+                 [format_info( Info ),
+                  X,
+                  format_type( T )] );
 
 % TODO: continue here  
 
