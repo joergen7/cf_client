@@ -411,8 +411,11 @@ format_error( {error, type, {no_comparable_type, Info, T}} ) ->
 
 
 
-format_error( {error, load, {invalid_option, S}} ) ->
+format_error( {error, load, {invalid_option, S}} ) when is_list( S ) ->
   io_lib:format( "load error: invalid option ~s", [S] );
+
+format_error( {error, load, {S, enoent}} ) when is_list( S ) ->
+  io_lib:format( "load error: file not found ~s", [S] );
 
 format_error( {error, Stage, Reason} ) ->
   io_lib:format( "~p error: ~p", [Stage, Reason] ).
