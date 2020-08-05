@@ -414,6 +414,12 @@ format_error( {error, type, {fix_fn_arg_no_fn, Info, {X, T}}} ) ->
                   X,
                   format_type( T )] );
 
+format_error( {error, type, {cmp_no_comparable_type, Info, {E, T}}} ) ->
+  io_lib:format( "type error ~s: comparison with uncomparable operand ~s : ~s",
+                 [format_info( Info ),
+                  format_expr( E ),
+                  format_type( T )] );
+
 % TODO: continue here  
 
 format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
