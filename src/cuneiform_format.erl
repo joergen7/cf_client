@@ -420,6 +420,14 @@ format_error( {error, type, {cmp_no_comparable_type, Info, {E, T}}} ) ->
                   format_expr( E ),
                   format_type( T )] );
 
+format_error( {error, type, {cmp_incomparable, Info, {E1, T1, E2, T2}}} ) ->
+  io_lib:format( "type error ~s: comparison of incomparable types ~s : ~s and ~s : ~s",
+    [format_info( Info ),
+     format_expr( E1 ),
+     format_type( T1 ),
+     format_expr( E2 ),
+     format_type( T2 )] );
+
 % TODO: continue here  
 
 format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
