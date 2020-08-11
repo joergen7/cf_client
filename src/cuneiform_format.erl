@@ -428,6 +428,12 @@ format_error( {error, type, {cmp_incomparable, Info, {E1, T1, E2, T2}}} ) ->
      format_expr( E2 ),
      format_type( T2 )] );
 
+format_error( {error, type, {conj_lhs_no_bool, Info, {E, T}}} ) ->
+  io_lib:format( "type error ~s: conjunction (and) left-hand side not a Boolean ~s : ~s",
+    [format_info( Info ),
+     format_expr( E ),
+     format_type( T )] );
+
 % TODO: continue here  
 
 format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
