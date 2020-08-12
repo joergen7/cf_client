@@ -434,6 +434,12 @@ format_error( {error, type, {conj_lhs_no_bool, Info, {E, T}}} ) ->
      format_expr( E ),
      format_type( T )] );
 
+format_error( {error, type, {conj_rhs_no_bool, Info, {E, T}}} ) ->
+  io_lib:format( "type error ~s: conjunction (and) right-hand side not a Boolean ~s : ~s",
+    [format_info( Info ),
+     format_expr( E ),
+     format_type( T )] );
+
 % TODO: continue here  
 
 format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
