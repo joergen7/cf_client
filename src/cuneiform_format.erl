@@ -447,6 +447,11 @@ format_error( {error, type, {disj_lhs_no_bool, Info, {E, T}}} ) ->
      format_expr( E ),
      format_type( T )] );
 
+format_error( {error, type, {disj_rhs_no_bool, Info, {E, T}}} ) ->
+  io_lib:format( "type error ~s: disjunction (or) right-hand side not a Boolean ~s : ~s",
+    [format_info( Info ),
+     format_expr( E ),
+     format_type( T )] );
 
 % TODO: continue here  
 
