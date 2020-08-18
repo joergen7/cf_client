@@ -459,6 +459,12 @@ format_error( {error, type, {neg_no_bool, Info, {E, T}}} ) ->
      format_expr( E ),
      format_type( T )] );
 
+format_error( {error, type, {isnil_no_list, Info, {E, T}}} ) ->
+  io_lib:format( "type error ~s: empty predicate operand not a list ~s : ~s",
+    [format_info( Info ),
+     format_expr( E ),
+     format_type( T )] );
+
 % TODO: continue here  
 
 format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
