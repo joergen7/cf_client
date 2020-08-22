@@ -473,6 +473,12 @@ format_error( {error, type, {cnd_result_type_mismatch, Info, {E1, T1, E2, T2}}} 
      format_expr( E2 ),
      format_type( T2 )] );
 
+format_error( {error, type, {cnd_case_no_bool, Info, {E, T}}} ) ->
+  io_lib:format( "type error ~s: conditional test is no Boolean ~s : ~s",
+    [format_info( Info ),
+     format_expr( E ),
+     format_type( T )] );
+
 % TODO: continue here  
 
 format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
