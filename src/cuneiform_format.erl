@@ -479,6 +479,13 @@ format_error( {error, type, {cnd_case_no_bool, Info, {E, T}}} ) ->
      format_expr( E ),
      format_type( T )] );
 
+format_error( {error, type, {cons_element_type_mismatch, Info, {T1, E2, T2}}} ) ->
+  io_lib:format( "type error ~s: cons or list element type mismatch; expected ~s but ~s : ~s",
+    [format_info( Info ),
+     format_type( T1 ),
+     format_expr( E2 ),
+     format_expr( T2 )] );
+
 % TODO: continue here  
 
 format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
