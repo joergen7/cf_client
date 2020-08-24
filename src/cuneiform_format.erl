@@ -486,6 +486,12 @@ format_error( {error, type, {cons_element_type_mismatch, Info, {T1, E2, T2}}} ) 
      format_expr( E2 ),
      format_expr( T2 )] );
 
+format_error( {error, type, {cons_no_list, Info, {E, T}}} ) ->
+  io_lib:format( "type error ~s: cons right-hand side not a list ~s : ~s",
+    [format_info( Info ),
+     format_expr( E ),
+     format_type( T )] );
+
 % TODO: continue here  
 
 format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
