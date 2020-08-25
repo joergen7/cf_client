@@ -442,7 +442,7 @@ condition_with_invalid_predicate_untypable() ->
 
 condition_with_nonbool_predicate_untypable() ->
   E = cnd( str( <<"true">> ), str( <<"bla">> ), str( <<"blub">> ) ),
-  ?assertEqual( {error, {cnd_case_no_bool, na, {str( <<"true">> ), t_str()}}},
+  ?assertEqual( {error, {cnd_test_no_bool, na, {str( <<"true">> ), t_str()}}},
                 type( E ) ).
 
 condition_with_invalid_then_expression_untypable() ->

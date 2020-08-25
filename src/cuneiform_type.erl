@@ -297,7 +297,7 @@ type( Gamma, {cnd, Info, E1, E2, E3} ) ->                                       
       end;
 
     {ok, T1} ->
-      {error, {cnd_case_no_bool, Info, {E1, T1}}};
+      {error, {cnd_test_no_bool, Info, {E1, T1}}};
 
     {error, Reason1} ->
       {error, Reason1}

@@ -61,7 +61,7 @@
                      | {neg_no_bool,                               info(), {e(), t()}}
                      | {isnil_no_list,                             info(), {e(), t()}}
                      | {cnd_result_type_mismatch,                  info(), {e(), t(), e(), t()}}
-                     | {cnd_case_no_bool,                          info(), {e(), t()}}
+                     | {cnd_test_no_bool,                          info(), {e(), t()}}
                      | {cons_element_type_mismatch,                info(), {t(), e(), t()}}
                      | {cons_no_list,                              info(), {e(), t()}}
                      | {hd_type_mismatch,                          info(), {t(), e(), t()}}
