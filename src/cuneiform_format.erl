@@ -492,6 +492,13 @@ format_error( {error, type, {cons_no_list, Info, {E, T}}} ) ->
      format_expr( E ),
      format_type( T )] );
 
+format_error( {error, type, {hd_type_mismatch, Info, {T1, E2, T2}}} ) ->
+  io_lib:format( "type error ~s: head default expression type mismatch; expected ~s but ~s : ~s",
+    [format_info( Info ),
+     format_type( T1 ),
+     format_expr( E2 ),
+     format_type( T2 )] );
+
 % TODO: continue here  
 
 format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
