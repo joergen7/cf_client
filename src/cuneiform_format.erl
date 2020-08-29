@@ -241,6 +241,12 @@ format_pattern( {r_rcd, RBindLst} ) ->
 
 
 
+%% @doc Formats an error tuple.
+%%
+%%      The error tuple has the form `{error, Stage Reason}'.
+%%
+%% @param X1 an error tuple
+%% @return a human-readable string describing the error
 
 -spec format_error( {error, Stage :: stage(), Reason :: _} ) -> string().
 
