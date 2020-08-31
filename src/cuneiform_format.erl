@@ -43,6 +43,16 @@
 -define( FUT, "*fut*" ).
 -define( ERR, "*err*" ).
 
+
+%% @doc Formats a given expression.
+%%
+%%      In most instances, the returned string can be pasted into a Cuneiform
+%%      shell and the resulting expression has the same meaning as the original.
+%%      Exceptions are closures, lambda expressions, and futures.
+%%
+%% @param E expression to format
+%% @return a string representing the expression
+
 -spec format_expr( E :: e() ) -> string().
 
 format_expr( {var, _, X} ) ->
