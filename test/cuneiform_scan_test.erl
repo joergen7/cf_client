@@ -70,7 +70,8 @@ scan_test_() ->
     {"foreign function def", fun foreign_function_def/0},
     {"import",               fun import/0},
     {"cons",                 fun cons/0},
-    {"err",                  fun err/0}
+    {"err",                  fun err/0},
+    {"foreign function body filters carriage return", fun foreign_function_body_filters_carriage_return/0}
    ]
   }.
 
@@ -455,3 +456,8 @@ err() ->
                  {strlit, 1, "blub"},
                  {colon, 1, ":"},
                  {t_str, 1, "Str"}], TokenLst ).
+
+foreign_function_body_filters_carriage_return() ->
+  S = "*{a\n\rb}*",
+  {ok, TokenLst, _} = string( S ),
+  ?assertEqual( [{body, 1, "a\nb"}], TokenLst ).

@@ -190,7 +190,8 @@ Erlang code.
 
 trim_body( S )
 when is_list( S ), length( S ) >= 4 ->
-  string:slice( S, 2, length( S )-4 ).
+  S1 = string:slice( S, 2, length( S )-4 ),
+  lists:filter( fun( $\r ) -> false; ( _ ) -> true end, S1 ).
 
 
 -spec trim_lit( S :: string() ) -> string().

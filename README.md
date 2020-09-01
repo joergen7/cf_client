@@ -174,11 +174,6 @@ Which will start a shell that should look like the following:
 - [joergen7/cre](https://github.com/joergen7/cre). A common runtime environment (CRE) for distributed workflow languages.
 - [joergen7/cuneiform](https://github.com/joergen7/cuneiform). A functional language for large-scale data analysis whose distributed execution environment is implemented on top of the CRE.
 
-
-## Authors
-
-- Jörgen Brandt ([@joergen7](https://github.com/joergen7/)) [joergen.brandt@onlinehome.de](mailto:joergen.brandt@onlinehome.de)
-
 ## License
 
 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)
