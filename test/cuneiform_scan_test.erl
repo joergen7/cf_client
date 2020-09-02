@@ -71,7 +71,8 @@ scan_test_() ->
     {"import",               fun import/0},
     {"cons",                 fun cons/0},
     {"err",                  fun err/0},
-    {"foreign function body filters carriage return", fun foreign_function_body_filters_carriage_return/0}
+    {"foreign function body filters carriage return", fun foreign_function_body_filters_carriage_return/0},
+    {"multiple carriage returns work", fun multiple_carriage_returns_work/0}
    ]
   }.
 
@@ -461,3 +462,8 @@ foreign_function_body_filters_carriage_return() ->
   S = "*{a\n\rb}*",
   {ok, TokenLst, _} = string( S ),
   ?assertEqual( [{body, 1, "a\nb"}], TokenLst ).
+
+multiple_carriage_returns_work() ->
+  S = "*{\r\na\r\nb\r\nc\r\n}*",
+  {ok, TokenLst, _} = string( S ),
+  ?assertEqual( [{body, 1, "\na\nb\nc\n"}], TokenLst ).
