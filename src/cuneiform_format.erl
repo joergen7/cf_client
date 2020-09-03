@@ -184,7 +184,9 @@ format_expr( {close, _, _, _} ) ->
 
 
 
-
+%% @doc Format type
+%% @param T type to format
+%% return string representing the type
 
 -spec format_type( T :: t() ) -> string().
 
