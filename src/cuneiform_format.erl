@@ -185,6 +185,11 @@ format_expr( {close, _, _, _} ) ->
 
 
 %% @doc Format type
+%%
+%%      Types can be parts of expressions or error messages. This function takes
+%%      a type and outputs a string representing it in the way the type would
+%%      appear in a Cuneiform script.
+%%
 %% @param T type to format
 %% return string representing the type
 
