@@ -191,7 +191,7 @@ format_expr( {close, _, _, _} ) ->
 %%      appear in a Cuneiform script.
 %%
 %% @param T type to format
-%% return string representing the type
+%% @return string representing the type
 
 -spec format_type( T :: t() ) -> string().
 
@@ -230,7 +230,12 @@ format_info( {File, Line} ) ->
 
 
 
-
+%% @doc Formats an extended script.
+%%
+%%      This function takes a script and adds line numbers to the left margin.
+%%
+%% @param ExtendedScript script
+%% @return same script with line numbers
 
 -spec format_extended_script( ExtendedScript :: binary() ) -> string().
 
