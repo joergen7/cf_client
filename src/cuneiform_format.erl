@@ -44,7 +44,7 @@
 -define( ERR, "*err*" ).
 
 
-%% @doc Formats a given expression.
+%% @doc Formats an expression.
 %%
 %%      In most instances, the returned string can be pasted into a Cuneiform
 %%      shell and the resulting expression has the same meaning as the original.
@@ -184,7 +184,7 @@ format_expr( {close, _, _, _} ) ->
 
 
 
-%% @doc Format type
+%% @doc Formats a type.
 %%
 %%      Types can be parts of expressions or error messages. This function takes
 %%      a type and outputs a string representing it in the way the type would
@@ -215,6 +215,15 @@ format_type( {'Rcd', TBindLst} ) ->
   S = lists:join( ", ", L ),
   lists:flatten( io_lib:format( "<~s>", [S] ) ).
 
+
+%% @doc Formats an source location information.
+%%
+%%      Source location information are attached to expressions so that in the
+%%      event of an error, the error message can hint at the location in the
+%%      source code it originates.
+%%
+%% @param Info source location information
+%% @return string representing the info
 
 -spec format_info( info() ) -> string().
 
