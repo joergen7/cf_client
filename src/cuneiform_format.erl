@@ -536,6 +536,12 @@ format_error( {error, type, {hd_type_mismatch, Info, {T1, E2, T2}}} ) ->
      format_expr( E2 ),
      format_type( T2 )] );
 
+format_error( {error, type, {hd_no_list, Info, {E, T}}} ) ->
+  io_lib:format( "type error ~s: head operand is not a list ~s : ~s",
+    [format_info( Info ),
+     format_expr( E ),
+     format_type( T )] );
+
 % TODO: continue here  
 
 format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
