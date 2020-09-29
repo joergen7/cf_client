@@ -557,12 +557,6 @@ format_error( {error, type, {tl_no_list, Info, {E, T}}} ) ->
 
 % TODO: continue here  
 
-format_error( {error, type, {type_mismatch, Info, {T1, T2}}} ) ->
-  io_lib:format( "type error ~s: type mismatch, expected ~s got ~s",
-                 [format_info( Info ),
-                  format_type( T1 ),
-                  format_type( T2 )] );
-
 format_error( {error, type, {key_missing, Info, Name}} ) ->
   io_lib:format( "type error ~s: application argument missing ~p",
                  [format_info( Info ), Name] );
