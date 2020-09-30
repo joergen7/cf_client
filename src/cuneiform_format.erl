@@ -557,10 +557,6 @@ format_error( {error, type, {tl_no_list, Info, {E, T}}} ) ->
 
 % TODO: continue here  
 
-format_error( {error, type, {key_missing, Info, Name}} ) ->
-  io_lib:format( "type error ~s: application argument missing ~p",
-                 [format_info( Info ), Name] );
-
 format_error( {error, type, {superfluous_key, Info, Name}} ) ->
   io_lib:format( "type error ~s: application superfluous argument ~p",
                  [format_info( Info ), Name] );
