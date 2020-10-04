@@ -557,10 +557,6 @@ format_error( {error, type, {tl_no_list, Info, {E, T}}} ) ->
 
 % TODO: continue here  
 
-format_error( {error, type, {superfluous_key, Info, Name}} ) ->
-  io_lib:format( "type error ~s: application superfluous argument ~p",
-                 [format_info( Info ), Name] );
-
 format_error( {error, type, {no_record_type, Info, T}} ) ->
   io_lib:format( "type error ~s: record expected, got ~s",
                  [format_info( Info ), format_type( T )] );
