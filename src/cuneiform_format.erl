@@ -557,10 +557,6 @@ format_error( {error, type, {tl_no_list, Info, {E, T}}} ) ->
 
 % TODO: continue here  
 
-format_error( {error, type, {no_list_type, Info, T}} ) ->
-  io_lib:format( "type error ~s: list expected, got ~s",
-                 [format_info( Info ), format_type( T )] );
-
 format_error( {error, type, {no_comparable_type, Info, T}} ) ->
   io_lib:format( "type error ~s: type not comparable ~s",
                  [format_info( Info ), format_type( T )] );
