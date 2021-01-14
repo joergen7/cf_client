@@ -2,7 +2,7 @@
 %%
 %% cf_client: Cuneiform client implementation
 %%
-%% Copyright 2015-2019 Jörgen Brandt <joergen@cuneiform-lang.org>
+%% Copyright 2013-2021 Jörgen Brandt <joergen@cuneiform-lang.org>
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@
                           cons/2, hd/2, tl/2,
                           t_bool/0, cmp/2, var/1, lam/2,
                           t_fn/2, neg/1, cnd/3, conj/2, disj/2,
-                          t_rcd/1, l_bash/0, rcd/1, app/2,
+                          t_rcd/1, l_bash/0, l_awk/0, rcd/1, app/2,
                           proj/2, fix/1, lst/2, t_lst/1, append/2, isnil/1,
                           for/3, fold/3, err/2, null/1, fut/2] ).
 
@@ -191,7 +191,8 @@ type_test_() ->
      fun record_field_access_with_variable_record_expression_typable/0},
     {"record field access with non-existing field name untypable",
      fun record_field_access_with_nonexisting_field_name_untypable/0},
-    {"fixpoint typable",           fun fixpoint_typable/0},
+    {"fixpoint typable",
+     fun fixpoint_typable/0},
     {"fixpoint with argument typable",
      fun fixpoint_with_argument_typable/0},
     {"fixpoint with invalid function expression untypable",
@@ -220,6 +221,8 @@ type_test_() ->
      fun cmp_rcd_field_order_no_effect/0},
     {"cnd rcd field order no effect",
      fun cnd_rcd_field_order_no_effect/0},
+    {"awk foreign lambda typable",
+     fun awk_foreign_lambda_typable/0},
 
 
 
@@ -1107,7 +1110,13 @@ app_with_multiple_missing_arg_binds_untypable() ->
                 type( E ) ).
 
 
-
+awk_foreign_lambda_typable() ->
+  ArgLst = [{file, t_file()}],
+  TRet = t_rcd( [{result, t_file()}] ),
+  Body = {frn, f, TRet, l_awk(), <<"blub">>},
+  E = lam( ArgLst, Body ),
+  T = t_fn( ArgLst, TRet ),
+  ?assertEqual( {ok, T}, type( E ) ).
 
 is_type_equivalent_test_() ->
   {foreach,
