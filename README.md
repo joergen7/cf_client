@@ -16,17 +16,17 @@ Although the Cuneiform client application can be imported also directly from Git
 
 #### rebar3
 
-To integrate the Cuneiform client application into a rebar3-managed project change the `deps` entry in your application's `rebar.config` file to include the tuple `{cf_client, "0.1.7"}`.
+To integrate the Cuneiform client application into a rebar3-managed project change the `deps` entry in your application's `rebar.config` file to include the tuple `{cf_client, "0.1.8"}`.
 
 ```erlang
-{deps, [{cf_client, "0.1.7"}]}.
+{deps, [{cf_client, "0.1.8"}]}.
 ```
 
 
 #### mix
 
 ```elixir
-{:cf_client, "~> 0.1.7"}
+{:cf_client, "~> 0.1.8"}
 ```
 
 ### Compiling

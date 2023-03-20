@@ -2,7 +2,7 @@
 %%
 %% cf_client: Cuneiform client implementation
 %%
-%% Copyright 2013-2021 Jörgen Brandt <joergen@cuneiform-lang.org>
+%% Copyright 2013 Jörgen Brandt <joergen@cuneiform-lang.org>
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@
 %%
 %% -------------------------------------------------------------------
 %% @author Jörgen Brandt <joergen@cuneiform-lang.org>
-%% @version 0.1.7
-%% @copyright 2013-2020
+%% @copyright 2013
 %%
 %%
 %%
@@ -405,7 +404,7 @@ type( Gamma, {for, Info, TRet, XteLst, EBody} ) ->                              
 
   end;
 
-type( _Gamma, {fold, Info, {X, _T, _EAcc}, {X, _T, _ELst}, _EBody} ) ->         % T-fold
+type( _Gamma, {fold, Info, {X, _TAcc, _EAcc}, {X, _TLst, _ELst}, _EBody} ) ->         % T-fold
   {error, {fold_ambiguous_bind_name, Info, X}};
 
 type( Gamma, {fold, Info, {X1, T1, E1}, {X2, T2, E2}, EBody} ) ->
