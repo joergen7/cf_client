@@ -36,7 +36,7 @@
 %% Language constructors
 -export( [l_awk/0, l_bash/0, l_elixir/0, l_erlang/0, l_gnuplot/0, l_java/0,
           l_javascript/0, l_matlab/0, l_octave/0, l_perl/0, l_python/0, l_r/0,
-          l_racket/0] ).
+          l_racket/0, l_wal/0] ).
 
 %% Type constructors
 -export( [t_str/0, t_file/0, t_bool/0, t_fn/2, t_lst/1, t_rcd/1] ).
@@ -146,7 +146,9 @@
 % @doc Generates Racket language designation.
 % @return Racket language designation
 -spec l_racket()     -> l(). l_racket()     -> 'Racket'.
-
+% @doc Generates Wal language designation.
+% @return Wal language designation
+-spec l_wal()        -> l(). l_wal()        -> 'Wal'.
 
 %%====================================================================
 %% Type constructors

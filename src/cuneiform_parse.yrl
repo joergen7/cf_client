@@ -37,7 +37,7 @@ Nonterminals
 
 Terminals
   l_awk l_bash l_elixir l_erlang l_gnuplot l_java l_javascript l_matlab
-  l_octave l_perl l_python l_r l_racket
+  l_octave l_perl l_python l_r l_racket l_wal
   t_str t_file t_bool t_fn
   assign bar cmp cnd colon comma def default do doublertag else eq err false
   fold for halt hd import in isnil larrow lbrace lparen lsquarebr ltag neg plus
@@ -86,6 +86,7 @@ l               -> l_perl                     : l_perl().
 l               -> l_python                   : l_python().
 l               -> l_r                        : l_r().
 l               -> l_racket                   : l_racket().
+l               -> l_wal                      : l_wal().
 
 t               -> t_str                                     : t_str().
 t               -> t_file                                    : t_file().
@@ -163,7 +164,8 @@ Erlang code.
                           l_awk/0, l_bash/0, l_elixir/0, l_erlang/0,
                           l_gnuplot/0, l_java/0,
                           l_javascript/0, l_matlab/0, l_octave/0,
-                          l_perl/0, l_python/0, l_r/0, l_racket/0
+                          l_perl/0, l_python/0, l_r/0, l_racket/0,
+						  l_wal/0
                          ] ).
 
 -import( cuneiform_lang, [

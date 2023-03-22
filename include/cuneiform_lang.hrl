@@ -97,7 +97,8 @@
                      | 'Perl'
                      | 'Python'
                      | 'R'
-                     | 'Racket'.
+                     | 'Racket'
+					 | 'Wal'.
 
 -type r()           :: {r_var, x(), t()}
                      | {r_rcd, [{x(), r()}]}.
