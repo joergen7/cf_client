@@ -693,6 +693,7 @@ validate_lang( Z = 'Perl' )       -> Z;
 validate_lang( Z = 'Python' )     -> Z;
 validate_lang( Z = 'R' )          -> Z;
 validate_lang( Z = 'Racket' )     -> Z;
+validate_lang( Z = 'Wal' )        -> Z;
 validate_lang( Z )                -> error( {bad_lang, Z} ).
 
 
