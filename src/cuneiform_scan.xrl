@@ -140,7 +140,7 @@ Rules.
 {DEFAULT}     : {token, {default, TokenLine, TokenChars}}.
 {DO}          : {token, {do, TokenLine, TokenChars}}.
 {DOUBLERTAG}  : {token, {doublertag, TokenLine, TokenChars}}.
-{ELSE}        : {token, {else, TokenLine, TokenChars}}.
+{ELSE}        : {token, {'else', TokenLine, TokenChars}}.
 {ERR}         : {token, {err, TokenLine, TokenChars}}.
 {EQ}          : {token, {eq, TokenLine, TokenChars}}.
 {FALSE}       : {token, {false, TokenLine, TokenChars}}.
