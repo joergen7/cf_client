@@ -27,37 +27,37 @@
 %% @end
 %% -------------------------------------------------------------------
 
--module( cuneiform_shell_test ).
+-module(cuneiform_shell_test).
 
--include_lib( "eunit/include/eunit.hrl" ).
+-include_lib("eunit/include/eunit.hrl").
 
--import( cuneiform_shell, [brace_level/2] ).
+-import(cuneiform_shell, [brace_level/2]).
+
 
 brace_level_test_() ->
-  {foreach,
+    {foreach,
 
-   fun() -> ok end,
-   fun( _ ) -> ok end,
+     fun() -> ok end,
+     fun(_) -> ok end,
 
-   [
-    {"then token increases brace level",
-     fun then_token_increases_brace_level/0},
-    {"do token increases brace level",
-     fun do_token_increases_brace_level/0},
-    {"halt token decreases brace level",
-     fun halt_token_decreases_brace_level/0}
-   ]
-  }.
+     [{"then token increases brace level",
+       fun then_token_increases_brace_level/0},
+      {"do token increases brace level",
+       fun do_token_increases_brace_level/0},
+      {"halt token decreases brace level",
+       fun halt_token_decreases_brace_level/0}]}.
 
 
 then_token_increases_brace_level() ->
-  TokenLst = [{then, 1, "then"}],
-  ?assertEqual( 1, brace_level( TokenLst, 0 ) ).
+    TokenLst = [{then, 1, "then"}],
+    ?assertEqual(1, brace_level(TokenLst, 0)).
+
 
 do_token_increases_brace_level() ->
-  TokenLst = [{do, 1, "do"}],
-  ?assertEqual( 1, brace_level( TokenLst, 0 ) ).
+    TokenLst = [{do, 1, "do"}],
+    ?assertEqual(1, brace_level(TokenLst, 0)).
+
 
 halt_token_decreases_brace_level() ->
-  TokenLst = [{halt, 1, "end"}],
-  ?assertEqual( 0, brace_level( TokenLst, 1 ) ).
+    TokenLst = [{halt, 1, "end"}],
+    ?assertEqual(0, brace_level(TokenLst, 1)).

@@ -27,54 +27,56 @@
 %% @end
 %% -------------------------------------------------------------------
 
-
--module( cf_client_sup ).
--behaviour( supervisor ).
+-module(cf_client_sup).
+-behaviour(supervisor).
 
 %% API
--export( [start_link/1] ).
+-export([start_link/1]).
 
 %% Supervisor callbacks
--export( [init/1] ).
+-export([init/1]).
 
 %%====================================================================
 %% API functions
 %%====================================================================
 
-start_link( CreNode ) ->
-  supervisor:start_link( {local, cf_client_sup}, ?MODULE, CreNode ).
+
+start_link(CreNode) ->
+    supervisor:start_link({local, cf_client_sup}, ?MODULE, CreNode).
+
 
 %%====================================================================
 %% Supervisor callbacks
 %%====================================================================
 
-init( CreNode ) when is_atom( CreNode ) ->
 
-  F =
-    fun() ->
-      cre:pid( CreNode )
-    end,
+init(CreNode) when is_atom(CreNode) ->
 
-  SupFlags = #{
-               strategy  => one_for_one,
-               intensity => 0,
-               period    => 5
-              },
+    F =
+        fun() ->
+                cre:pid(CreNode)
+        end,
 
-  ClientNodeSpec = #{
-                     id       => cf_client,
-                     start    => {cf_client_process,
-                                  start_link,
-                                  [{local, cf_client}, F]},
-                     restart  => permanent,
-                     shutdown => 5000,
-                     type     => worker,
-                     modules  => [cf_client_process]
-                    },
+    SupFlags = #{
+                 strategy => one_for_one,
+                 intensity => 0,
+                 period => 5
+                },
 
-  SpecLst = [ClientNodeSpec],
+    ClientNodeSpec = #{
+                       id => cf_client,
+                       start => {cf_client_process,
+                                 start_link,
+                                 [{local, cf_client}, F]},
+                       restart => permanent,
+                       shutdown => 5000,
+                       type => worker,
+                       modules => [cf_client_process]
+                      },
 
-  {ok, {SupFlags, SpecLst}}.
+    SpecLst = [ClientNodeSpec],
+
+    {ok, {SupFlags, SpecLst}}.
 
 %%====================================================================
 %% Internal functions

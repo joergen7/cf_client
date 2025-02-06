@@ -5,13 +5,10 @@
   {mod, {cf_client, []}},
   {applications,
    [kernel,
-    stdlib
-   ]},
-  {env,[
-        {default_map, #{ cre_node => <<"node">> }},
-        {global_file, "/usr/local/etc/cuneiform/cf_client.json"},
-        {user_file,   ".config/cuneiform/cf_client.json"}
-       ]},
+    stdlib]},
+  {env, [{default_map, #{cre_node => <<"node">>}},
+         {global_file, "/usr/local/etc/cuneiform/cf_client.json"},
+         {user_file, ".config/cuneiform/cf_client.json"}]},
   {modules, [cf_client,
              cf_client_effi,
              cf_client_process,
@@ -28,7 +25,4 @@
 
   {maintainers, ["Jorgen Brandt"]},
   {licenses, ["Apache 2.0"]},
-  {links, [
-           {"GitHub", "https://github.com/joergen7/cf_client/"}
-          ]}
- ]}.
+  {links, [{"GitHub", "https://github.com/joergen7/cf_client/"}]}]}.

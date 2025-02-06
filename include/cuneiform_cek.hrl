@@ -31,45 +31,61 @@
 %% Type definitions
 %%====================================================================
 
--type k()     :: mt
-               | {app_fn, info(), [{x(), e()}], env(), k()}
-               | {app_arg, info(), e(), [{x(), e()}], [cprop()], x(),
-                           [{x(), e()}], env(), k()}
-               | {fix_op, info(), k()}
-               | {cmp_lhs, info(), e(), env(), k()}
-               | {cmp_rhs, info(), e(), cprop(), env(), k()}
-               | {conj_lhs, info(), e(), env(), k()}
-               | {conj_rhs, info(), e(), k()}
-               | {disj_lhs, info(), e(), env(), k()}
-               | {disj_rhs, info(), e(), k()}
-               | {neg_op, info(), k()}
-               | {isnil_op, info(), k()}
-               | {cnd_if, info(), e(), e(), env(), k()}
-               | {cons_hd, info(), e(), env(), k()}
-               | {cons_tl, info(), e(), cprop(), k()}
-               | {hd_op, info(), e(), env(), k()}
-               | {tl_op, info(), e(), env(), k()}
-               | {append_lhs, info(), e(), env(), k()}
-               | {append_rhs, info(), e(), k()}
-               | {for_arg, info(), t(), [{x(), t(), e()}], x(), t(),
-                           [{x(), t(), e()}], e(), env(), k()}
-               | {fold_arg, info(), {x(), t(), e()}, x(), t(), e(), env(), k()}
-               | {rcd_field, info(), [{x(), e()}], [cprop()], x(), [{x(), e()}],
-                             env(), k()}
-               | {proj_op, info(), x(), k()}.
+-type k() :: mt |
+             {app_fn, info(), [{x(), e()}], env(), k()} |
+             {app_arg, info(),
+                       e(),
+                       [{x(), e()}],
+                       [cprop()],
+                       x(),
+                       [{x(), e()}],
+                       env(),
+                       k()} |
+             {fix_op, info(), k()} |
+             {cmp_lhs, info(), e(), env(), k()} |
+             {cmp_rhs, info(), e(), cprop(), env(), k()} |
+             {conj_lhs, info(), e(), env(), k()} |
+             {conj_rhs, info(), e(), k()} |
+             {disj_lhs, info(), e(), env(), k()} |
+             {disj_rhs, info(), e(), k()} |
+             {neg_op, info(), k()} |
+             {isnil_op, info(), k()} |
+             {cnd_if, info(), e(), e(), env(), k()} |
+             {cons_hd, info(), e(), env(), k()} |
+             {cons_tl, info(), e(), cprop(), k()} |
+             {hd_op, info(), e(), env(), k()} |
+             {tl_op, info(), e(), env(), k()} |
+             {append_lhs, info(), e(), env(), k()} |
+             {append_rhs, info(), e(), k()} |
+             {for_arg, info(),
+                       t(),
+                       [{x(), t(), e()}],
+                       x(),
+                       t(),
+                       [{x(), t(), e()}],
+                       e(),
+                       env(),
+                       k()} |
+             {fold_arg, info(), {x(), t(), e()}, x(), t(), e(), env(), k()} |
+             {rcd_field, info(),
+                         [{x(), e()}],
+                         [cprop()],
+                         x(),
+                         [{x(), e()}],
+                         env(),
+                         k()} |
+             {proj_op, info(), x(), k()}.
 
--type cprop() :: unknown
-               | stalled
-               | value.
+-type cprop() :: unknown |
+                 stalled |
+                 value.
 
--type comm()  :: {[{binary(), e()}],     % outbox
-                  sets:set( binary() ),  % awaybox
-                  #{ binary() => e() }}. % inbox
+-type comm() :: {[{binary(), e()}],  % outbox
+                 sets:set(binary()),  % awaybox
+                 #{binary() => e()}}.  % inbox
 
--type prog()  :: {comm(),               % state of communication
-                  e(),                  % control string
-                  env(),                % scope environment
-                  k(),                  % continuation
-                  cprop()}.             % control string property
-
-
+-type prog() :: {comm(),  % state of communication
+                 e(),  % control string
+                 env(),  % scope environment
+                 k(),  % continuation
+                 cprop()}.  % control string property

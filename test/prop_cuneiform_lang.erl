@@ -27,60 +27,63 @@
 %% @end
 %% -------------------------------------------------------------------
 
--module( prop_cuneiform_lang ).
+-module(prop_cuneiform_lang).
 
--include_lib( "proper/include/proper.hrl" ).
+-include_lib("proper/include/proper.hrl").
 
--include( "cuneiform_lang.hrl" ).
+-include("cuneiform_lang.hrl").
 
-
--import( cuneiform_lang, [validate_assign/1,
-                          validate_expr/1,
-                          validate_lang/1,
-                          validate_pattern/1,
-                          validate_reason/1,
-                          validate_type/1] ).
-
+-import(cuneiform_lang,
+        [validate_assign/1,
+         validate_expr/1,
+         validate_lang/1,
+         validate_pattern/1,
+         validate_reason/1,
+         validate_type/1]).
 
 %%==========================================================
 %% Properties
 %%==========================================================
 
-
-
-
-
 %% Types
 
+
 prop_validate_type_always_returns_original() ->
-  ?FORALL( T, t(),
-    begin
-      T =:= validate_type( T )
-    end ).
+    ?FORALL(T,
+            t(),
+            begin
+                T =:= validate_type(T)
+            end).
+
 
 %% Langs
 
+
 prop_validate_lang_always_returns_original() ->
-  ?FORALL( L, l(),
-    begin
-      L =:= validate_lang( L )
-    end ).
+    ?FORALL(L,
+            l(),
+            begin
+                L =:= validate_lang(L)
+            end).
+
 
 %% Patterns
 
+
 prop_validate_pattern_always_returns_original() ->
-  ?FORALL( R, r(),
-    begin
-      R =:= validate_pattern( R )
-    end ).
+    ?FORALL(R,
+            r(),
+            begin
+                R =:= validate_pattern(R)
+            end).
+
 
 %% Reasons
 
+
 prop_validate_reason_always_returns_original() ->
-  ?FORALL( Reason, reason(),
-    begin
-      Reason =:= validate_reason( Reason )
-    end ).
-
-
-
+    ?FORALL(Reason,
+            reason(),
+            begin
+                Reason =:= validate_reason(Reason)
+            end).

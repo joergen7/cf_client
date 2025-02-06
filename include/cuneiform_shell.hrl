@@ -31,12 +31,12 @@
 %% Type definitions
 %%====================================================================
 
--type stage() :: load
-               | scan
-               | parse
-               | type
-               | runtime.
+-type stage() :: load |
+                 scan |
+                 parse |
+                 type |
+                 runtime.
 
--type reply() :: {query, e()}
-               | {error, stage(), _}
-               | {parrot, e(), t()}.
+-type reply() :: {query, e()} |
+                 {error, stage(), _} |
+                 {parrot, e(), t()}.

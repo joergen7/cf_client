@@ -27,37 +27,45 @@
 %% @end
 %% -------------------------------------------------------------------
 
--module( prop_cuneiform_type ).
+-module(prop_cuneiform_type).
 
--include_lib( "proper/include/proper.hrl" ).
+-include_lib("proper/include/proper.hrl").
 
--include( "cuneiform_lang.hrl" ).
+-include("cuneiform_lang.hrl").
 
--import( cuneiform_lang, [validate_type/1] ).
+-import(cuneiform_lang, [validate_type/1]).
 
--import( cuneiform_type, [is_type_comparable/1,
-                          is_type_equivalent/2] ).
+-import(cuneiform_type,
+        [is_type_comparable/1,
+         is_type_equivalent/2]).
 
 %% Type Comparability
 
+
 prop_is_type_comparable_total() ->
-  ?FORALL( Z, oneof( [t(), term()] ),
-    begin
-      is_boolean( is_type_comparable( Z ) )
-    end ).
+    ?FORALL(Z,
+            oneof([t(), term()]),
+            begin
+                is_boolean(is_type_comparable(Z))
+            end).
+
 
 %% Type Equivalence
 
+
 prop_is_type_equivalent_reflexive() ->
-  ?FORALL( T, t(),
-    begin
-      is_type_equivalent( T, T )
-    end ).
+    ?FORALL(T,
+            t(),
+            begin
+                is_type_equivalent(T, T)
+            end).
+
 
 prop_is_type_equivalent_symmetric() ->
-  ?FORALL( T1, t(),
-    ?FORALL( T2, t(),
-      begin
-        is_type_equivalent( T1, T2 ) =:= is_type_equivalent( T2, T1 )
-      end ) ).
-
+    ?FORALL(T1,
+            t(),
+            ?FORALL(T2,
+                    t(),
+                    begin
+                        is_type_equivalent(T1, T2) =:= is_type_equivalent(T2, T1)
+                    end)).

@@ -27,27 +27,34 @@
 %% @end
 %% -------------------------------------------------------------------
 
--module( prop_cuneiform_format ).
+-module(prop_cuneiform_format).
 
--include_lib( "proper/include/proper.hrl" ).
+-include_lib("proper/include/proper.hrl").
 
--include( "cuneiform_lang.hrl" ).
--include( "cuneiform_type.hrl" ).
+-include("cuneiform_lang.hrl").
+-include("cuneiform_type.hrl").
 
--import( cuneiform_format, [format_info/1, format_type/1, format_expr/1,
-                            format_error/1] ).
+-import(cuneiform_format,
+        [format_info/1,
+         format_type/1,
+         format_expr/1,
+         format_error/1]).
+
 
 prop_format_info_handles_all_info() ->
-  ?FORALL( Info, info(),
-    begin
-      is_list( format_info( Info ) )
-    end ).
+    ?FORALL(Info,
+            info(),
+            begin
+                is_list(format_info(Info))
+            end).
+
 
 prop_format_type_handles_all_t() ->
-  ?FORALL( T, t(),
-    begin
-      is_list( format_type( T ) )
-    end ).
+    ?FORALL(T,
+            t(),
+            begin
+                is_list(format_type(T))
+            end).
 
 % prop_format_expr_handles_all_e() ->
 %   ?FORALL( E, e(),

@@ -27,206 +27,209 @@
 %% @end
 %% -------------------------------------------------------------------
 
-
--module( cf_client ).
--behaviour( application ).
+-module(cf_client).
+-behaviour(application).
 
 %% API exports
--export( [start/0] ).
+-export([start/0]).
 
--export( [main/1] ).
+-export([main/1]).
 
 %% Application callbacks
--export( [start/2, stop/1] ).
+-export([start/2, stop/1]).
 
--define( VSN, "0.1.8" ).
-
+-define(VSN, "0.1.8").
 
 %%====================================================================
 %% API functions
 %%====================================================================
 
+
 start() ->
-  application:start( ?MODULE ).
+    application:start(?MODULE).
 
 
 %%====================================================================
 %% Application callback functions
 %%====================================================================
 
-start( _StartType, _StartArgs ) ->
 
-  {ok, DefaultMap} = application:get_env( ?MODULE, default_map ),
-  {ok, GlobalFile} = application:get_env( ?MODULE, global_file ),
-  {ok, UserFile}   = application:get_env( ?MODULE, user_file ),
+start(_StartType, _StartArgs) ->
 
-  SupplFile =
-    case application:get_env( ?MODULE, suppl_file ) of
-      {ok, S}   -> S;
-      undefined -> undefined
-    end,
+    {ok, DefaultMap} = application:get_env(?MODULE, default_map),
+    {ok, GlobalFile} = application:get_env(?MODULE, global_file),
+    {ok, UserFile} = application:get_env(?MODULE, user_file),
 
-  FlagMap =
-    case application:get_env( ?MODULE, flag_map ) of
-      {ok, M}   -> M;
-      undefined -> #{}
-    end,
+    SupplFile =
+        case application:get_env(?MODULE, suppl_file) of
+            {ok, S} -> S;
+            undefined -> undefined
+        end,
 
-  ConfMap = lib_conf:create_conf( DefaultMap, GlobalFile, UserFile, SupplFile,
-                                  FlagMap ),
+    FlagMap =
+        case application:get_env(?MODULE, flag_map) of
+            {ok, M} -> M;
+            undefined -> #{}
+        end,
+
+    ConfMap = lib_conf:create_conf(DefaultMap,
+                                   GlobalFile,
+                                   UserFile,
+                                   SupplFile,
+                                   FlagMap),
+
+    CreNode =
+        case maps:get(cre_node, ConfMap) of
+
+            <<"node">> ->
+                node();
+
+            B when is_binary(B) ->
+                binary_to_atom(B, utf8)
+
+        end,
+
+    error_logger:info_report([{info, "starting Cuneiform client"},
+                              {application, cf_client},
+                              {vsn, ?VSN},
+                              {node, node()},
+                              {cre_node, CreNode}]),
+
+    cf_client_sup:start_link(CreNode).
 
 
-  CreNode =
-    case maps:get( cre_node, ConfMap ) of
-
-      <<"node">> ->
-        node();
-              
-      B when is_binary( B ) ->
-        binary_to_atom( B, utf8 )
-
-    end,
-
-  error_logger:info_report( [{info,        "starting Cuneiform client"},
-                             {application, cf_client},
-                             {vsn,         ?VSN},
-                             {node,        node()},
-                             {cre_node,    CreNode}] ),
-
-
-  cf_client_sup:start_link( CreNode ).
-
-stop( _State ) ->
-  ok.
-
+stop(_State) ->
+    ok.
 
 
 %%====================================================================
 %% Escript main function
 %%====================================================================
 
-main( Args ) ->
 
-  try
+main(Args) ->
 
-    case getopt:parse( get_optspec_lst(), Args ) of
-  
-      {error, R1} ->
-        throw( {error, R1} );
+    try
 
-      {ok, {OptLst, NonOptLst}} ->
+        case getopt:parse(get_optspec_lst(), Args) of
 
-        % break if version needs to be displayed
-        case lists:member( version, OptLst ) of
-          false -> ok;
-          true  -> throw( version )
-        end,
+            {error, R1} ->
+                throw({error, R1});
 
-        % break if help needs to be displayed
-        case lists:member( help, OptLst ) of
-          false -> ok;
-          true  -> throw( help )
-        end,
+            {ok, {OptLst, NonOptLst}} ->
 
-        % extract supplement configuration file
-        SupplFile =
-          case lists:keyfind( suppl_file, 1, OptLst ) of
-            false            -> undefined;
-            {suppl_file, S1} -> S1
-          end,
+                % break if version needs to be displayed
+                case lists:member(version, OptLst) of
+                    false -> ok;
+                    true -> throw(version)
+                end,
 
-        % set supplement file
-        ok = application:set_env( cf_client, suppl_file, SupplFile ),
+                % break if help needs to be displayed
+                case lists:member(help, OptLst) of
+                    false -> ok;
+                    true -> throw(help)
+                end,
 
-        % extract CRE node name
-        M1 =
-          case lists:keyfind( cre_node, 1, OptLst ) of
-            false               -> #{};
-            {cre_node, CreNode} -> #{ cre_node => CreNode }
-          end,
+                % extract supplement configuration file
+                SupplFile =
+                    case lists:keyfind(suppl_file, 1, OptLst) of
+                        false -> undefined;
+                        {suppl_file, S1} -> S1
+                    end,
 
-        % set flag map
-        ok = application:set_env( cf_client, flag_map, M1 ),
+                % set supplement file
+                ok = application:set_env(cf_client, suppl_file, SupplFile),
 
-        % start client service
-        ok =
-          case start() of
+                % extract CRE node name
+                M1 =
+                    case lists:keyfind(cre_node, 1, OptLst) of
+                        false -> #{};
+                        {cre_node, CreNode} -> #{cre_node => CreNode}
+                    end,
 
-            ok ->
-              ok;
+                % set flag map
+                ok = application:set_env(cf_client, flag_map, M1),
 
-            {error, {{shutdown, {failed_to_start_child, _, R2}}, _}} ->
-              throw( {error, R2} );
+                % start client service
+                ok =
+                    case start() of
 
-            {error, R2} ->
-              throw( {error, R2} )
+                        ok ->
+                            ok;
 
-          end,
+                        {error, {{shutdown, {failed_to_start_child, _, R2}}, _}} ->
+                            throw({error, R2});
 
-        case NonOptLst of
-          []    -> throw( shell );
-          [_|_] -> throw( {load, NonOptLst} )
+                        {error, R2} ->
+                            throw({error, R2})
+
+                    end,
+
+                case NonOptLst of
+                    [] -> throw(shell);
+                    [_ | _] -> throw({load, NonOptLst})
+                end
+
         end
 
-    end
+    catch
 
-  catch
-    
-    throw:version ->
-      print_version();
+        throw:version ->
+            print_version();
 
-    throw:help ->
-      print_help();
+        throw:help ->
+            print_help();
 
-    throw:shell ->
-      link( whereis( cf_client ) ),
-      cuneiform_shell:shell( cf_client );
+        throw:shell ->
+            link(whereis(cf_client)),
+            cuneiform_shell:shell(cf_client);
 
-    throw:{load, FileLst} ->
+        throw:{load, FileLst} ->
 
-      F =
-        fun( File ) ->
+            F =
+                fun(File) ->
 
-          % collect reply list
-          ReplyLst =
-            case file:read_file( File ) of
+                        % collect reply list
+                        ReplyLst =
+                            case file:read_file(File) of
 
-              {error, R3} ->
-                [{error, load, {File, R3}}];
+                                {error, R3} ->
+                                    [{error, load, {File, R3}}];
 
-              {ok, B} ->
-                S = binary_to_list( B ),
-                cuneiform_shell:shell_eval_oneshot( S )
+                                {ok, B} ->
+                                    S = binary_to_list(B),
+                                    cuneiform_shell:shell_eval_oneshot(S)
 
-            end,
+                            end,
 
-          % print reply list on screen
-          cuneiform_shell:process_reply_lst( ReplyLst, cf_client, silent )
+                        % print reply list on screen
+                        cuneiform_shell:process_reply_lst(ReplyLst, cf_client, silent)
 
-        end,
+                end,
 
-      ok = lists:foreach( F, FileLst );
+            ok = lists:foreach(F, FileLst);
 
-    throw:{error, Reason} ->
-      ok = io:format( "~n~p~n", [Reason] )
+        throw:{error, Reason} ->
+            ok = io:format("~n~p~n", [Reason])
 
-  end.
+    end.
+
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 
-get_optspec_lst() ->
-  [
-   {version,    $v, "version",    undefined, "Show cf_worker version."},
-   {help,       $h, "help",       undefined, "Show command line options."},
-   {suppl_file, $s, "suppl_file", binary,    "Supplementary configuration file."},
-   {cre_node,   $c, "cre_node",   binary,    "Erlang node running the CRE application."}
 
-  ].
+get_optspec_lst() ->
+    [{version, $v, "version", undefined, "Show cf_worker version."},
+     {help, $h, "help", undefined, "Show command line options."},
+     {suppl_file, $s, "suppl_file", binary, "Supplementary configuration file."},
+     {cre_node, $c, "cre_node", binary, "Erlang node running the CRE application."}].
+
 
 print_help() ->
-  getopt:usage( get_optspec_lst(), "cf_worker" ).
+    getopt:usage(get_optspec_lst(), "cf_worker").
+
 
 print_version() ->
-  io:format( "cf_client ~s~n", [?VSN] ).
+    io:format("cf_client ~s~n", [?VSN]).

@@ -27,103 +27,112 @@
 %% @end
 %% -------------------------------------------------------------------
 
--module( cf_client_process ).
--behaviour( cre_client ).
-
+-module(cf_client_process).
+-behaviour(cre_client).
 
 %%====================================================================
 %% Exports
 %%====================================================================
 
 %% CRE client callbacks
--export( [init/1, is_value/2, recv/3, step/2, load/2, unload/2] ).
+-export([init/1, is_value/2, recv/3, step/2, load/2, unload/2]).
 
 %% API functions
--export( [start_link/1, start_link/2] ).
+-export([start_link/1, start_link/2]).
 
--include( "cuneiform_lang.hrl" ).
--include( "cuneiform_cek.hrl" ).
+-include("cuneiform_lang.hrl").
+-include("cuneiform_cek.hrl").
 
--import( cuneiform_cek,  [ev/1, extract_outbox/1, is_finished/1, load/1,
-                          recv_result/3, unload/1, set_unknown/1] ).
--import( cf_client_effi, [app_to_effi_request/2, effi_reply_to_expr/2] ).
+-import(cuneiform_cek,
+        [ev/1,
+         extract_outbox/1,
+         is_finished/1,
+         load/1,
+         recv_result/3,
+         unload/1,
+         set_unknown/1]).
+-import(cf_client_effi, [app_to_effi_request/2, effi_reply_to_expr/2]).
 
 %%====================================================================
 %% API functions
 %%====================================================================
 
-start_link( F ) when is_function( F, 0 ) ->
-  case F() of
-    {ok, CreName} -> start_link( CreName );
-    {error, E}    -> {error, E}
-  end;
 
-start_link( CreName ) ->
-  cre_client:start_link( CreName, ?MODULE, [] ).
+start_link(F) when is_function(F, 0) ->
+    case F() of
+        {ok, CreName} -> start_link(CreName);
+        {error, E} -> {error, E}
+    end;
+
+start_link(CreName) ->
+    cre_client:start_link(CreName, ?MODULE, []).
 
 
-start_link( ClientName, F ) when is_function( F, 0 ) ->
-  case F() of
-    {ok, CreName} -> start_link( ClientName, CreName );
-    {error, E}    -> {error, E}
-  end;
+start_link(ClientName, F) when is_function(F, 0) ->
+    case F() of
+        {ok, CreName} -> start_link(ClientName, CreName);
+        {error, E} -> {error, E}
+    end;
 
-start_link( Clientname, CreName ) ->
-  cre_client:start_link( Clientname, CreName, ?MODULE, [] ).
+start_link(Clientname, CreName) ->
+    cre_client:start_link(Clientname, CreName, ?MODULE, []).
 
 
 %%====================================================================
 %% CRE client callback implementations
 %%====================================================================
 
--spec init( ClientArg :: _ ) -> [].
 
-init( _ClientArg ) -> [].
+-spec init(ClientArg :: _) -> [].
 
--spec is_value( P :: prog(), UsrInfo :: _ ) -> boolean().
-
-is_value( P, _ ) ->
-  is_finished( P ).
+init(_ClientArg) -> [].
 
 
--spec recv( P, ReplyLst, UsrInfo ) -> prog()
-when P        :: prog(),
-     ReplyLst :: [{#{ atom() => _ }, #{ atom() => _ }}],
-     UsrInfo  :: _.
+-spec is_value(P :: prog(), UsrInfo :: _) -> boolean().
 
-recv( P, ReplyLst, _UsrInfo ) ->
-
-  F =
-    fun( {A, R}, Prog ) ->
-      #{ app_id := H } = A,
-      E = effi_reply_to_expr( A, R ),
-      recv_result( Prog, H, E )
-    end,
+is_value(P, _) ->
+    is_finished(P).
 
 
-  lists:foldl( F, P, ReplyLst ).
+-spec recv(P, ReplyLst, UsrInfo) -> prog()
+              when P :: prog(),
+                   ReplyLst :: [{#{atom() => _}, #{atom() => _}}],
+                   UsrInfo :: _.
+
+recv(P, ReplyLst, _UsrInfo) ->
+
+    F =
+        fun({A, R}, Prog) ->
+                #{app_id := H} = A,
+                E = effi_reply_to_expr(A, R),
+                recv_result(Prog, H, E)
+        end,
+
+    lists:foldl(F, P, ReplyLst).
 
 
--spec step( P, UsrInfo ) -> Result
-when P       :: prog(),
-     UsrInfo :: _,
-     Result  :: {ok, prog(), [e()]}.
+-spec step(P, UsrInfo) -> Result
+              when P :: prog(),
+                   UsrInfo :: _,
+                   Result :: {ok, prog(), [e()]}.
 
-step( P, _UsrInfo ) ->
-  {Outbox, P1} = extract_outbox( ev( set_unknown( P ) ) ),
-  Outbox1 = [app_to_effi_request( H, E ) || {H, E} <- Outbox],
-  {ok, P1, Outbox1}.
+step(P, _UsrInfo) ->
+    {Outbox, P1} = extract_outbox(ev(set_unknown(P))),
+    Outbox1 = [ app_to_effi_request(H, E) || {H, E} <- Outbox ],
+    {ok, P1, Outbox1}.
 
--spec load( E, UserInfo ) -> prog()
-when E        :: e(),
-     UserInfo :: _.
 
-load( E, _ ) ->
-  load( E ).
+-spec load(E, UserInfo) -> prog()
+              when E :: e(),
+                   UserInfo :: _.
 
--spec unload( P, UserInfo ) -> e()
-when P        :: prog(),
-     UserInfo :: _.
+load(E, _) ->
+    load(E).
 
-unload( P, _ ) ->
-  unload( P ).
+
+-spec unload(P, UserInfo) -> e()
+              when P :: prog(),
+                   UserInfo :: _.
+
+unload(P, _) ->
+    unload(P).
